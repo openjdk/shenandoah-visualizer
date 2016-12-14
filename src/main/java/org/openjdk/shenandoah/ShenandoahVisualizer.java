@@ -22,12 +22,18 @@
  */
 package org.openjdk.shenandoah;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-import javax.swing.*;
+import sun.jvmstat.monitor.LongMonitor;
+import sun.jvmstat.monitor.MonitoredHost;
+import sun.jvmstat.monitor.MonitoredVm;
+import sun.jvmstat.monitor.VmIdentifier;
 
-import sun.jvmstat.monitor.*;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
 
 class ShenandoahVisualizer {
 
@@ -119,10 +125,10 @@ class ShenandoahVisualizer {
         frame.setSize(WIDTH, HEIGHT);
         frame.setVisible(true);
         frame.addWindowListener(new WindowAdapter() {
-                public void windowClosing(WindowEvent e) {
-                    doRepaint = false;
-                }
-            });
+            public void windowClosing(WindowEvent e) {
+                doRepaint = false;
+            }
+        });
         int cols = (int) Math.floor(Math.sqrt(max_regions));
         int rows = (int) Math.floor(max_regions / cols);
         while (doRepaint) {
@@ -168,21 +174,21 @@ class ShenandoahVisualizer {
                     g.drawLine(rectx + rectWidth * liveLvl / 255, recty, rectx + rectWidth * liveLvl / 255, recty + rectHeight);
 
                     if (inCset) {
-			g.setColor(new Color(255, 255, 0));
-			g.fillRect(rectx, recty, rectWidth, rectHeight / 3);
-                	g.setColor(Color.BLACK);
-			g.drawRect(rectx, recty, rectWidth, rectHeight / 3);
+                        g.setColor(new Color(255, 255, 0));
+                        g.fillRect(rectx, recty, rectWidth, rectHeight / 3);
+                        g.setColor(Color.BLACK);
+                        g.drawRect(rectx, recty, rectWidth, rectHeight / 3);
                     }
 
                     if (humongous) {
-			g.setColor(new Color(255, 0, 0));
-			g.fillRect(rectx, recty, rectWidth, rectHeight / 3);
-                	g.setColor(Color.BLACK);
-			g.drawRect(rectx, recty, rectWidth, rectHeight / 3);
+                        g.setColor(new Color(255, 0, 0));
+                        g.fillRect(rectx, recty, rectWidth, rectHeight / 3);
+                        g.setColor(Color.BLACK);
+                        g.drawRect(rectx, recty, rectWidth, rectHeight / 3);
                     }
 
                     if (unused) {
-			g.setColor(new Color(0, 0, 0));
+                        g.setColor(new Color(0, 0, 0));
                         g.drawLine(rectx, recty, rectx + rectWidth, recty + rectHeight);
                         g.drawLine(rectx, recty + rectHeight, rectx + rectWidth, recty);
                     }
