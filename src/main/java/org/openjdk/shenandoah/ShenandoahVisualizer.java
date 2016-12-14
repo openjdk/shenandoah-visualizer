@@ -37,13 +37,6 @@ import java.awt.image.BufferedImage;
 
 class ShenandoahVisualizer {
 
-    private static final int USED_MASK = 0x3fffffff;
-    private static final int USED_SHIFT = 0;
-    private static final int LIVE_MASK = 0x3fffffff;
-    private static final int LIVE_SHIFT = 30;
-    private static final int FLAGS_MASK = 0xf;
-    private static final int FLAGS_SHIFT = 60;
-
     private static final int WIDTH = 1000;
     private static final int HEIGHT = 800;
     static BufferedImage img;
@@ -149,51 +142,8 @@ class ShenandoahVisualizer {
                         System.exit(-1);
                     }
 
-                    long data = mons_data[i].longValue();
-                    long used = (data >>> USED_SHIFT) & USED_MASK;
-                    int usedLvl = Math.min(255, (int) (used * 255 / max_size));
-
-                    long live = (data >>> LIVE_SHIFT) & LIVE_MASK;
-                    int liveLvl = Math.min(255, (int) (live * 255 / max_size));
-
-                    long stat = (data >>> FLAGS_SHIFT) & FLAGS_MASK;
-                    boolean inCset = (stat & 0x1) > 0;
-                    boolean humongous = (stat & 0x2) > 0;
-                    boolean unused = (stat & 0x4) > 0;
-
-                    g.setColor(Color.WHITE);
-                    g.fillRect(rectx, recty, rectWidth, rectHeight);
-
-                    g.setColor(new Color(150, 150, 150));
-                    g.fillRect(rectx, recty, rectWidth * usedLvl / 255, rectHeight);
-
-                    g.setColor(new Color(0, 200, 0));
-                    g.fillRect(rectx, recty, rectWidth * liveLvl / 255, rectHeight);
-
-                    g.setColor(new Color(0, 100, 0));
-                    g.drawLine(rectx + rectWidth * liveLvl / 255, recty, rectx + rectWidth * liveLvl / 255, recty + rectHeight);
-
-                    if (inCset) {
-                        g.setColor(new Color(255, 255, 0));
-                        g.fillRect(rectx, recty, rectWidth, rectHeight / 3);
-                        g.setColor(Color.BLACK);
-                        g.drawRect(rectx, recty, rectWidth, rectHeight / 3);
-                    }
-
-                    if (humongous) {
-                        g.setColor(new Color(255, 0, 0));
-                        g.fillRect(rectx, recty, rectWidth, rectHeight / 3);
-                        g.setColor(Color.BLACK);
-                        g.drawRect(rectx, recty, rectWidth, rectHeight / 3);
-                    }
-
-                    if (unused) {
-                        g.setColor(new Color(0, 0, 0));
-                        g.drawLine(rectx, recty, rectx + rectWidth, recty + rectHeight);
-                        g.drawLine(rectx, recty + rectHeight, rectx + rectWidth, recty);
-                    }
-                    g.setColor(Color.BLACK);
-                    g.drawRect(rectx, recty, rectWidth, rectHeight);
+                    RegionStat s = new RegionStat(max_size, mons_data[i].longValue());
+                    s.render(g, rectx, recty, rectWidth, rectHeight);
                 }
                 g.dispose();
             }
