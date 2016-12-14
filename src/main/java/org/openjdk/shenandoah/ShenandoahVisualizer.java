@@ -20,12 +20,13 @@
  * questions.
  *
  */
+package org.openjdk.shenandoah;
 
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 import javax.swing.*;
-import java.util.*;
+
 import sun.jvmstat.monitor.*;
 
 class ShenandoahVisualizer {
@@ -74,7 +75,7 @@ class ShenandoahVisualizer {
                 g.setColor(Color.GREEN);
             }
             g.fillRect(220, 0, 40, 20);
-            
+
         }
     }
 
@@ -200,4 +201,5 @@ class ShenandoahVisualizer {
         frame.dispose();
     }
 }
-
+
+
