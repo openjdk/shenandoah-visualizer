@@ -17,6 +17,14 @@ public class RegionStat {
     private final double liveLvl;
     private final double usedLvl;
 
+    public RegionStat(double usedLvl, double liveLvl, boolean unused, boolean humongous, boolean inCset) {
+        this.usedLvl = usedLvl;
+        this.liveLvl = liveLvl;
+        this.unused = unused;
+        this.humongous = humongous;
+        this.inCset = inCset;
+    }
+
     public RegionStat(long maxSize, long data) {
         long used = (data >>> USED_SHIFT) & USED_MASK;
         usedLvl = Math.min(1D, 1D * used / maxSize);

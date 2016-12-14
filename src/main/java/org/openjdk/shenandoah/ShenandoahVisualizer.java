@@ -77,7 +77,7 @@ class ShenandoahVisualizer {
         service.scheduleAtFixedRate(() -> {
             Snapshot cur = data.snapshot();
             if (!cur.equals(lastSnapshot)) {
-                render(cur);
+                renderedImage = render(cur, width, height);
                 lastSnapshot = cur;
             }
             frame.repaint();
@@ -93,7 +93,7 @@ class ShenandoahVisualizer {
 
     static volatile Snapshot lastSnapshot;
 
-    public static void render(Snapshot snapshot) {
+    public static BufferedImage render(Snapshot snapshot, int width, int height) {
         int cols = (int) Math.floor(Math.sqrt(snapshot.regionCount()));
         int rows = (int) Math.floor(snapshot.regionCount() / cols);
 
@@ -104,6 +104,10 @@ class ShenandoahVisualizer {
         final int PAD = 20;
         final int LINE = 30;
         final int PAD_TOP = 100;
+        final int PAD_RIGHT = 300;
+
+        int rectWidth = (img.getWidth() - (PAD + PAD_RIGHT)) / cols;
+        int rectHeight = (img.getHeight() - (PAD + PAD_TOP)) / rows;
 
         // Draw white background
         g.setColor(Color.WHITE);
@@ -112,6 +116,36 @@ class ShenandoahVisualizer {
         // Draw time
         g.setColor(Color.BLACK);
         g.drawString(String.valueOf(snapshot.time()), PAD, PAD);
+
+        // Draw legend
+
+        final int LEGEND_X = width - PAD_RIGHT;
+        final int LEGEND_Y = PAD_TOP;
+        int LABEL_X = (int) (LEGEND_X + rectWidth * 1.5);
+
+        new RegionStat(0.0, 0.0, true, false, false)
+                .render(g, LEGEND_X, LEGEND_Y + 1 * LINE, rectWidth, rectHeight);
+        g.drawString("Unused", LABEL_X, LEGEND_Y + 1 * LINE + rectHeight);
+
+        new RegionStat(0.0, 0.0, false, false, false)
+                .render(g, LEGEND_X, LEGEND_Y + 2 * LINE, rectWidth, rectHeight);
+        g.drawString("Empty", LABEL_X, LEGEND_Y + 2 * LINE + rectHeight);
+
+        new RegionStat(1.0, 1.0, false, false, false)
+                .render(g, LEGEND_X, LEGEND_Y + 3 * LINE, rectWidth, rectHeight);
+        g.drawString("Live", LABEL_X, LEGEND_Y + 3 * LINE + rectHeight);
+
+        new RegionStat(1.0, 1.0, false, true, false)
+                .render(g, LEGEND_X, LEGEND_Y + 4 * LINE, rectWidth, rectHeight);
+        g.drawString("Live + Humongous", LABEL_X, LEGEND_Y + 4 * LINE + rectHeight);
+
+        new RegionStat(1.0, 0.3, false, false, false)
+                .render(g, LEGEND_X, LEGEND_Y + 5 * LINE, rectWidth, rectHeight);
+        g.drawString("1/3 Live", LABEL_X, LEGEND_Y + 5 * LINE + rectHeight);
+
+        new RegionStat(1.0, 0.3, false, false, true)
+                .render(g, LEGEND_X, LEGEND_Y + 6 * LINE, rectWidth, rectHeight);
+        g.drawString("1/3 Live + In Collection Set", LABEL_X, LEGEND_Y + 6 * LINE + rectHeight);
 
         // Draw status
         g.setColor(Color.BLACK);
@@ -128,8 +162,6 @@ class ShenandoahVisualizer {
         g.drawString("Status: " + status, PAD, PAD + 1 * LINE);
 
         // Draw region field
-        int rectWidth = (img.getWidth() - 2*PAD) / cols;
-        int rectHeight = (img.getHeight() - (PAD + PAD_TOP)) / rows;
 
         for (int i = 0; i < snapshot.regionCount(); i++) {
             int rectx = PAD + (i % cols) * rectWidth;
@@ -140,8 +172,7 @@ class ShenandoahVisualizer {
         }
         g.dispose();
 
-        // publish
-        renderedImage = img;
+        return img;
     }
 
 }
