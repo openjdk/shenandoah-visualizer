@@ -29,6 +29,9 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 class ShenandoahVisualizer {
 
@@ -89,6 +92,7 @@ class ShenandoahVisualizer {
         DataProvider data = new DataProvider(args[0]);
 
         img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
+
         VisPanel p = new VisPanel();
         p.addComponentListener(new VisPanelListener());
 
@@ -100,40 +104,40 @@ class ShenandoahVisualizer {
         frame.getContentPane().add(statusPanel, BorderLayout.SOUTH);
         frame.setSize(WIDTH, HEIGHT);
         frame.setVisible(true);
+
+        ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
+        service.scheduleAtFixedRate(() -> {
+            render(data);
+            frame.repaint();
+        }, 0, 100, TimeUnit.MILLISECONDS);
+
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
-                doRepaint = false;
+                service.shutdown();
+                frame.dispose();
             }
         });
+    }
+
+    public static void render(DataProvider data) {
         int cols = (int) Math.floor(Math.sqrt(data.maxRegions()));
         int rows = (int) Math.floor(data.maxRegions() / cols);
-        while (doRepaint) {
-            long start = System.currentTimeMillis();
-            synchronized (ShenandoahVisualizer.class) {
-                isMarking = (data.status() & 0x1) > 0;
-                isEvacuating = (data.status() & 0x2) > 0;
+        isMarking = (data.status() & 0x1) > 0;
+        isEvacuating = (data.status() & 0x2) > 0;
 
-                int rectWidth = img.getWidth() / cols;
-                int rectHeight = img.getHeight() / rows;
-                Graphics g = img.getGraphics();
-                for (int i = 0; i < data.maxRegions(); i++) {
-                    int rectx = (i % cols) * rectWidth;
-                    int recty = (i / rows) * rectHeight;
+        int rectWidth = img.getWidth() / cols;
+        int rectHeight = img.getHeight() / rows;
+        Graphics g = img.getGraphics();
+        for (int i = 0; i < data.maxRegions(); i++) {
+            int rectx = (i % cols) * rectWidth;
+            int recty = (i / rows) * rectHeight;
 
-                    RegionStat s = data.regionStat(i);
-                    s.render(g, rectx, recty, rectWidth, rectHeight);
-                }
-                g.dispose();
-            }
-            long duration = System.currentTimeMillis() - start;
-            long sleep = 100 - duration;
-            if (sleep > 0) {
-                Thread.sleep(sleep);
-            }
-            frame.repaint();
+            RegionStat s = data.regionStat(i);
+            s.render(g, rectx, recty, rectWidth, rectHeight);
         }
-        frame.dispose();
+        g.dispose();
     }
+
 }
 
 
