@@ -22,11 +22,6 @@
  */
 package org.openjdk.shenandoah;
 
-import sun.jvmstat.monitor.LongMonitor;
-import sun.jvmstat.monitor.MonitoredHost;
-import sun.jvmstat.monitor.MonitoredVm;
-import sun.jvmstat.monitor.VmIdentifier;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
@@ -90,20 +85,8 @@ class ShenandoahVisualizer {
             System.err.println("missing VM identifier");
             System.exit(-1);
         }
-        MonitoredHost host = MonitoredHost.getMonitoredHost(args[0]);
-        MonitoredVm vm = host.getMonitoredVm(new VmIdentifier(args[0]));
-        LongMonitor max_regions_mon = (LongMonitor) vm.findByName("sun.gc.shenandoah.regions.max_regions");
-        int max_regions = (int) max_regions_mon.longValue();
-        LongMonitor max_size_mon = (LongMonitor) vm.findByName("sun.gc.shenandoah.regions.region_size");
-        long max_size = max_size_mon.longValue();
-        LongMonitor status_mon = (LongMonitor) vm.findByName("sun.gc.shenandoah.regions.status");
 
-        System.out.println("max_regions: " + max_regions);
-        LongMonitor[] mons_data = new LongMonitor[max_regions];
-        for (int i = 0; i < max_regions; i++) {
-            mons_data[i] = (LongMonitor) vm.findByName("sun.gc.shenandoah.regions.region." + i + ".data");
-            //System.out.println("region " + i + " used: " + mons[i].longValue());
-        }
+        DataProvider data = new DataProvider(args[0]);
 
         img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
         VisPanel p = new VisPanel();
@@ -122,27 +105,22 @@ class ShenandoahVisualizer {
                 doRepaint = false;
             }
         });
-        int cols = (int) Math.floor(Math.sqrt(max_regions));
-        int rows = (int) Math.floor(max_regions / cols);
+        int cols = (int) Math.floor(Math.sqrt(data.maxRegions()));
+        int rows = (int) Math.floor(data.maxRegions() / cols);
         while (doRepaint) {
             long start = System.currentTimeMillis();
             synchronized (ShenandoahVisualizer.class) {
-                isMarking = (status_mon.longValue() & 0x1) > 0;
-                isEvacuating = (status_mon.longValue() & 0x2) > 0;
+                isMarking = (data.status() & 0x1) > 0;
+                isEvacuating = (data.status() & 0x2) > 0;
 
                 int rectWidth = img.getWidth() / cols;
                 int rectHeight = img.getHeight() / rows;
                 Graphics g = img.getGraphics();
-                for (int i = 0; i < max_regions; i++) {
+                for (int i = 0; i < data.maxRegions(); i++) {
                     int rectx = (i % cols) * rectWidth;
                     int recty = (i / rows) * rectHeight;
 
-                    if (mons_data[i] == null) {
-                        System.err.println("Insufficient shared memory for all region counters. Try -XX:PerfDataMemorySize=512K or higher when running the monitored program.");
-                        System.exit(-1);
-                    }
-
-                    RegionStat s = new RegionStat(max_size, mons_data[i].longValue());
+                    RegionStat s = data.regionStat(i);
                     s.render(g, rectx, recty, rectWidth, rectHeight);
                 }
                 g.dispose();
