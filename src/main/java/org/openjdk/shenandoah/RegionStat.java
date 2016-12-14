@@ -68,5 +68,31 @@ public class RegionStat {
         g.drawRect(x, y, width, height);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
+        RegionStat that = (RegionStat) o;
+
+        if (unused != that.unused) return false;
+        if (humongous != that.humongous) return false;
+        if (inCset != that.inCset) return false;
+        if (Double.compare(that.liveLvl, liveLvl) != 0) return false;
+        return Double.compare(that.usedLvl, usedLvl) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        int result;
+        long temp;
+        result = (unused ? 1 : 0);
+        result = 31 * result + (humongous ? 1 : 0);
+        result = 31 * result + (inCset ? 1 : 0);
+        temp = Double.doubleToLongBits(liveLvl);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(usedLvl);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        return result;
+    }
 }

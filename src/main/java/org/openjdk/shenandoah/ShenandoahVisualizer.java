@@ -50,38 +50,6 @@ class ShenandoahVisualizer {
         }
     }
 
-    static class StatusPanel extends JPanel {
-        private final DataProvider data;
-
-        public StatusPanel(DataProvider data) {
-            this.data = data;
-        }
-
-        public void paint(Graphics g) {
-            boolean isMarking = (data.status() & 0x1) > 0;
-            boolean isEvacuating = (data.status() & 0x2) > 0;
-
-            g.setColor(Color.BLACK);
-            g.drawString("marking:", 0, 15);
-            if (isMarking) {
-                g.setColor(Color.RED);
-            } else {
-                g.setColor(Color.GREEN);
-            }
-            g.fillRect(60, 0, 40, 20);
-
-            g.setColor(Color.BLACK);
-            g.drawString("evacuating:", 120, 15);
-            if (isEvacuating) {
-                g.setColor(Color.RED);
-            } else {
-                g.setColor(Color.GREEN);
-            }
-            g.fillRect(220, 0, 40, 20);
-
-        }
-    }
-
     static class VisPanelListener extends ComponentAdapter {
         public void componentResized(ComponentEvent ev) {
             width = ev.getComponent().getWidth();
@@ -97,22 +65,21 @@ class ShenandoahVisualizer {
 
         DataProvider data = new DataProvider(args[0]);
 
-
         VisPanel p = new VisPanel();
         p.addComponentListener(new VisPanelListener());
 
-        StatusPanel statusPanel = new StatusPanel(data);
-        statusPanel.setPreferredSize(new Dimension(220, 20));
-
         JFrame frame = new JFrame();
         frame.getContentPane().add(p, BorderLayout.CENTER);
-        frame.getContentPane().add(statusPanel, BorderLayout.SOUTH);
         frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
         frame.setVisible(true);
 
         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
         service.scheduleAtFixedRate(() -> {
-            render(data);
+            Snapshot cur = data.snapshot();
+            if (!cur.equals(lastSnapshot)) {
+                render(cur);
+                lastSnapshot = cur;
+            }
             frame.repaint();
         }, 0, 100, TimeUnit.MILLISECONDS);
 
@@ -124,20 +91,51 @@ class ShenandoahVisualizer {
         });
     }
 
-    public static void render(DataProvider data) {
-        int cols = (int) Math.floor(Math.sqrt(data.maxRegions()));
-        int rows = (int) Math.floor(data.maxRegions() / cols);
+    static volatile Snapshot lastSnapshot;
+
+    public static void render(Snapshot snapshot) {
+        int cols = (int) Math.floor(Math.sqrt(snapshot.regionCount()));
+        int rows = (int) Math.floor(snapshot.regionCount() / cols);
 
         BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
-        int rectWidth = img.getWidth() / cols;
-        int rectHeight = img.getHeight() / rows;
         Graphics g = img.getGraphics();
-        for (int i = 0; i < data.maxRegions(); i++) {
-            int rectx = (i % cols) * rectWidth;
-            int recty = (i / rows) * rectHeight;
 
-            RegionStat s = data.regionStat(i);
+        final int PAD = 20;
+        final int LINE = 30;
+        final int PAD_TOP = 100;
+
+        // Draw white background
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, width, height);
+
+        // Draw time
+        g.setColor(Color.BLACK);
+        g.drawString(String.valueOf(snapshot.time()), PAD, PAD);
+
+        // Draw status
+        g.setColor(Color.BLACK);
+        String status = "";
+        if (snapshot.isMarking()) {
+            status += " (marking)";
+        }
+        if (snapshot.isEvacuating()) {
+            status += " (evacuating)";
+        }
+        if (status.isEmpty()) {
+            status = " (idle)";
+        }
+        g.drawString("Status: " + status, PAD, PAD + 1 * LINE);
+
+        // Draw region field
+        int rectWidth = (img.getWidth() - 2*PAD) / cols;
+        int rectHeight = (img.getHeight() - (PAD + PAD_TOP)) / rows;
+
+        for (int i = 0; i < snapshot.regionCount(); i++) {
+            int rectx = PAD + (i % cols) * rectWidth;
+            int recty = PAD + PAD_TOP + (i / rows) * rectHeight;
+
+            RegionStat s = snapshot.get(i);
             s.render(g, rectx, recty, rectWidth, rectHeight);
         }
         g.dispose();

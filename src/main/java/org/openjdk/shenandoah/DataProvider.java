@@ -2,6 +2,9 @@ package org.openjdk.shenandoah;
 
 import sun.jvmstat.monitor.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class DataProvider {
 
     private final int maxRegions;
@@ -30,15 +33,15 @@ public class DataProvider {
         }
     }
 
-    public int maxRegions() {
-        return maxRegions;
+    public Snapshot snapshot() {
+        List<RegionStat> stats = new ArrayList<>();
+        for (LongMonitor m : data) {
+            stats.add(new RegionStat(maxSize, m.longValue()));
+        }
+        boolean isMarking = (status.longValue() & 0x1) > 0;
+        boolean isEvacuating = (status.longValue() & 0x2) > 0;
+
+        return new Snapshot(System.currentTimeMillis(), stats, isMarking, isEvacuating);
     }
 
-    public long status() {
-        return status.longValue();
-    }
-
-    public RegionStat regionStat(int i) {
-        return new RegionStat(maxSize, data[i].longValue());
-    }
 }
