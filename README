@@ -1,0 +1,13 @@
+Build:
+ $ mvn clean install
+
+Run:
+ 1. Start Shenandoah with these additional flags:
+     -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+ShenandoahRegionSampling
+
+ 2. Figure out the process PID
+
+ 3. Attach Visualizer:
+    $ java -Xbootclasspath/p:<path-to-tools.jar> -jar target/visualizer.jar local://<pid>
+
+    tools.jar is usually at $JAVA_HOME/lib
