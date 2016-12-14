@@ -187,6 +187,16 @@ class ShenandoahVisualizer {
             RegionStat s = snapshot.get(i);
             s.render(g, rectx, recty, sqSize, sqSize);
         }
+
+        if (snapshot.isMarking()) {
+            g.setColor(new Color(0, 0, 255, 30));
+            g.fillRect(0, 0, width, height);
+        }
+        if (snapshot.isEvacuating()) {
+            g.setColor(new Color(255, 0, 0, 30));
+            g.fillRect(0, 0, width, height);
+        }
+
         g.dispose();
 
         return img;
