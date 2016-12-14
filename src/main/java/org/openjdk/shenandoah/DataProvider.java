@@ -41,7 +41,7 @@ public class DataProvider {
         boolean isMarking = (status.longValue() & 0x1) > 0;
         boolean isEvacuating = (status.longValue() & 0x2) > 0;
 
-        return new Snapshot(System.currentTimeMillis(), stats, isMarking, isEvacuating);
+        return new Snapshot(System.currentTimeMillis(), maxSize, stats, isMarking, isEvacuating);
     }
 
 }

@@ -29,6 +29,8 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +43,7 @@ class ShenandoahVisualizer {
     static volatile BufferedImage renderedImage;
     private static volatile int width;
     private static volatile int height;
+    static final long START_TIME = System.currentTimeMillis();
 
     static class VisPanel extends JPanel {
         public void paint(Graphics g) {
@@ -99,7 +102,7 @@ class ShenandoahVisualizer {
         Graphics g = img.getGraphics();
 
         final int PAD = 20;
-        final int LINE = 30;
+        final int LINE = 20;
         final int PAD_TOP = 100;
         final int PAD_RIGHT = 300;
 
@@ -113,38 +116,9 @@ class ShenandoahVisualizer {
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, width, height);
 
-        // Draw time
+        // Draw extra data
         g.setColor(Color.BLACK);
-        g.drawString(String.valueOf(snapshot.time()), PAD, PAD);
-
-        // Draw legend
-        final int LEGEND_X = width - PAD_RIGHT;
-        final int LEGEND_Y = PAD_TOP;
-        final int LABEL_X = (int) (LEGEND_X + sqSize * 1.5);
-
-        new RegionStat(0.0, 0.0, true, false, false)
-                .render(g, LEGEND_X, LEGEND_Y + 1 * LINE, sqSize, sqSize);
-        g.drawString("Unused", LABEL_X, LEGEND_Y + 1 * LINE + sqSize);
-
-        new RegionStat(0.0, 0.0, false, false, false)
-                .render(g, LEGEND_X, LEGEND_Y + 2 * LINE, sqSize, sqSize);
-        g.drawString("Empty", LABEL_X, LEGEND_Y + 2 * LINE + sqSize);
-
-        new RegionStat(1.0, 1.0, false, false, false)
-                .render(g, LEGEND_X, LEGEND_Y + 3 * LINE, sqSize, sqSize);
-        g.drawString("Live", LABEL_X, LEGEND_Y + 3 * LINE + sqSize);
-
-        new RegionStat(1.0, 1.0, false, true, false)
-                .render(g, LEGEND_X, LEGEND_Y + 4 * LINE, sqSize, sqSize);
-        g.drawString("Live + Humongous", LABEL_X, LEGEND_Y + 4 * LINE + sqSize);
-
-        new RegionStat(1.0, 0.3, false, false, false)
-                .render(g, LEGEND_X, LEGEND_Y + 5 * LINE, sqSize, sqSize);
-        g.drawString("1/3 Live", LABEL_X, LEGEND_Y + 5 * LINE + sqSize);
-
-        new RegionStat(1.0, 0.3, false, false, true)
-                .render(g, LEGEND_X, LEGEND_Y + 6 * LINE, sqSize, sqSize);
-        g.drawString("1/3 Live + In Collection Set", LABEL_X, LEGEND_Y + 6 * LINE + sqSize);
+        g.drawString("Time: " + (snapshot.time() - START_TIME) + " ms", PAD, PAD);
 
         // Draw status
         g.setColor(Color.BLACK);
@@ -159,6 +133,50 @@ class ShenandoahVisualizer {
             status = " (idle)";
         }
         g.drawString("Status: " + status, PAD, PAD + 1 * LINE);
+
+        g.drawString("Total: " + (snapshot.total() / 1024 / 1024) + " MB", PAD, PAD + 2 * LINE);
+        g.drawString("Used: " + (snapshot.used() / 1024 / 1024) + " MB", PAD, PAD + 3 * LINE);
+        g.drawString("Live: " + (snapshot.live() / 1024 / 1024) + " MB", PAD, PAD + 4 * LINE);
+
+        // Draw legend
+        final int LEGEND_X = PAD + fieldWidth + sqSize;
+        final int LEGEND_Y = PAD_TOP;
+
+        Map<String, RegionStat> items = new LinkedHashMap<>();
+
+        items.put("Unused",
+                new RegionStat(0.0, 0.0, true, false, false));
+
+        items.put("Empty",
+                new RegionStat(0.0, 0.0, false, false, false));
+
+        items.put("1/2 Used",
+                new RegionStat(0.5, 0.0, false, false, false));
+
+        items.put("Fully Used",
+                new RegionStat(1.0, 0.0, false, false, false));
+
+        items.put("Fully Live",
+                new RegionStat(1.0, 1.0, false, false, false));
+
+        items.put("Fully Live + Humongous",
+                new RegionStat(1.0, 1.0, false, true, false));
+
+        items.put("1/3 Live",
+                new RegionStat(1.0, 0.3, false, false, false));
+
+        items.put("1/3 Live + In Collection Set",
+                new RegionStat(1.0, 0.3, false, false, true));
+
+        {
+            int i = 1;
+            for (String key : items.keySet()) {
+                int y = (int) (LEGEND_Y + i * sqSize * 1.5);
+                items.get(key).render(g, LEGEND_X, y, sqSize, sqSize);
+                g.drawString(key, (int) (LEGEND_X + sqSize * 1.5), y + sqSize);
+                i++;
+            }
+        }
 
         // Draw region field
 

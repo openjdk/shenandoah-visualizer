@@ -5,12 +5,14 @@ import java.util.List;
 public class Snapshot {
 
     private final long time;
+    private final long regionSize;
     private final List<RegionStat> stats;
     private final boolean isMarking;
     private final boolean isEvacuating;
 
-    public Snapshot(long time, List<RegionStat> stats, boolean isMarking, boolean isEvacuating) {
+    public Snapshot(long time, long regionSize, List<RegionStat> stats, boolean isMarking, boolean isEvacuating) {
         this.time = time;
+        this.regionSize = regionSize;
         this.stats = stats;
         this.isMarking = isMarking;
         this.isEvacuating = isEvacuating;
@@ -54,5 +56,25 @@ public class Snapshot {
 
     public int regionCount() {
         return stats.size();
+    }
+
+    public long total() {
+        return regionSize * regionCount();
+    }
+
+    public long used() {
+        long used = 0L;
+        for (RegionStat rs : stats) {
+            used += regionSize * rs.used();
+        }
+        return used;
+    }
+
+    public long live() {
+        long live = 0L;
+        for (RegionStat rs : stats) {
+            live += regionSize * rs.live();
+        }
+        return live;
     }
 }

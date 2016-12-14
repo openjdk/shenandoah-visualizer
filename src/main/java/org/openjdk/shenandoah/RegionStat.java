@@ -16,6 +16,7 @@ public class RegionStat {
     private final boolean inCset;
     private final double liveLvl;
     private final double usedLvl;
+    private long ma;
 
     public RegionStat(double usedLvl, double liveLvl, boolean unused, boolean humongous, boolean inCset) {
         this.usedLvl = usedLvl;
@@ -102,5 +103,13 @@ public class RegionStat {
         temp = Double.doubleToLongBits(usedLvl);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
         return result;
+    }
+
+    public double live() {
+        return liveLvl;
+    }
+
+    public double used() {
+        return usedLvl;
     }
 }
