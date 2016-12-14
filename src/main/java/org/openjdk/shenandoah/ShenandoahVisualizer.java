@@ -35,26 +35,32 @@ import java.util.concurrent.TimeUnit;
 
 class ShenandoahVisualizer {
 
-    private static final int WIDTH = 1000;
-    private static final int HEIGHT = 800;
-    static BufferedImage img;
-    static boolean isMarking;
-    static boolean isEvacuating;
+    private static final int INITIAL_WIDTH = 1000;
+    private static final int INITIAL_HEIGHT = 800;
 
-    static boolean doRepaint = true;
+    static volatile BufferedImage renderedImage;
+    private static volatile int width;
+    private static volatile int height;
 
     static class VisPanel extends JPanel {
         public void paint(Graphics g) {
-            if (img != null) {
-                synchronized (ShenandoahVisualizer.class) {
-                    g.drawImage(img, 0, 0, this);
-                }
+            if (renderedImage != null) {
+                g.drawImage(renderedImage, 0, 0, this);
             }
         }
     }
 
     static class StatusPanel extends JPanel {
+        private final DataProvider data;
+
+        public StatusPanel(DataProvider data) {
+            this.data = data;
+        }
+
         public void paint(Graphics g) {
+            boolean isMarking = (data.status() & 0x1) > 0;
+            boolean isEvacuating = (data.status() & 0x2) > 0;
+
             g.setColor(Color.BLACK);
             g.drawString("marking:", 0, 15);
             if (isMarking) {
@@ -78,8 +84,8 @@ class ShenandoahVisualizer {
 
     static class VisPanelListener extends ComponentAdapter {
         public void componentResized(ComponentEvent ev) {
-            // System.out.println("resizing to: " + ev.getComponent().getWidth() + "x" + ev.getComponent().getHeight());
-            img = new BufferedImage(ev.getComponent().getWidth(), ev.getComponent().getHeight(), BufferedImage.TYPE_INT_RGB);
+            width = ev.getComponent().getWidth();
+            height = ev.getComponent().getHeight();
         }
     }
 
@@ -91,18 +97,17 @@ class ShenandoahVisualizer {
 
         DataProvider data = new DataProvider(args[0]);
 
-        img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
 
         VisPanel p = new VisPanel();
         p.addComponentListener(new VisPanelListener());
 
-        StatusPanel statusPanel = new StatusPanel();
+        StatusPanel statusPanel = new StatusPanel(data);
         statusPanel.setPreferredSize(new Dimension(220, 20));
 
         JFrame frame = new JFrame();
         frame.getContentPane().add(p, BorderLayout.CENTER);
         frame.getContentPane().add(statusPanel, BorderLayout.SOUTH);
-        frame.setSize(WIDTH, HEIGHT);
+        frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
         frame.setVisible(true);
 
         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
@@ -122,8 +127,8 @@ class ShenandoahVisualizer {
     public static void render(DataProvider data) {
         int cols = (int) Math.floor(Math.sqrt(data.maxRegions()));
         int rows = (int) Math.floor(data.maxRegions() / cols);
-        isMarking = (data.status() & 0x1) > 0;
-        isEvacuating = (data.status() & 0x2) > 0;
+
+        BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
         int rectWidth = img.getWidth() / cols;
         int rectHeight = img.getHeight() / rows;
@@ -136,6 +141,9 @@ class ShenandoahVisualizer {
             s.render(g, rectx, recty, rectWidth, rectHeight);
         }
         g.dispose();
+
+        // publish
+        renderedImage = img;
     }
 
 }
