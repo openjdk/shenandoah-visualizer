@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 class ShenandoahVisualizer {
@@ -77,7 +78,7 @@ class ShenandoahVisualizer {
         frame.setVisible(true);
 
         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
-        service.scheduleAtFixedRate(() -> {
+        ScheduledFuture<?> f = service.scheduleAtFixedRate(() -> {
             Snapshot cur = data.snapshot();
             if (!cur.equals(lastSnapshot)) {
                 renderedImage = render(cur, width, height);
@@ -92,6 +93,8 @@ class ShenandoahVisualizer {
                 frame.dispose();
             }
         });
+
+        f.get();
     }
 
     static volatile Snapshot lastSnapshot;
