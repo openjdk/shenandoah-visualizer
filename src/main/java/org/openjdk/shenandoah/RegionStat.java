@@ -4,26 +4,30 @@ import java.awt.*;
 
 public class RegionStat {
 
-    private static final int USED_MASK = 0x3fffffff;
+    private static final int USED_MASK = 0x1fffffff;
     private static final int USED_SHIFT = 0;
-    private static final int LIVE_MASK = 0x3fffffff;
-    private static final int LIVE_SHIFT = 30;
-    private static final int FLAGS_MASK = 0xf;
-    private static final int FLAGS_SHIFT = 60;
+    private static final int LIVE_MASK = 0x1fffffff;
+    private static final int LIVE_SHIFT = 29;
+    private static final int FLAGS_MASK = 0x3f;
+    private static final int FLAGS_SHIFT = 58;
 
     private final boolean unused;
     private final boolean humongous;
     private final boolean inCset;
+    private final boolean newlyAllocated;
+    private final boolean pinned;
     private final double liveLvl;
     private final double usedLvl;
     private long ma;
 
-    public RegionStat(double usedLvl, double liveLvl, boolean unused, boolean humongous, boolean inCset) {
+    public RegionStat(double usedLvl, double liveLvl, boolean unused, boolean humongous, boolean inCset, boolean newlyAllocated) {
         this.usedLvl = usedLvl;
         this.liveLvl = liveLvl;
         this.unused = unused;
         this.humongous = humongous;
         this.inCset = inCset;
+        this.newlyAllocated = newlyAllocated;
+        this.pinned = false;
     }
 
     public RegionStat(long maxSize, long data) {
@@ -34,9 +38,11 @@ public class RegionStat {
         liveLvl = Math.min(1D, 1D * live / maxSize);
 
         long stat = (data >>> FLAGS_SHIFT) & FLAGS_MASK;
-        inCset = (stat & 0x1) > 0;
-        humongous = (stat & 0x2) > 0;
-        unused = (stat & 0x4) > 0;
+        unused = (stat & 1) > 0;
+        inCset = (stat & 2) > 0;
+        humongous = (stat & 4) > 0;
+        newlyAllocated = (stat & 8) > 0;
+        pinned = (stat & 16) > 0;
     }
 
     public void render(Graphics g, int x, int y, int width, int height) {
@@ -44,15 +50,21 @@ public class RegionStat {
         g.fillRect(x, y, width, height);
 
         int usedWidth = (int) (width * usedLvl);
-        g.setColor(new Color(150, 150, 150));
+        g.setColor(
+                newlyAllocated ?
+                new Color(0, 250, 250) :
+                new Color(150, 150, 150)
+        );
         g.fillRect(x, y, usedWidth, height);
 
-        int liveWidth = (int) (width * liveLvl);
-        g.setColor(new Color(0, 200, 0));
-        g.fillRect(x, y, liveWidth, height);
+        if (!newlyAllocated) {
+            int liveWidth = (int) (width * liveLvl);
+            g.setColor(new Color(0, 200, 0));
+            g.fillRect(x, y, liveWidth, height);
 
-        g.setColor(new Color(0, 100, 0));
-        g.drawLine(x + liveWidth, y, x + liveWidth, y + height);
+            g.setColor(new Color(0, 100, 0));
+            g.drawLine(x + liveWidth, y, x + liveWidth, y + height);
+        }
 
         if (inCset) {
             g.setColor(Color.YELLOW);
@@ -73,6 +85,12 @@ public class RegionStat {
             g.drawLine(x, y, x + width, y + height);
             g.drawLine(x, y + height, x + width, y);
         }
+
+        if (pinned) {
+            g.setColor(Color.RED);
+            g.fillOval(x + width/2, y + height/2, width/4, height/4);
+        }
+
         g.setColor(Color.BLACK);
         g.drawRect(x, y, width, height);
     }

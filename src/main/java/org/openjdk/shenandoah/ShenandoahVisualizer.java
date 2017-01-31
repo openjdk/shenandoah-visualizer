@@ -84,6 +84,15 @@ class ShenandoahVisualizer {
                 renderedImage = render(cur, width, height);
                 lastSnapshot = cur;
             }
+            long max = cur.total() / 1024 / 1024;
+            System.out.format("%d, %d, %d, %d, %d, %d, %n",
+                    cur.time() - START_TIME,
+                    max,
+                    cur.isMarking() ? max : 0,
+                    cur.isEvacuating() ? max : 0,
+                    cur.live() / 1024 / 1024,
+                    cur.used() / 1024 / 1024
+            );
             frame.repaint();
         }, 0, 100, TimeUnit.MILLISECONDS);
 
@@ -148,28 +157,28 @@ class ShenandoahVisualizer {
         Map<String, RegionStat> items = new LinkedHashMap<>();
 
         items.put("Unused",
-                new RegionStat(0.0, 0.0, true, false, false));
+                new RegionStat(0.0, 0.0, true, false, false, false));
 
         items.put("Empty",
-                new RegionStat(0.0, 0.0, false, false, false));
+                new RegionStat(0.0, 0.0, false, false, false, false));
 
         items.put("1/2 Used",
-                new RegionStat(0.5, 0.0, false, false, false));
+                new RegionStat(0.5, 0.0, false, false, false, false));
 
         items.put("Fully Used",
-                new RegionStat(1.0, 0.0, false, false, false));
+                new RegionStat(1.0, 0.0, false, false, false, false));
 
         items.put("Fully Live",
-                new RegionStat(1.0, 1.0, false, false, false));
+                new RegionStat(1.0, 1.0, false, false, false, false));
 
         items.put("Fully Live + Humongous",
-                new RegionStat(1.0, 1.0, false, true, false));
+                new RegionStat(1.0, 1.0, false, true, false, false));
 
         items.put("1/3 Live",
-                new RegionStat(1.0, 0.3, false, false, false));
+                new RegionStat(1.0, 0.3, false, false, false, false));
 
         items.put("1/3 Live + In Collection Set",
-                new RegionStat(1.0, 0.3, false, false, true));
+                new RegionStat(1.0, 0.3, false, false, true, false));
 
         {
             int i = 1;
