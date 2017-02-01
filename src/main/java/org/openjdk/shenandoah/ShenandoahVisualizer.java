@@ -73,6 +73,7 @@ class ShenandoahVisualizer {
         p.addComponentListener(new VisPanelListener());
 
         JFrame frame = new JFrame();
+        frame.setTitle("Shenandoah GC Visualizer");
         frame.getContentPane().add(p, BorderLayout.CENTER);
         frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
         frame.setVisible(true);
