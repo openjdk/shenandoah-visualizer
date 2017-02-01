@@ -29,12 +29,15 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
+import static org.openjdk.shenandoah.RegionFlag.*;
 
 class ShenandoahVisualizer {
 
@@ -157,28 +160,34 @@ class ShenandoahVisualizer {
         Map<String, RegionStat> items = new LinkedHashMap<>();
 
         items.put("Unused",
-                new RegionStat(0.0, 0.0, true, false, false, false));
+                new RegionStat(0.0, 0.0, EnumSet.of(UNUSED)));
 
         items.put("Empty",
-                new RegionStat(0.0, 0.0, false, false, false, false));
+                new RegionStat(0.0, 0.0, EnumSet.noneOf(RegionFlag.class)));
 
         items.put("1/2 Used",
-                new RegionStat(0.5, 0.0, false, false, false, false));
+                new RegionStat(0.5, 0.0,  EnumSet.noneOf(RegionFlag.class)));
 
         items.put("Fully Used",
-                new RegionStat(1.0, 0.0, false, false, false, false));
+                new RegionStat(1.0, 0.0,  EnumSet.noneOf(RegionFlag.class)));
+
+        items.put("Fully Used, Recently Allocated",
+                new RegionStat(1.0, 0.0,  EnumSet.of(RECENTLY_ALLOCATED)));
 
         items.put("Fully Live",
-                new RegionStat(1.0, 1.0, false, false, false, false));
+                new RegionStat(1.0, 1.0,  EnumSet.noneOf(RegionFlag.class)));
 
         items.put("Fully Live + Humongous",
-                new RegionStat(1.0, 1.0, false, true, false, false));
+                new RegionStat(1.0, 1.0, EnumSet.of(HUMONGOUS)));
 
         items.put("1/3 Live",
-                new RegionStat(1.0, 0.3, false, false, false, false));
+                new RegionStat(1.0, 0.3, EnumSet.noneOf(RegionFlag.class)));
 
         items.put("1/3 Live + In Collection Set",
-                new RegionStat(1.0, 0.3, false, false, true, false));
+                new RegionStat(1.0, 0.3, EnumSet.of(IN_COLLECTION_SET)));
+
+        items.put("1/3 Live + Pinned",
+                new RegionStat(1.0, 0.3, EnumSet.of(PINNED)));
 
         {
             int i = 1;

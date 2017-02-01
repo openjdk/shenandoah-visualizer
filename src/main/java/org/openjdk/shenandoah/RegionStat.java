@@ -1,6 +1,7 @@
 package org.openjdk.shenandoah;
 
 import java.awt.*;
+import java.util.EnumSet;
 
 public class RegionStat {
 
@@ -11,23 +12,14 @@ public class RegionStat {
     private static final int FLAGS_MASK = 0x3f;
     private static final int FLAGS_SHIFT = 58;
 
-    private final boolean unused;
-    private final boolean humongous;
-    private final boolean inCset;
-    private final boolean newlyAllocated;
-    private final boolean pinned;
+    private final EnumSet<RegionFlag> flags;
     private final double liveLvl;
     private final double usedLvl;
-    private long ma;
 
-    public RegionStat(double usedLvl, double liveLvl, boolean unused, boolean humongous, boolean inCset, boolean newlyAllocated) {
+    public RegionStat(double usedLvl, double liveLvl, EnumSet<RegionFlag> flags) {
         this.usedLvl = usedLvl;
         this.liveLvl = liveLvl;
-        this.unused = unused;
-        this.humongous = humongous;
-        this.inCset = inCset;
-        this.newlyAllocated = newlyAllocated;
-        this.pinned = false;
+        this.flags = flags;
     }
 
     public RegionStat(long maxSize, long data) {
@@ -38,11 +30,14 @@ public class RegionStat {
         liveLvl = Math.min(1D, 1D * live / maxSize);
 
         long stat = (data >>> FLAGS_SHIFT) & FLAGS_MASK;
-        unused = (stat & 1) > 0;
-        inCset = (stat & 2) > 0;
-        humongous = (stat & 4) > 0;
-        newlyAllocated = (stat & 8) > 0;
-        pinned = (stat & 16) > 0;
+
+        flags = EnumSet.noneOf(RegionFlag.class);
+
+        if ((stat & 1)  > 0) flags.add(RegionFlag.UNUSED);
+        if ((stat & 2)  > 0) flags.add(RegionFlag.IN_COLLECTION_SET);
+        if ((stat & 4)  > 0) flags.add(RegionFlag.HUMONGOUS);
+        if ((stat & 8)  > 0) flags.add(RegionFlag.RECENTLY_ALLOCATED);
+        if ((stat & 16) > 0) flags.add(RegionFlag.PINNED);
     }
 
     public void render(Graphics g, int x, int y, int width, int height) {
@@ -51,13 +46,13 @@ public class RegionStat {
 
         int usedWidth = (int) (width * usedLvl);
         g.setColor(
-                newlyAllocated ?
+                flags.contains(RegionFlag.RECENTLY_ALLOCATED) ?
                 new Color(0, 250, 250) :
                 new Color(150, 150, 150)
         );
         g.fillRect(x, y, usedWidth, height);
 
-        if (!newlyAllocated) {
+        if (!flags.contains(RegionFlag.RECENTLY_ALLOCATED)) {
             int liveWidth = (int) (width * liveLvl);
             g.setColor(new Color(0, 200, 0));
             g.fillRect(x, y, liveWidth, height);
@@ -66,27 +61,27 @@ public class RegionStat {
             g.drawLine(x + liveWidth, y, x + liveWidth, y + height);
         }
 
-        if (inCset) {
+        if (flags.contains(RegionFlag.IN_COLLECTION_SET)) {
             g.setColor(Color.YELLOW);
             g.fillRect(x, y, width, height / 3);
             g.setColor(Color.BLACK);
             g.drawRect(x, y, width, height / 3);
         }
 
-        if (humongous) {
+        if (flags.contains(RegionFlag.HUMONGOUS)) {
             g.setColor(Color.RED);
             g.fillRect(x, y, width, height / 3);
             g.setColor(Color.BLACK);
             g.drawRect(x, y, width, height / 3);
         }
 
-        if (unused) {
+        if (flags.contains(RegionFlag.UNUSED)) {
             g.setColor(Color.BLACK);
             g.drawLine(x, y, x + width, y + height);
             g.drawLine(x, y + height, x + width, y);
         }
 
-        if (pinned) {
+        if (flags.contains(RegionFlag.PINNED)) {
             g.setColor(Color.RED);
             g.fillOval(x + width/2, y + height/2, width/4, height/4);
         }
@@ -102,20 +97,16 @@ public class RegionStat {
 
         RegionStat that = (RegionStat) o;
 
-        if (unused != that.unused) return false;
-        if (humongous != that.humongous) return false;
-        if (inCset != that.inCset) return false;
         if (Double.compare(that.liveLvl, liveLvl) != 0) return false;
-        return Double.compare(that.usedLvl, usedLvl) == 0;
+        if (Double.compare(that.usedLvl, usedLvl) != 0) return false;
+        return flags.equals(that.flags);
     }
 
     @Override
     public int hashCode() {
         int result;
         long temp;
-        result = (unused ? 1 : 0);
-        result = 31 * result + (humongous ? 1 : 0);
-        result = 31 * result + (inCset ? 1 : 0);
+        result = flags.hashCode();
         temp = Double.doubleToLongBits(liveLvl);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
         temp = Double.doubleToLongBits(usedLvl);
