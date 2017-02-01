@@ -3,6 +3,8 @@ package org.openjdk.shenandoah;
 import java.awt.*;
 import java.util.EnumSet;
 
+import static org.openjdk.shenandoah.Colors.*;
+
 public class RegionStat {
 
     private static final int USED_MASK = 0x1fffffff;
@@ -47,29 +49,28 @@ public class RegionStat {
         int usedWidth = (int) (width * usedLvl);
         g.setColor(
                 flags.contains(RegionFlag.RECENTLY_ALLOCATED) ?
-                new Color(0, 250, 250) :
-                new Color(150, 150, 150)
+                        USED_ALLOC : USED
         );
         g.fillRect(x, y, usedWidth, height);
 
         if (!flags.contains(RegionFlag.RECENTLY_ALLOCATED)) {
             int liveWidth = (int) (width * liveLvl);
-            g.setColor(new Color(0, 200, 0));
+            g.setColor(LIVE);
             g.fillRect(x, y, liveWidth, height);
 
-            g.setColor(new Color(0, 100, 0));
+            g.setColor(LIVE_BORDER);
             g.drawLine(x + liveWidth, y, x + liveWidth, y + height);
         }
 
         if (flags.contains(RegionFlag.IN_COLLECTION_SET)) {
-            g.setColor(Color.YELLOW);
+            g.setColor(Colors.CSET);
             g.fillRect(x, y, width, height / 3);
             g.setColor(Color.BLACK);
             g.drawRect(x, y, width, height / 3);
         }
 
         if (flags.contains(RegionFlag.HUMONGOUS)) {
-            g.setColor(Color.RED);
+            g.setColor(Colors.HUMONGOUS);
             g.fillRect(x, y, width, height / 3);
             g.setColor(Color.BLACK);
             g.drawRect(x, y, width, height / 3);
@@ -121,4 +122,9 @@ public class RegionStat {
     public double used() {
         return usedLvl;
     }
+
+    public EnumSet<RegionFlag> flags() {
+        return flags;
+    }
+
 }

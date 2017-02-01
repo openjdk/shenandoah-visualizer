@@ -41,6 +41,7 @@ public class Snapshot {
 
         Snapshot snapshot = (Snapshot) o;
 
+        if (time != snapshot.time) return false;
         if (isMarking != snapshot.isMarking) return false;
         if (isEvacuating != snapshot.isEvacuating) return false;
         return stats != null ? stats.equals(snapshot.stats) : snapshot.stats == null;
@@ -48,7 +49,8 @@ public class Snapshot {
 
     @Override
     public int hashCode() {
-        int result = stats.hashCode();
+        int result = (int) (time ^ (time >>> 32));
+        result = 31 * result + (stats != null ? stats.hashCode() : 0);
         result = 31 * result + (isMarking ? 1 : 0);
         result = 31 * result + (isEvacuating ? 1 : 0);
         return result;
@@ -66,6 +68,36 @@ public class Snapshot {
         long used = 0L;
         for (RegionStat rs : stats) {
             used += regionSize * rs.used();
+        }
+        return used;
+    }
+
+    public long recentlyAllocated() {
+        long used = 0L;
+        for (RegionStat rs : stats) {
+            if (rs.flags().contains(RegionFlag.RECENTLY_ALLOCATED)) {
+                used += regionSize * rs.used();
+            }
+        }
+        return used;
+    }
+
+    public long collectionSet() {
+        long used = 0L;
+        for (RegionStat rs : stats) {
+            if (rs.flags().contains(RegionFlag.IN_COLLECTION_SET)) {
+                used += regionSize * rs.used();
+            }
+        }
+        return used;
+    }
+
+    public long humongous() {
+        long used = 0L;
+        for (RegionStat rs : stats) {
+            if (rs.flags().contains(RegionFlag.HUMONGOUS)) {
+                used += regionSize * rs.used();
+            }
         }
         return used;
     }

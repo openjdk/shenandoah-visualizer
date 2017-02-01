@@ -10,11 +10,13 @@ public class DataProvider {
     private final int maxRegions;
     private final long maxSize;
     private final LongMonitor[] data;
+    private final LongMonitor timestamp;
     private final LongMonitor status;
 
     public DataProvider(String id) throws Exception {
         MonitoredHost host = MonitoredHost.getMonitoredHost(id);
         MonitoredVm vm = host.getMonitoredVm(new VmIdentifier(id));
+        timestamp = (LongMonitor) vm.findByName("sun.gc.shenandoah.regions.timestamp");
         LongMonitor max_regions_mon = (LongMonitor) vm.findByName("sun.gc.shenandoah.regions.max_regions");
         maxRegions = (int) max_regions_mon.longValue();
         LongMonitor max_size_mon = (LongMonitor) vm.findByName("sun.gc.shenandoah.regions.region_size");
@@ -41,7 +43,8 @@ public class DataProvider {
         boolean isMarking = (status.longValue() & 0x1) > 0;
         boolean isEvacuating = (status.longValue() & 0x2) > 0;
 
-        return new Snapshot(System.currentTimeMillis(), maxSize, stats, isMarking, isEvacuating);
+        long time = timestamp.longValue();
+        return new Snapshot(time, maxSize, stats, isMarking, isEvacuating);
     }
 
 }

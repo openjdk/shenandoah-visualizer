@@ -29,9 +29,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -47,7 +45,6 @@ class ShenandoahVisualizer {
     static volatile BufferedImage renderedImage;
     private static volatile int width;
     private static volatile int height;
-    static final long START_TIME = System.currentTimeMillis();
 
     static class VisPanel extends JPanel {
         public void paint(Graphics g) {
@@ -84,18 +81,13 @@ class ShenandoahVisualizer {
         ScheduledFuture<?> f = service.scheduleAtFixedRate(() -> {
             Snapshot cur = data.snapshot();
             if (!cur.equals(lastSnapshot)) {
-                renderedImage = render(cur, width, height);
+                renderedImage = render(cur, lastSnapshots, width, height);
                 lastSnapshot = cur;
+                lastSnapshots.add(new SnapshotView(cur));
+                if (lastSnapshots.size() > 2500) {
+                    lastSnapshots.removeFirst();
+                }
             }
-            long max = cur.total() / 1024 / 1024;
-            System.out.format("%d, %d, %d, %d, %d, %d, %n",
-                    cur.time() - START_TIME,
-                    max,
-                    cur.isMarking() ? max : 0,
-                    cur.isEvacuating() ? max : 0,
-                    cur.live() / 1024 / 1024,
-                    cur.used() / 1024 / 1024
-            );
             frame.repaint();
         }, 0, 10, TimeUnit.MILLISECONDS);
 
@@ -109,16 +101,18 @@ class ShenandoahVisualizer {
         f.get();
     }
 
+    static final LinkedList<SnapshotView> lastSnapshots = new LinkedList<>();
+
     static volatile Snapshot lastSnapshot;
 
-    public static BufferedImage render(Snapshot snapshot, int width, int height) {
+    public static BufferedImage render(Snapshot snapshot, LinkedList<SnapshotView> lastSnapshots, int width, int height) {
         BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
         Graphics g = img.getGraphics();
 
         final int PAD = 20;
         final int LINE = 20;
-        final int PAD_TOP = 100;
+        final int PAD_TOP = 200;
         final int PAD_RIGHT = 300;
 
         int fieldWidth = img.getWidth() - (PAD + PAD_RIGHT);
@@ -133,7 +127,7 @@ class ShenandoahVisualizer {
 
         // Draw extra data
         g.setColor(Color.BLACK);
-        g.drawString("Time: " + (snapshot.time() - START_TIME) + " ms", PAD, PAD);
+        g.drawString("Time: " + (snapshot.time() / 1024 / 1024) + " ms", 2*PAD + fieldWidth, PAD);
 
         // Draw status
         g.setColor(Color.BLACK);
@@ -147,11 +141,52 @@ class ShenandoahVisualizer {
         if (status.isEmpty()) {
             status = " (idle)";
         }
-        g.drawString("Status: " + status, PAD, PAD + 1 * LINE);
+        g.drawString("Status: " + status, 2*PAD + fieldWidth, PAD + 1 * LINE);
 
-        g.drawString("Total: " + (snapshot.total() / 1024 / 1024) + " MB", PAD, PAD + 2 * LINE);
-        g.drawString("Used: " + (snapshot.used() / 1024 / 1024) + " MB", PAD, PAD + 3 * LINE);
-        g.drawString("Live: " + (snapshot.live() / 1024 / 1024) + " MB", PAD, PAD + 4 * LINE);
+        g.drawString("Total: " + (snapshot.total()) + " KB", 2*PAD + fieldWidth, PAD + 2 * LINE);
+        g.drawString("Used: " + (snapshot.used()) + " KB", 2*PAD + fieldWidth, PAD + 3 * LINE);
+        g.drawString("Live: " + (snapshot.live()) + " KB", 2*PAD + fieldWidth, PAD + 4 * LINE);
+
+        // Draw graph
+        {
+            int Y_SIZE = PAD_TOP - PAD;
+            int X_SIZE = fieldWidth;
+
+            g.setColor(Color.BLACK);
+            g.fillRect(PAD, PAD, X_SIZE, Y_SIZE);
+
+            if (lastSnapshots.size() > 2) {
+                double stepY = 1D * Y_SIZE / snapshot.total();
+                long firstTime = lastSnapshots.getFirst().time();
+                long lastTime = lastSnapshots.getLast().time();
+                double stepX = 1D * X_SIZE / (lastTime - firstTime);
+                for (SnapshotView s : lastSnapshots) {
+                    int x = (int) (PAD + (s.time() - firstTime) * stepX);
+
+                    if (s.isMarking()) {
+                        g.setColor(new Color(100, 100, 0));
+                        g.drawRect(x, PAD, 1, Y_SIZE);
+                    }
+
+                    if (s.isEvacuating()) {
+                        g.setColor(new Color(100, 0, 0));
+                        g.drawRect(x, PAD, 1, Y_SIZE);
+                    }
+
+                    g.setColor(Colors.USED);
+                    g.drawRect(x, PAD + (int) (Y_SIZE - s.used() * stepY), 1, 1);
+                    g.setColor(Colors.USED_ALLOC);
+                    g.drawRect(x, PAD + (int) (Y_SIZE - s.recentlyAllocated() * stepY), 1, 1);
+                    g.setColor(Colors.HUMONGOUS);
+                    g.drawRect(x, PAD + (int) (Y_SIZE - s.humongous() * stepY), 1, 1);
+                    g.setColor(Colors.LIVE);
+                    g.drawRect(x, PAD + (int) (Y_SIZE - s.live() * stepY), 1, 1);
+                    g.setColor(Colors.CSET);
+                    g.drawRect(x, PAD + (int) (Y_SIZE - s.collectionSet() * stepY), 1, 1);
+
+                }
+            }
+        }
 
         // Draw legend
         final int LEGEND_X = PAD + fieldWidth + sqSize;
