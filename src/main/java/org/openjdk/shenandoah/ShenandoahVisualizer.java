@@ -94,7 +94,7 @@ class ShenandoahVisualizer {
                     cur.used() / 1024 / 1024
             );
             frame.repaint();
-        }, 0, 100, TimeUnit.MILLISECONDS);
+        }, 0, 10, TimeUnit.MILLISECONDS);
 
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
