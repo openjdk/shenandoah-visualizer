@@ -151,10 +151,14 @@ class ShenandoahVisualizer {
         // Draw graph
         {
             int Y_SIZE = PAD_TOP - PAD;
-            int X_SIZE = fieldWidth;
+            int X_SIZE = Math.min(lastSnapshots.size(), fieldWidth);
 
             g.setColor(Color.BLACK);
             g.fillRect(PAD, PAD, X_SIZE, Y_SIZE);
+
+            while (lastSnapshots.size() > X_SIZE) {
+                lastSnapshots.removeFirst();
+            }
 
             if (lastSnapshots.size() > 2) {
                 double stepY = 1D * Y_SIZE / snapshot.total();
@@ -162,7 +166,7 @@ class ShenandoahVisualizer {
                 long lastTime = lastSnapshots.getLast().time();
                 double stepX = 1D * X_SIZE / (lastTime - firstTime);
                 for (SnapshotView s : lastSnapshots) {
-                    int x = (int) (PAD + (s.time() - firstTime) * stepX);
+                    int x = (int) Math.round(PAD + (s.time() - firstTime) * stepX);
 
                     if (s.isMarking()) {
                         g.setColor(new Color(100, 100, 0));
@@ -175,15 +179,15 @@ class ShenandoahVisualizer {
                     }
 
                     g.setColor(Colors.USED);
-                    g.drawRect(x, PAD + (int) (Y_SIZE - s.used() * stepY), 1, 1);
+                    g.drawRect(x, PAD + (int) Math.round(Y_SIZE - s.used() * stepY), 1, 1);
                     g.setColor(Colors.USED_ALLOC);
-                    g.drawRect(x, PAD + (int) (Y_SIZE - s.recentlyAllocated() * stepY), 1, 1);
+                    g.drawRect(x, PAD + (int) Math.round(Y_SIZE - s.recentlyAllocated() * stepY), 1, 1);
                     g.setColor(Colors.HUMONGOUS);
-                    g.drawRect(x, PAD + (int) (Y_SIZE - s.humongous() * stepY), 1, 1);
+                    g.drawRect(x, PAD + (int) Math.round(Y_SIZE - s.humongous() * stepY), 1, 1);
                     g.setColor(Colors.LIVE);
-                    g.drawRect(x, PAD + (int) (Y_SIZE - s.live() * stepY), 1, 1);
+                    g.drawRect(x, PAD + (int) Math.round(Y_SIZE - s.live() * stepY), 1, 1);
                     g.setColor(Colors.CSET);
-                    g.drawRect(x, PAD + (int) (Y_SIZE - s.collectionSet() * stepY), 1, 1);
+                    g.drawRect(x, PAD + (int) Math.round(Y_SIZE - s.collectionSet() * stepY), 1, 1);
 
                 }
             }
