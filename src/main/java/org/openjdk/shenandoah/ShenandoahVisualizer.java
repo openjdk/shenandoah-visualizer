@@ -46,21 +46,6 @@ class ShenandoahVisualizer {
     private static volatile int width;
     private static volatile int height;
 
-    static class VisPanel extends JPanel {
-        public void paint(Graphics g) {
-            if (renderedImage != null) {
-                g.drawImage(renderedImage, 0, 0, this);
-            }
-        }
-    }
-
-    static class VisPanelListener extends ComponentAdapter {
-        public void componentResized(ComponentEvent ev) {
-            width = ev.getComponent().getWidth();
-            height = ev.getComponent().getHeight();
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         if (args.length < 1) {
             System.err.println("missing VM identifier");
@@ -69,8 +54,19 @@ class ShenandoahVisualizer {
 
         DataProvider data = new DataProvider(args[0]);
 
-        VisPanel p = new VisPanel();
-        p.addComponentListener(new VisPanelListener());
+        JPanel p = new JPanel() {
+            public void paint(Graphics g) {
+                if (renderedImage != null) {
+                    g.drawImage(renderedImage, 0, 0, this);
+                }
+            }
+        };
+        p.addComponentListener(new ComponentAdapter() {
+            public void componentResized(ComponentEvent ev) {
+                width = ev.getComponent().getWidth();
+                height = ev.getComponent().getHeight();
+            }
+        });
 
         JFrame frame = new JFrame();
         frame.setTitle("Shenandoah GC Visualizer");
@@ -79,18 +75,8 @@ class ShenandoahVisualizer {
         frame.setVisible(true);
 
         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
-        ScheduledFuture<?> f = service.scheduleAtFixedRate(() -> {
-            Snapshot cur = data.snapshot();
-            if (!cur.equals(lastSnapshot)) {
-                renderedImage = render(cur, lastSnapshots, width, height);
-                lastSnapshot = cur;
-                lastSnapshots.add(new SnapshotView(cur));
-                if (lastSnapshots.size() > 2500) {
-                    lastSnapshots.removeFirst();
-                }
-            }
-            frame.repaint();
-        }, 0, 10, TimeUnit.MILLISECONDS);
+        ScheduledFuture<?> f = service.scheduleAtFixedRate(new RenderTask(data, frame),
+                0, 10, TimeUnit.MILLISECONDS);
 
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
@@ -102,9 +88,32 @@ class ShenandoahVisualizer {
         f.get();
     }
 
-    static final LinkedList<SnapshotView> lastSnapshots = new LinkedList<>();
+    public static class RenderTask implements Runnable {
+        final DataProvider data;
+        final JFrame frame;
+        final LinkedList<SnapshotView> lastSnapshots;
+        volatile Snapshot lastSnapshot;
 
-    static volatile Snapshot lastSnapshot;
+        public RenderTask(DataProvider data, JFrame frame) {
+            this.data = data;
+            this.frame = frame;
+            this.lastSnapshots = new LinkedList<>();
+        }
+
+        @Override
+        public void run() {
+            Snapshot cur = data.snapshot();
+            if (!cur.equals(lastSnapshot)) {
+                renderedImage = render(cur, lastSnapshots, width, height);
+                lastSnapshot = cur;
+                lastSnapshots.add(new SnapshotView(cur));
+                if (lastSnapshots.size() > 2500) {
+                    lastSnapshots.removeFirst();
+                }
+                frame.repaint();
+            }
+        }
+    }
 
     public static BufferedImage render(Snapshot snapshot, LinkedList<SnapshotView> lastSnapshots, int width, int height) {
         BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
