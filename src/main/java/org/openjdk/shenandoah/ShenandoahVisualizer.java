@@ -28,7 +28,6 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -42,40 +41,110 @@ class ShenandoahVisualizer {
     private static final int INITIAL_WIDTH = 1000;
     private static final int INITIAL_HEIGHT = 800;
 
-    static volatile BufferedImage renderedImage;
-    private static volatile int width;
-    private static volatile int height;
-
     public static void main(String[] args) throws Exception {
         if (args.length < 1) {
             System.err.println("missing VM identifier");
             System.exit(-1);
         }
 
+        JFrame frame = new JFrame();
+        frame.setLayout(new GridBagLayout());
+        frame.setTitle("Shenandoah GC Visualizer");
+        frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
+
         DataProvider data = new DataProvider(args[0]);
 
-        JPanel p = new JPanel() {
+        Render render = new Render(data, frame);
+
+        JPanel regionsPanel = new JPanel() {
             public void paint(Graphics g) {
-                if (renderedImage != null) {
-                    g.drawImage(renderedImage, 0, 0, this);
-                }
+                render.renderRegions(g);
             }
         };
-        p.addComponentListener(new ComponentAdapter() {
+
+        JPanel legendPanel = new JPanel() {
+            @Override
+            public void paint(Graphics g) {
+                render.renderLegend(g);
+            }
+        };
+
+        JPanel statusPanel = new JPanel() {
+            @Override
+            public void paint(Graphics g) {
+                render.renderStats(g);
+            }
+        };
+
+        JPanel graphPanel = new JPanel() {
+            @Override
+            public void paint(Graphics g) {
+                render.renderGraph(g);
+            }
+        };
+
+        regionsPanel.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent ev) {
-                width = ev.getComponent().getWidth();
-                height = ev.getComponent().getHeight();
+                render.notifyRegionResized(ev.getComponent().getWidth(), ev.getComponent().getHeight());
             }
         });
 
-        JFrame frame = new JFrame();
-        frame.setTitle("Shenandoah GC Visualizer");
-        frame.getContentPane().add(p, BorderLayout.CENTER);
-        frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
+        graphPanel.addComponentListener(new ComponentAdapter() {
+            public void componentResized(ComponentEvent ev) {
+                render.notifyGraphResized(ev.getComponent().getWidth(), ev.getComponent().getHeight());
+            }
+        });
+
+        Insets pad = new Insets(10, 10, 10, 10);
+
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridx = 0;
+            c.gridy = 0;
+            c.weightx = 3;
+            c.weighty = 1;
+            c.insets = pad;
+            frame.add(graphPanel, c);
+        }
+
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridx = 0;
+            c.gridy = 1;
+            c.weightx = 3;
+            c.weighty = 5;
+            c.insets = pad;
+            frame.add(regionsPanel, c);
+        }
+
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridx = 1;
+            c.gridy = 0;
+            c.weightx = 1;
+            c.weighty = 1;
+            c.insets = pad;
+            frame.add(statusPanel, c);
+        }
+
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridx = 1;
+            c.gridy = 1;
+            c.weightx = 1;
+            c.weighty = 1;
+            c.insets = pad;
+            frame.add(legendPanel, c);
+        }
+
         frame.setVisible(true);
 
         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
-        ScheduledFuture<?> f = service.scheduleAtFixedRate(new RenderTask(data, frame),
+        ScheduledFuture<?> f = service.scheduleAtFixedRate(render,
                 0, 10, TimeUnit.MILLISECONDS);
 
         frame.addWindowListener(new WindowAdapter() {
@@ -88,180 +157,162 @@ class ShenandoahVisualizer {
         f.get();
     }
 
-    public static class RenderTask implements Runnable {
+    private static class Render implements Runnable {
+        public static final int LINE = 20;
+
         final DataProvider data;
         final JFrame frame;
-        final LinkedList<SnapshotView> lastSnapshots;
-        volatile Snapshot lastSnapshot;
 
-        public RenderTask(DataProvider data, JFrame frame) {
+        int regionWidth, regionHeight;
+        int graphWidth, graphHeight;
+
+        final LinkedList<SnapshotView> lastSnapshots;
+        volatile Snapshot snapshot;
+
+        public Render(DataProvider data, JFrame frame) {
             this.data = data;
             this.frame = frame;
             this.lastSnapshots = new LinkedList<>();
+            this.snapshot = data.snapshot();
         }
 
         @Override
-        public void run() {
+        public synchronized void run() {
             Snapshot cur = data.snapshot();
-            if (!cur.equals(lastSnapshot)) {
-                renderedImage = render(cur, lastSnapshots, width, height);
-                lastSnapshot = cur;
+            if (!cur.equals(snapshot)) {
+                snapshot = cur;
                 lastSnapshots.add(new SnapshotView(cur));
-                if (lastSnapshots.size() > 2500) {
+                if (lastSnapshots.size() > graphWidth) {
                     lastSnapshots.removeFirst();
                 }
                 frame.repaint();
             }
         }
-    }
 
-    public static BufferedImage render(Snapshot snapshot, LinkedList<SnapshotView> lastSnapshots, int width, int height) {
-        BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-
-        Graphics g = img.getGraphics();
-
-        final int PAD = 20;
-        final int LINE = 20;
-        final int PAD_TOP = 200;
-        final int PAD_RIGHT = 300;
-
-        int fieldWidth = img.getWidth() - (PAD + PAD_RIGHT);
-        int fieldHeight = img.getHeight() - (PAD + PAD_TOP);
-        int area = fieldWidth * fieldHeight;
-        int sqSize = (int) Math.sqrt(1D * area / snapshot.regionCount());
-        int cols = fieldWidth / sqSize;
-
-        // Draw white background
-        g.setColor(Color.WHITE);
-        g.fillRect(0, 0, width, height);
-
-        // Draw extra data
-        g.setColor(Color.BLACK);
-        g.drawString("Time: " + (snapshot.time() / 1024 / 1024) + " ms", 2*PAD + fieldWidth, PAD);
-
-        // Draw status
-        g.setColor(Color.BLACK);
-        String status = "";
-        if (snapshot.isMarking()) {
-            status += " (marking)";
-        }
-        if (snapshot.isEvacuating()) {
-            status += " (evacuating)";
-        }
-        if (status.isEmpty()) {
-            status = " (idle)";
-        }
-        g.drawString("Status: " + status, 2*PAD + fieldWidth, PAD + 1 * LINE);
-
-        g.drawString("Total: " + (snapshot.total()) + " KB", 2*PAD + fieldWidth, PAD + 2 * LINE);
-        g.drawString("Used: " + (snapshot.used()) + " KB", 2*PAD + fieldWidth, PAD + 3 * LINE);
-        g.drawString("Live: " + (snapshot.live()) + " KB", 2*PAD + fieldWidth, PAD + 4 * LINE);
-
-        // Draw graph
-        {
-            int Y_SIZE = PAD_TOP - PAD;
-            int X_SIZE = Math.min(lastSnapshots.size(), fieldWidth);
+        public synchronized void renderGraph(Graphics g) {
+            if (lastSnapshots.size() < 2) return;
 
             g.setColor(Color.BLACK);
-            g.fillRect(PAD, PAD, X_SIZE, Y_SIZE);
+            g.fillRect(0, 0, graphWidth, graphHeight);
 
-            while (lastSnapshots.size() > X_SIZE) {
-                lastSnapshots.removeFirst();
-            }
+            double stepY = 1D * graphHeight / snapshot.total();
+            long firstTime = lastSnapshots.getFirst().time();
+            long lastTime = lastSnapshots.getLast().time();
+            double stepX = 1D * Math.min(lastSnapshots.size(), graphWidth) / (lastTime - firstTime);
+            for (SnapshotView s : lastSnapshots) {
+                int x = (int) Math.round((s.time() - firstTime) * stepX);
 
-            if (lastSnapshots.size() > 2) {
-                double stepY = 1D * Y_SIZE / snapshot.total();
-                long firstTime = lastSnapshots.getFirst().time();
-                long lastTime = lastSnapshots.getLast().time();
-                double stepX = 1D * X_SIZE / (lastTime - firstTime);
-                for (SnapshotView s : lastSnapshots) {
-                    int x = (int) Math.round(PAD + (s.time() - firstTime) * stepX);
-
-                    if (s.isMarking()) {
-                        g.setColor(new Color(100, 100, 0));
-                        g.drawRect(x, PAD, 1, Y_SIZE);
-                    }
-
-                    if (s.isEvacuating()) {
-                        g.setColor(new Color(100, 0, 0));
-                        g.drawRect(x, PAD, 1, Y_SIZE);
-                    }
-
-                    g.setColor(Colors.USED);
-                    g.drawRect(x, PAD + (int) Math.round(Y_SIZE - s.used() * stepY), 1, 1);
-                    g.setColor(Colors.USED_ALLOC);
-                    g.drawRect(x, PAD + (int) Math.round(Y_SIZE - s.recentlyAllocated() * stepY), 1, 1);
-                    g.setColor(Colors.HUMONGOUS);
-                    g.drawRect(x, PAD + (int) Math.round(Y_SIZE - s.humongous() * stepY), 1, 1);
-                    g.setColor(Colors.LIVE);
-                    g.drawRect(x, PAD + (int) Math.round(Y_SIZE - s.live() * stepY), 1, 1);
-                    g.setColor(Colors.CSET);
-                    g.drawRect(x, PAD + (int) Math.round(Y_SIZE - s.collectionSet() * stepY), 1, 1);
-
+                if (s.isMarking()) {
+                    g.setColor(new Color(100, 100, 0));
+                    g.drawRect(x, 0, 1, graphHeight);
                 }
+
+                if (s.isEvacuating()) {
+                    g.setColor(new Color(100, 0, 0));
+                    g.drawRect(x, 0, 1, graphHeight);
+                }
+
+                g.setColor(Colors.USED);
+                g.drawRect(x, (int) Math.round(graphHeight - s.used() * stepY), 1, 1);
+                g.setColor(Colors.USED_ALLOC);
+                g.drawRect(x, (int) Math.round(graphHeight - s.recentlyAllocated() * stepY), 1, 1);
+                g.setColor(Colors.HUMONGOUS);
+                g.drawRect(x, (int) Math.round(graphHeight - s.humongous() * stepY), 1, 1);
+                g.setColor(Colors.LIVE);
+                g.drawRect(x, (int) Math.round(graphHeight - s.live() * stepY), 1, 1);
+                g.setColor(Colors.CSET);
+                g.drawRect(x, (int) Math.round(graphHeight - s.collectionSet() * stepY), 1, 1);
             }
         }
 
-        // Draw legend
-        final int LEGEND_X = PAD + fieldWidth + sqSize;
-        final int LEGEND_Y = PAD_TOP;
+        public synchronized void renderLegend(Graphics g) {
+            final int sqSize = LINE;
 
-        Map<String, RegionStat> items = new LinkedHashMap<>();
+            Map<String, RegionStat> items = new LinkedHashMap<>();
 
-        items.put("Unused",
-                new RegionStat(0.0, 0.0, EnumSet.of(UNUSED)));
+            items.put("Unused",
+                    new RegionStat(0.0, 0.0, EnumSet.of(UNUSED)));
 
-        items.put("Empty",
-                new RegionStat(0.0, 0.0, EnumSet.noneOf(RegionFlag.class)));
+            items.put("Empty",
+                    new RegionStat(0.0, 0.0, EnumSet.noneOf(RegionFlag.class)));
 
-        items.put("1/2 Used",
-                new RegionStat(0.5, 0.0,  EnumSet.noneOf(RegionFlag.class)));
+            items.put("1/2 Used",
+                    new RegionStat(0.5, 0.0, EnumSet.noneOf(RegionFlag.class)));
 
-        items.put("Fully Used",
-                new RegionStat(1.0, 0.0,  EnumSet.noneOf(RegionFlag.class)));
+            items.put("Fully Used",
+                    new RegionStat(1.0, 0.0, EnumSet.noneOf(RegionFlag.class)));
 
-        items.put("Fully Used, Recently Allocated",
-                new RegionStat(1.0, 0.0,  EnumSet.of(RECENTLY_ALLOCATED)));
+            items.put("Fully Used, Recently Allocated",
+                    new RegionStat(1.0, 0.0, EnumSet.of(RECENTLY_ALLOCATED)));
 
-        items.put("Fully Live",
-                new RegionStat(1.0, 1.0,  EnumSet.noneOf(RegionFlag.class)));
+            items.put("Fully Live",
+                    new RegionStat(1.0, 1.0, EnumSet.noneOf(RegionFlag.class)));
 
-        items.put("Fully Live + Humongous",
-                new RegionStat(1.0, 1.0, EnumSet.of(HUMONGOUS)));
+            items.put("Fully Live + Humongous",
+                    new RegionStat(1.0, 1.0, EnumSet.of(HUMONGOUS)));
 
-        items.put("1/3 Live",
-                new RegionStat(1.0, 0.3, EnumSet.noneOf(RegionFlag.class)));
+            items.put("1/3 Live",
+                    new RegionStat(1.0, 0.3, EnumSet.noneOf(RegionFlag.class)));
 
-        items.put("1/3 Live + In Collection Set",
-                new RegionStat(1.0, 0.3, EnumSet.of(IN_COLLECTION_SET)));
+            items.put("1/3 Live + In Collection Set",
+                    new RegionStat(1.0, 0.3, EnumSet.of(IN_COLLECTION_SET)));
 
-        items.put("1/3 Live + Pinned",
-                new RegionStat(1.0, 0.3, EnumSet.of(PINNED)));
+            items.put("1/3 Live + Pinned",
+                    new RegionStat(1.0, 0.3, EnumSet.of(PINNED)));
 
-        {
             int i = 1;
             for (String key : items.keySet()) {
-                int y = (int) (LEGEND_Y + i * sqSize * 1.5);
-                items.get(key).render(g, LEGEND_X, y, sqSize, sqSize);
-                g.drawString(key, (int) (LEGEND_X + sqSize * 1.5), y + sqSize);
+                int y = (int) (i * sqSize * 1.5);
+                items.get(key).render(g, 0, y, sqSize, sqSize);
+                g.drawString(key, (int) (sqSize * 1.5), y + sqSize);
                 i++;
             }
         }
 
-        // Draw region field
-        for (int i = 0; i < snapshot.regionCount(); i++) {
-            int rectx = PAD + (i % cols) * sqSize;
-            int recty = PAD + PAD_TOP + (i / cols) * sqSize;
+        public synchronized void renderRegions(Graphics g) {
+            int area = regionWidth * regionHeight;
+            int sqSize = Math.max(1, (int) Math.sqrt(1D * area / snapshot.regionCount()));
+            int cols = regionWidth / sqSize;
 
-            RegionStat s = snapshot.get(i);
-            s.render(g, rectx, recty, sqSize, sqSize);
+            for (int i = 0; i < snapshot.regionCount(); i++) {
+                int rectx = (i % cols) * sqSize;
+                int recty = (i / cols) * sqSize;
+
+                RegionStat s = snapshot.get(i);
+                s.render(g, rectx, recty, sqSize, sqSize);
+            }
         }
 
-        g.dispose();
+        public synchronized void renderStats(Graphics g) {
+            String status = "";
+            if (snapshot.isMarking()) {
+                status += " (marking)";
+            }
+            if (snapshot.isEvacuating()) {
+                status += " (evacuating)";
+            }
+            if (status.isEmpty()) {
+                status = " (idle)";
+            }
 
-        return img;
+            g.setColor(Color.BLACK);
+            g.drawString("Time: " + (snapshot.time() / 1024 / 1024) + " ms", 0, 0 * LINE);
+            g.drawString("Status: " + status, 0, 1 * LINE);
+            g.drawString("Total: " + (snapshot.total()) + " KB", 0, 2 * LINE);
+            g.drawString("Used: " + (snapshot.used()) + " KB", 0, 3 * LINE);
+            g.drawString("Live: " + (snapshot.live()) + " KB", 0, 4 * LINE);
+        }
+
+        public synchronized void notifyRegionResized(int width, int height) {
+            this.regionWidth = width;
+            this.regionHeight = height;
+        }
+
+        public synchronized void notifyGraphResized(int width, int height) {
+            this.graphWidth = width;
+            this.graphHeight = height;
+        }
     }
-
 }
 
 
