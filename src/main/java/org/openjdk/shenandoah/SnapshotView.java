@@ -1,13 +1,9 @@
 package org.openjdk.shenandoah;
 
-import java.util.List;
-
 public class SnapshotView {
 
     private final long time;
-    private final boolean isMarking;
-    private final boolean isEvacuating;
-    private final boolean isUpdatingRefs;
+    private final Phase phase;
     private final long total;
     private final long used;
     private final long live;
@@ -16,10 +12,8 @@ public class SnapshotView {
     private final long collectionSet;
 
     public SnapshotView(Snapshot s) {
-        this.time = s.time();
-        this.isEvacuating = s.isEvacuating();
-        this.isMarking = s.isMarking();
-        this.isUpdatingRefs = s.isUpdateRefs();
+        time = s.time();
+        phase = s.phase();
         total = total();
         used = s.used();
         live = s.live();
@@ -28,16 +22,8 @@ public class SnapshotView {
         collectionSet = s.collectionSet();
     }
 
-    public boolean isMarking() {
-        return isMarking;
-    }
-
-    public boolean isEvacuating() {
-        return isEvacuating;
-    }
-
-    public boolean isUpdatingRefs() {
-        return isUpdatingRefs;
+    public Phase phase() {
+        return phase;
     }
 
     public long time() {

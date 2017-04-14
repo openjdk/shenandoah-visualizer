@@ -202,20 +202,23 @@ class ShenandoahVisualizer {
             for (SnapshotView s : lastSnapshots) {
                 int x = (int) Math.round((s.time() - firstTime) * stepX);
 
-                if (s.isMarking()) {
-                    g.setColor(new Color(100, 100, 0));
-                    g.drawRect(x, 0, 1, graphHeight);
+                switch (s.phase()) {
+                    case IDLE:
+                        g.setColor(Color.BLACK);
+                        break;
+                    case MARKING:
+                        g.setColor(new Color(100, 100, 0));
+                        break;
+                    case EVACUATING:
+                        g.setColor(new Color(100, 0, 0));
+                        break;
+                    case UPDATE_REFS:
+                        g.setColor(new Color(0, 100, 100));
+                        break;
+                    default:
+                        g.setColor(Color.WHITE);
                 }
-
-                if (s.isEvacuating()) {
-                    g.setColor(new Color(100, 0, 0));
-                    g.drawRect(x, 0, 1, graphHeight);
-                }
-
-                if (s.isUpdatingRefs()) {
-                    g.setColor(new Color(0, 100, 100));
-                    g.drawRect(x, 0, 1, graphHeight);
-                }
+                g.drawRect(x, 0, 1, graphHeight);
 
                 g.setColor(Colors.USED);
                 g.drawRect(x, (int) Math.round(graphHeight - s.used() * stepY), 1, 1);
@@ -308,17 +311,19 @@ class ShenandoahVisualizer {
 
         public synchronized void renderStats(Graphics g) {
             String status = "";
-            if (snapshot.isMarking()) {
-                status += " (marking)";
-            }
-            if (snapshot.isEvacuating()) {
-                status += " (evacuating)";
-            }
-            if (snapshot.isUpdateRefs()) {
-                status += " (updating refs)";
-            }
-            if (status.isEmpty()) {
-                status = " (idle)";
+            switch (snapshot.phase()) {
+                case IDLE:
+                    status += " (idle)";
+                    break;
+                case MARKING:
+                    status += " (marking)";
+                    break;
+                case EVACUATING:
+                    status += " (evacuating)";
+                    break;
+                case UPDATE_REFS:
+                    status += " (updating refs)";
+                    break;
             }
 
             g.setColor(Color.BLACK);

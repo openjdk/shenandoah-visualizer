@@ -7,29 +7,34 @@ public class Snapshot {
     private final long time;
     private final long regionSize;
     private final List<RegionStat> stats;
-    private final boolean isMarking;
-    private final boolean isEvacuating;
-    private final boolean isUpdateRefs;
+    private final Phase phase;
 
-    public Snapshot(long time, long regionSize, List<RegionStat> stats, boolean isMarking, boolean isEvacuating, boolean isUpdateRefs) {
+    public Snapshot(long time, long regionSize, List<RegionStat> stats, int status) {
         this.time = time;
         this.regionSize = regionSize;
         this.stats = stats;
-        this.isMarking = isMarking;
-        this.isEvacuating = isEvacuating;
-        this.isUpdateRefs = isUpdateRefs;
+
+        switch (status) {
+            case 0x0:
+                this.phase = Phase.IDLE;
+                break;
+            case 0x1:
+                this.phase = Phase.MARKING;
+                break;
+            case 0x2:
+                this.phase = Phase.EVACUATING;
+                break;
+            case 0x4:
+                this.phase = Phase.UPDATE_REFS;
+                break;
+            default:
+                this.phase = Phase.UNKNOWN;
+                break;
+        }
     }
 
-    public boolean isMarking() {
-        return isMarking;
-    }
-
-    public boolean isEvacuating() {
-        return isEvacuating;
-    }
-
-    public boolean isUpdateRefs() {
-        return isUpdateRefs;
+    public Phase phase() {
+        return phase;
     }
 
     public RegionStat get(int i) {
@@ -48,18 +53,15 @@ public class Snapshot {
         Snapshot snapshot = (Snapshot) o;
 
         if (time != snapshot.time) return false;
-        if (isMarking != snapshot.isMarking) return false;
-        if (isEvacuating != snapshot.isEvacuating) return false;
-        if (isUpdateRefs != snapshot.isUpdateRefs) return false;
-        return stats != null ? stats.equals(snapshot.stats) : snapshot.stats == null;
+        if (!stats.equals(snapshot.stats)) return false;
+        return phase == snapshot.phase;
     }
 
     @Override
     public int hashCode() {
         int result = (int) (time ^ (time >>> 32));
-        result = 31 * result + (stats != null ? stats.hashCode() : 0);
-        result = 31 * result + (isMarking ? 1 : 0);
-        result = 31 * result + (isEvacuating ? 1 : 0);
+        result = 31 * result + stats.hashCode();
+        result = 31 * result + phase.hashCode();
         return result;
     }
 

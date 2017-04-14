@@ -48,12 +48,9 @@ public class DataProvider {
             StringMonitor mtrx = matrix[c];
             stats.add(new RegionStat(maxSize, data[c].longValue(), (mtrx == null ? "" : mtrx.stringValue())));
         }
-        boolean isMarking    = (status.longValue() & 0x1) > 0;
-        boolean isEvacuating = (status.longValue() & 0x2) > 0;
-        boolean isUpdateRefs = (status.longValue() & 0x4) > 0;
 
         long time = timestamp.longValue();
-        return new Snapshot(time, maxSize, stats, isMarking, isEvacuating, isUpdateRefs);
+        return new Snapshot(time, maxSize, stats, (int) status.longValue());
     }
 
 }
