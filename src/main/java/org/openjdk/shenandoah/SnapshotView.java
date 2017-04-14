@@ -7,6 +7,7 @@ public class SnapshotView {
     private final long time;
     private final boolean isMarking;
     private final boolean isEvacuating;
+    private final boolean isUpdatingRefs;
     private final long total;
     private final long used;
     private final long live;
@@ -18,6 +19,7 @@ public class SnapshotView {
         this.time = s.time();
         this.isEvacuating = s.isEvacuating();
         this.isMarking = s.isMarking();
+        this.isUpdatingRefs = s.isUpdateRefs();
         total = total();
         used = s.used();
         live = s.live();
@@ -32,6 +34,10 @@ public class SnapshotView {
 
     public boolean isEvacuating() {
         return isEvacuating;
+    }
+
+    public boolean isUpdatingRefs() {
+        return isUpdatingRefs;
     }
 
     public long time() {

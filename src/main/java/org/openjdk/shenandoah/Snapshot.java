@@ -9,13 +9,15 @@ public class Snapshot {
     private final List<RegionStat> stats;
     private final boolean isMarking;
     private final boolean isEvacuating;
+    private final boolean isUpdateRefs;
 
-    public Snapshot(long time, long regionSize, List<RegionStat> stats, boolean isMarking, boolean isEvacuating) {
+    public Snapshot(long time, long regionSize, List<RegionStat> stats, boolean isMarking, boolean isEvacuating, boolean isUpdateRefs) {
         this.time = time;
         this.regionSize = regionSize;
         this.stats = stats;
         this.isMarking = isMarking;
         this.isEvacuating = isEvacuating;
+        this.isUpdateRefs = isUpdateRefs;
     }
 
     public boolean isMarking() {
@@ -24,6 +26,10 @@ public class Snapshot {
 
     public boolean isEvacuating() {
         return isEvacuating;
+    }
+
+    public boolean isUpdateRefs() {
+        return isUpdateRefs;
     }
 
     public RegionStat get(int i) {
@@ -44,6 +50,7 @@ public class Snapshot {
         if (time != snapshot.time) return false;
         if (isMarking != snapshot.isMarking) return false;
         if (isEvacuating != snapshot.isEvacuating) return false;
+        if (isUpdateRefs != snapshot.isUpdateRefs) return false;
         return stats != null ? stats.equals(snapshot.stats) : snapshot.stats == null;
     }
 

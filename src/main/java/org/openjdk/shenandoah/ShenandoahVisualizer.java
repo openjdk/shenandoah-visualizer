@@ -145,7 +145,7 @@ class ShenandoahVisualizer {
 
         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
         ScheduledFuture<?> f = service.scheduleAtFixedRate(render,
-                0, 10, TimeUnit.MILLISECONDS);
+                0, 100, TimeUnit.MILLISECONDS);
 
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
@@ -209,6 +209,11 @@ class ShenandoahVisualizer {
 
                 if (s.isEvacuating()) {
                     g.setColor(new Color(100, 0, 0));
+                    g.drawRect(x, 0, 1, graphHeight);
+                }
+
+                if (s.isUpdatingRefs()) {
+                    g.setColor(new Color(0, 100, 100));
                     g.drawRect(x, 0, 1, graphHeight);
                 }
 
@@ -281,6 +286,24 @@ class ShenandoahVisualizer {
                 RegionStat s = snapshot.get(i);
                 s.render(g, rectx, recty, sqSize, sqSize);
             }
+
+            Color BASE = new Color(0, 0, 0, 20);
+
+            for (int f = 0; f < snapshot.regionCount(); f++) {
+                RegionStat s = snapshot.get(f);
+                BitSet bs = s.incoming();
+                for (int t = 0; t < snapshot.regionCount(); t++) {
+                    if (bs.get(t)) {
+                        int f_rectx = (int) ((f % cols + 0.5) * sqSize);
+                        int f_recty = (int) ((f / cols + 0.5) * sqSize);
+                        int t_rectx = (int) ((t % cols + 0.5) * sqSize);
+                        int t_recty = (int) ((t / cols + 0.5) * sqSize);
+
+                        g.setColor(BASE);
+                        g.drawLine(f_rectx, f_recty, t_rectx, t_recty);
+                    }
+                }
+            }
         }
 
         public synchronized void renderStats(Graphics g) {
@@ -290,6 +313,9 @@ class ShenandoahVisualizer {
             }
             if (snapshot.isEvacuating()) {
                 status += " (evacuating)";
+            }
+            if (snapshot.isUpdateRefs()) {
+                status += " (updating refs)";
             }
             if (status.isEmpty()) {
                 status = " (idle)";

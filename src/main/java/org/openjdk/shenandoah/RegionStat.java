@@ -1,6 +1,7 @@
 package org.openjdk.shenandoah;
 
 import java.awt.*;
+import java.util.BitSet;
 import java.util.EnumSet;
 
 import static org.openjdk.shenandoah.Colors.*;
@@ -15,16 +16,18 @@ public class RegionStat {
     private static final int FLAGS_SHIFT = 58;
 
     private final EnumSet<RegionFlag> flags;
+    private final BitSet incoming;
     private final double liveLvl;
     private final double usedLvl;
 
     public RegionStat(double usedLvl, double liveLvl, EnumSet<RegionFlag> flags) {
+        this.incoming = new BitSet();
         this.usedLvl = usedLvl;
         this.liveLvl = liveLvl;
         this.flags = flags;
     }
 
-    public RegionStat(long maxSize, long data) {
+    public RegionStat(long maxSize, long data, String matrix) {
         long used = (data >>> USED_SHIFT) & USED_MASK;
         usedLvl = Math.min(1D, 1D * used / maxSize);
 
@@ -40,6 +43,18 @@ public class RegionStat {
         if ((stat & 4)  > 0) flags.add(RegionFlag.HUMONGOUS);
         if ((stat & 8)  > 0) flags.add(RegionFlag.RECENTLY_ALLOCATED);
         if ((stat & 16) > 0) flags.add(RegionFlag.PINNED);
+
+        this.incoming = new BitSet();
+        int idx = 0;
+        for (char c : matrix.toCharArray()) {
+            c = (char) (c - 32);
+            incoming.set(idx++, (c & (1 << 0)) > 0);
+            incoming.set(idx++, (c & (1 << 1)) > 0);
+            incoming.set(idx++, (c & (1 << 2)) > 0);
+            incoming.set(idx++, (c & (1 << 3)) > 0);
+            incoming.set(idx++, (c & (1 << 4)) > 0);
+            incoming.set(idx++, (c & (1 << 5)) > 0);
+        }
     }
 
     public void render(Graphics g, int x, int y, int width, int height) {
@@ -100,7 +115,8 @@ public class RegionStat {
 
         if (Double.compare(that.liveLvl, liveLvl) != 0) return false;
         if (Double.compare(that.usedLvl, usedLvl) != 0) return false;
-        return flags.equals(that.flags);
+        if (!flags.equals(that.flags)) return false;
+        return incoming.equals(that.incoming);
     }
 
     @Override
@@ -108,6 +124,7 @@ public class RegionStat {
         int result;
         long temp;
         result = flags.hashCode();
+        result = 31 * result + incoming.hashCode();
         temp = Double.doubleToLongBits(liveLvl);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
         temp = Double.doubleToLongBits(usedLvl);
@@ -127,4 +144,7 @@ public class RegionStat {
         return flags;
     }
 
+    public BitSet incoming() {
+        return incoming;
+    }
 }

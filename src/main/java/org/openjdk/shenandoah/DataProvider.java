@@ -10,6 +10,7 @@ public class DataProvider {
     private final int maxRegions;
     private final long maxSize;
     private final LongMonitor[] data;
+    private final StringMonitor[] matrix;
     private final LongMonitor timestamp;
     private final LongMonitor status;
 
@@ -24,6 +25,7 @@ public class DataProvider {
         status = (LongMonitor) vm.findByName("sun.gc.shenandoah.regions.status");
 
         data = new LongMonitor[maxRegions];
+        matrix = new StringMonitor[maxRegions];
         for (int i = 0; i < maxRegions; i++) {
             LongMonitor mon = (LongMonitor) vm.findByName("sun.gc.shenandoah.regions.region." + i + ".data");
             if (mon != null) {
@@ -32,19 +34,26 @@ public class DataProvider {
                 throw new IllegalStateException("Insufficient shared memory for all region counters. " +
                         "Try -XX:PerfDataMemorySize=512K or higher when running the monitored program.");
             }
+
+            StringMonitor mtrx = (StringMonitor) vm.findByName("sun.gc.shenandoah.regions.region." + i + ".matrix");
+            if (mtrx != null) {
+                matrix[i] = mtrx;
+            }
         }
     }
 
     public Snapshot snapshot() {
         List<RegionStat> stats = new ArrayList<>();
-        for (LongMonitor m : data) {
-            stats.add(new RegionStat(maxSize, m.longValue()));
+        for (int c = 0; c < maxRegions; c++) {
+            StringMonitor mtrx = matrix[c];
+            stats.add(new RegionStat(maxSize, data[c].longValue(), (mtrx == null ? "" : mtrx.stringValue())));
         }
-        boolean isMarking = (status.longValue() & 0x1) > 0;
+        boolean isMarking    = (status.longValue() & 0x1) > 0;
         boolean isEvacuating = (status.longValue() & 0x2) > 0;
+        boolean isUpdateRefs = (status.longValue() & 0x4) > 0;
 
         long time = timestamp.longValue();
-        return new Snapshot(time, maxSize, stats, isMarking, isEvacuating);
+        return new Snapshot(time, maxSize, stats, isMarking, isEvacuating, isUpdateRefs);
     }
 
 }
