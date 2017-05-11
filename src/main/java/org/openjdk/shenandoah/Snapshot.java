@@ -81,14 +81,20 @@ public class Snapshot {
         return used;
     }
 
-    public long recentlyAllocated() {
-        long used = 0L;
+    public long tlabAllocs() {
+        long r = 0L;
         for (RegionStat rs : stats) {
-            if (rs.flags().contains(RegionFlag.RECENTLY_ALLOCATED)) {
-                used += regionSize * rs.used();
-            }
+            r += regionSize * rs.tlabAllocs();
         }
-        return used;
+        return r;
+    }
+
+    public long gclabAllocs() {
+        long r = 0L;
+        for (RegionStat rs : stats) {
+            r += regionSize * rs.gclabAllocs();
+        }
+        return r;
     }
 
     public long collectionSet() {

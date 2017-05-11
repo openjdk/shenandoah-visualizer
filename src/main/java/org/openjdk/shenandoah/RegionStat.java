@@ -8,10 +8,11 @@ import static org.openjdk.shenandoah.Colors.*;
 
 public class RegionStat {
 
-    private static final int USED_MASK = 0x1fffffff;
-    private static final int USED_SHIFT = 0;
-    private static final int LIVE_MASK = 0x1fffffff;
-    private static final int LIVE_SHIFT = 29;
+    private static final int PERCENT_MASK = 0x7f;
+    private static final int USED_SHIFT   = 0;
+    private static final int LIVE_SHIFT   = 7;
+    private static final int TLAB_SHIFT   = 14;
+    private static final int GCLAB_SHIFT  = 21;
     private static final int FLAGS_MASK = 0x3f;
     private static final int FLAGS_SHIFT = 58;
 
@@ -19,30 +20,32 @@ public class RegionStat {
     private final BitSet incoming;
     private final double liveLvl;
     private final double usedLvl;
+    private final double tlabLvl;
+    private final double gclabLvl;
 
-    public RegionStat(double usedLvl, double liveLvl, EnumSet<RegionFlag> flags) {
+    public RegionStat(double usedLvl, double liveLvl, double tlabLvl, double gclabLvl, EnumSet<RegionFlag> flags) {
         this.incoming = new BitSet();
         this.usedLvl = usedLvl;
         this.liveLvl = liveLvl;
+        this.tlabLvl = tlabLvl;
+        this.gclabLvl = gclabLvl;
         this.flags = flags;
     }
 
     public RegionStat(long maxSize, long data, String matrix) {
-        long used = (data >>> USED_SHIFT) & USED_MASK;
-        usedLvl = Math.min(1D, 1D * used / maxSize);
-
-        long live = (data >>> LIVE_SHIFT) & LIVE_MASK;
-        liveLvl = Math.min(1D, 1D * live / maxSize);
+        usedLvl  = ((data >>> USED_SHIFT)  & PERCENT_MASK) / 100D;
+        liveLvl  = ((data >>> LIVE_SHIFT)  & PERCENT_MASK) / 100D;
+        tlabLvl  = ((data >>> TLAB_SHIFT)  & PERCENT_MASK) / 100D;
+        gclabLvl = ((data >>> GCLAB_SHIFT) & PERCENT_MASK) / 100D;
 
         long stat = (data >>> FLAGS_SHIFT) & FLAGS_MASK;
 
         flags = EnumSet.noneOf(RegionFlag.class);
 
-        if ((stat & 1)  > 0) flags.add(RegionFlag.UNUSED);
-        if ((stat & 2)  > 0) flags.add(RegionFlag.IN_COLLECTION_SET);
-        if ((stat & 4)  > 0) flags.add(RegionFlag.HUMONGOUS);
-        if ((stat & 8)  > 0) flags.add(RegionFlag.RECENTLY_ALLOCATED);
-        if ((stat & 16) > 0) flags.add(RegionFlag.PINNED);
+        if ((stat & 1) > 0) flags.add(RegionFlag.UNUSED);
+        if ((stat & 2) > 0) flags.add(RegionFlag.IN_COLLECTION_SET);
+        if ((stat & 4) > 0) flags.add(RegionFlag.HUMONGOUS);
+        if ((stat & 8) > 0) flags.add(RegionFlag.PINNED);
 
         this.incoming = new BitSet();
         int idx = 0;
@@ -62,13 +65,23 @@ public class RegionStat {
         g.fillRect(x, y, width, height);
 
         int usedWidth = (int) (width * usedLvl);
-        g.setColor(
-                flags.contains(RegionFlag.RECENTLY_ALLOCATED) ?
-                        USED_ALLOC : USED
-        );
+        g.setColor(USED);
         g.fillRect(x, y, usedWidth, height);
 
-        if (!flags.contains(RegionFlag.RECENTLY_ALLOCATED)) {
+        if (gclabLvl > 0 || tlabLvl > 0) {
+            int tlabWidth = (int) (width * tlabLvl);
+            int gclabWidth = (int) (width * gclabLvl);
+            g.setColor(TLAB_ALLOC);
+            g.fillRect(x, y, tlabWidth, height);
+            g.setColor(TLAB_ALLOC_BORDER);
+            g.drawLine(x + tlabWidth, y, x + tlabWidth, y + height);
+
+            int lx = x + tlabWidth;
+            g.setColor(GCLAB_ALLOC);
+            g.fillRect(lx, y, gclabWidth, height);
+            g.setColor(GCLAB_ALLOC_BORDER);
+            g.drawLine(lx + gclabWidth, y, lx + gclabWidth, y + height);
+        } else {
             int liveWidth = (int) (width * liveLvl);
             g.setColor(LIVE);
             g.fillRect(x, y, liveWidth, height);
@@ -140,6 +153,14 @@ public class RegionStat {
         return usedLvl;
     }
 
+    public double tlabAllocs() {
+        return tlabLvl;
+    }
+
+    public double gclabAllocs() {
+        return gclabLvl;
+    }
+
     public EnumSet<RegionFlag> flags() {
         return flags;
     }
@@ -147,4 +168,5 @@ public class RegionStat {
     public BitSet incoming() {
         return incoming;
     }
+
 }

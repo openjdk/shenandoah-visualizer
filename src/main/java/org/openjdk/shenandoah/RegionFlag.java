@@ -8,8 +8,6 @@ public enum RegionFlag {
 
     IN_COLLECTION_SET,
 
-    RECENTLY_ALLOCATED,
-
     PINNED,
 
 }
