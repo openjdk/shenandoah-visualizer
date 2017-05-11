@@ -204,16 +204,16 @@ class ShenandoahVisualizer {
 
                 switch (s.phase()) {
                     case IDLE:
-                        g.setColor(Color.BLACK);
+                        g.setColor(Colors.TIMELINE_IDLE);
                         break;
                     case MARKING:
-                        g.setColor(new Color(100, 100, 0));
+                        g.setColor(Colors.TIMELINE_MARK);
                         break;
                     case EVACUATING:
-                        g.setColor(new Color(100, 0, 0));
+                        g.setColor(Colors.TIMELINE_EVACUATING);
                         break;
                     case UPDATE_REFS:
-                        g.setColor(new Color(0, 100, 100));
+                        g.setColor(Colors.TIMELINE_UPDATEREFS);
                         break;
                     default:
                         g.setColor(Color.WHITE);
@@ -241,40 +241,40 @@ class ShenandoahVisualizer {
             Map<String, RegionStat> items = new LinkedHashMap<>();
 
             items.put("Unused",
-                    new RegionStat(0.0, 0.0, 0.0, 0.0, EnumSet.of(UNUSED)));
+                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, EnumSet.of(UNUSED)));
 
             items.put("Empty",
-                    new RegionStat(0.0, 0.0, 0.0, 0.0, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("1/2 Used",
-                    new RegionStat(0.5, 0.0, 0.0, 0.0, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(0.5f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("Fully Used",
-                    new RegionStat(1.0, 0.0, 0.0, 0.0, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("Fully Used, 100% TLAB Allocs",
-                    new RegionStat(1.0, 0.0, 1.0, 0.0, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 1.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("Fully Used, 100% GCLAB Allocs",
-                    new RegionStat(1.0, 0.0, 0.0, 1.0, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 0.0f, 1.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("Fully Used, 50%/50% TLAB/GCLAB Allocs",
-                    new RegionStat(1.0, 0.0, 0.5, 0.5, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 0.5f, 0.5f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("Fully Live",
-                    new RegionStat(1.0, 1.0, 0.0, 0.0, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("Fully Live + Humongous",
-                    new RegionStat(1.0, 1.0, 0.0, 0.0, EnumSet.of(HUMONGOUS)));
+                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, EnumSet.of(HUMONGOUS)));
 
             items.put("1/3 Live",
-                    new RegionStat(1.0, 0.3, 0.0, 0.0, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("1/3 Live + In Collection Set",
-                    new RegionStat(1.0, 0.3, 0.0, 0.0, EnumSet.of(IN_COLLECTION_SET)));
+                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, EnumSet.of(IN_COLLECTION_SET)));
 
             items.put("1/3 Live + Pinned",
-                    new RegionStat(1.0, 0.3, 0.0, 0.0, EnumSet.of(PINNED)));
+                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, EnumSet.of(PINNED)));
 
             int i = 1;
             for (String key : items.keySet()) {
@@ -303,15 +303,17 @@ class ShenandoahVisualizer {
             for (int f = 0; f < snapshot.regionCount(); f++) {
                 RegionStat s = snapshot.get(f);
                 BitSet bs = s.incoming();
-                for (int t = 0; t < snapshot.regionCount(); t++) {
-                    if (bs.get(t)) {
-                        int f_rectx = (int) ((f % cols + 0.5) * sqSize);
-                        int f_recty = (int) ((f / cols + 0.5) * sqSize);
-                        int t_rectx = (int) ((t % cols + 0.5) * sqSize);
-                        int t_recty = (int) ((t / cols + 0.5) * sqSize);
+                if (bs != null) {
+                    for (int t = 0; t < snapshot.regionCount(); t++) {
+                        if (bs.get(t)) {
+                            int f_rectx = (int) ((f % cols + 0.5) * sqSize);
+                            int f_recty = (int) ((f / cols + 0.5) * sqSize);
+                            int t_rectx = (int) ((t % cols + 0.5) * sqSize);
+                            int t_recty = (int) ((t / cols + 0.5) * sqSize);
 
-                        g.setColor(BASE);
-                        g.drawLine(f_rectx, f_recty, t_rectx, t_recty);
+                            g.setColor(BASE);
+                            g.drawLine(f_rectx, f_recty, t_rectx, t_recty);
+                        }
                     }
                 }
             }

@@ -46,7 +46,7 @@ public class DataProvider {
         List<RegionStat> stats = new ArrayList<>();
         for (int c = 0; c < maxRegions; c++) {
             StringMonitor mtrx = matrix[c];
-            stats.add(new RegionStat(maxSize, data[c].longValue(), (mtrx == null ? "" : mtrx.stringValue())));
+            stats.add(new RegionStat(data[c].longValue(), (mtrx == null ? "" : mtrx.stringValue())));
         }
 
         long time = timestamp.longValue();
