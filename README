@@ -1,6 +1,9 @@
 Build:
  $ mvn clean install
 
+...or pick up binary build here:
+ https://builds.shipilev.net/shenandoah-visualizer/
+
 Run:
  1. Start Shenandoah with these additional flags:
      -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+ShenandoahRegionSampling
