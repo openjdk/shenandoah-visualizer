@@ -222,6 +222,8 @@ class ShenandoahVisualizer {
 
                 g.setColor(Colors.USED);
                 g.drawRect(x, (int) Math.round(graphHeight - s.used() * stepY), 1, 1);
+                g.setColor(Colors.SHARED_ALLOC);
+                g.drawRect(x, (int) Math.round(graphHeight - s.sharedAllocs() * stepY), 1, 1);
                 g.setColor(Colors.TLAB_ALLOC);
                 g.drawRect(x, (int) Math.round(graphHeight - s.tlabAllocs() * stepY), 1, 1);
                 g.setColor(Colors.GCLAB_ALLOC);
@@ -241,40 +243,46 @@ class ShenandoahVisualizer {
             Map<String, RegionStat> items = new LinkedHashMap<>();
 
             items.put("Unused",
-                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, EnumSet.of(UNUSED)));
+                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, EnumSet.of(UNUSED)));
 
             items.put("Empty",
-                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("1/2 Used",
-                    new RegionStat(0.5f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(0.5f, 0.0f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("Fully Used",
-                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("Fully Used, 100% TLAB Allocs",
-                    new RegionStat(1.0f, 0.0f, 1.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 1.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("Fully Used, 100% GCLAB Allocs",
-                    new RegionStat(1.0f, 0.0f, 0.0f, 1.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 0.0f, 1.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+
+            items.put("Fully Used, 100% Shared Allocs",
+                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("Fully Used, 50%/50% TLAB/GCLAB Allocs",
-                    new RegionStat(1.0f, 0.0f, 0.5f, 0.5f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 0.5f, 0.5f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+
+            items.put("Fully Used, 33%/33%/33% T/GC/S Allocs",
+                    new RegionStat(1.0f, 0.0f, 1f/3, 1f/3, 1f/3, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("Fully Live",
-                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("Fully Live + Humongous",
-                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, EnumSet.of(HUMONGOUS)));
+                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, EnumSet.of(HUMONGOUS)));
 
             items.put("1/3 Live",
-                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
 
             items.put("1/3 Live + In Collection Set",
-                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, EnumSet.of(IN_COLLECTION_SET)));
+                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, EnumSet.of(IN_COLLECTION_SET)));
 
             items.put("1/3 Live + Pinned",
-                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, EnumSet.of(PINNED)));
+                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, EnumSet.of(PINNED)));
 
             int i = 1;
             for (String key : items.keySet()) {
@@ -288,11 +296,12 @@ class ShenandoahVisualizer {
         public synchronized void renderRegions(Graphics g) {
             int area = regionWidth * regionHeight;
             int sqSize = Math.max(1, (int) Math.sqrt(1D * area / snapshot.regionCount()));
-            int cols = regionWidth / sqSize;
+            int cellSize = sqSize + 3;
+            int cols = regionWidth / cellSize;
 
             for (int i = 0; i < snapshot.regionCount(); i++) {
-                int rectx = (i % cols) * sqSize;
-                int recty = (i / cols) * sqSize;
+                int rectx = (i % cols) * cellSize;
+                int recty = (i / cols) * cellSize;
 
                 RegionStat s = snapshot.get(i);
                 s.render(g, rectx, recty, sqSize, sqSize);

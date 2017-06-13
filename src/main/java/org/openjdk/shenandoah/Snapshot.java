@@ -97,6 +97,14 @@ public class Snapshot {
         return r;
     }
 
+    public long sharedAllocs() {
+        long r = 0L;
+        for (RegionStat rs : stats) {
+            r += regionSize * rs.sharedAllocs();
+        }
+        return r;
+    }
+
     public long collectionSet() {
         long used = 0L;
         for (RegionStat rs : stats) {

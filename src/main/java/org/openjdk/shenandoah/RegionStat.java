@@ -15,6 +15,7 @@ public class RegionStat {
     private static final int LIVE_SHIFT   = 7;
     private static final int TLAB_SHIFT   = 14;
     private static final int GCLAB_SHIFT  = 21;
+    private static final int SHARED_SHIFT = 28;
     private static final int FLAGS_SHIFT  = 58;
 
     private final EnumSet<RegionFlag> flags;
@@ -23,13 +24,15 @@ public class RegionStat {
     private final float usedLvl;
     private final float tlabLvl;
     private final float gclabLvl;
+    private final float sharedLvl;
 
-    public RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, EnumSet<RegionFlag> flags) {
+    public RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float sharedLvl, EnumSet<RegionFlag> flags) {
         this.incoming = null;
         this.usedLvl = usedLvl;
         this.liveLvl = liveLvl;
         this.tlabLvl = tlabLvl;
         this.gclabLvl = gclabLvl;
+        this.sharedLvl = sharedLvl;
         this.flags = flags;
     }
 
@@ -38,6 +41,7 @@ public class RegionStat {
         liveLvl  = ((data >>> LIVE_SHIFT)  & PERCENT_MASK) / 100F;
         tlabLvl  = ((data >>> TLAB_SHIFT)  & PERCENT_MASK) / 100F;
         gclabLvl = ((data >>> GCLAB_SHIFT) & PERCENT_MASK) / 100F;
+        sharedLvl = ((data >>> SHARED_SHIFT) & PERCENT_MASK) / 100F;
 
         long stat = (data >>> FLAGS_SHIFT) & FLAGS_MASK;
 
@@ -73,26 +77,38 @@ public class RegionStat {
         g.setColor(USED);
         g.fillRect(x, y, usedWidth, height);
 
-        if (gclabLvl > 0 || tlabLvl > 0) {
+        int liveWidth = (int) (width * liveLvl);
+        g.setColor(LIVE);
+        g.fillRect(x, y, liveWidth, height);
+
+        g.setColor(LIVE_BORDER);
+        g.drawLine(x + liveWidth, y, x + liveWidth, y + height);
+
+        if (gclabLvl > 0 || tlabLvl > 0 || sharedLvl > 0) {
+            int sharedWidth = (int) (width * sharedLvl);
             int tlabWidth = (int) (width * tlabLvl);
             int gclabWidth = (int) (width * gclabLvl);
+
+            int h = height / 3;
+            int ly = y + (height - h);
+            int lx = x;
+
             g.setColor(TLAB_ALLOC);
-            g.fillRect(x, y, tlabWidth, height);
+            g.fillRect(lx, ly, tlabWidth, h);
             g.setColor(TLAB_ALLOC_BORDER);
-            g.drawLine(x + tlabWidth, y, x + tlabWidth, y + height);
+            g.drawRect(lx, ly, tlabWidth, h);
 
-            int lx = x + tlabWidth;
+            lx += tlabWidth;
             g.setColor(GCLAB_ALLOC);
-            g.fillRect(lx, y, gclabWidth, height);
+            g.fillRect(lx, ly, gclabWidth, h);
             g.setColor(GCLAB_ALLOC_BORDER);
-            g.drawLine(lx + gclabWidth, y, lx + gclabWidth, y + height);
-        } else {
-            int liveWidth = (int) (width * liveLvl);
-            g.setColor(LIVE);
-            g.fillRect(x, y, liveWidth, height);
+            g.drawRect(lx, ly, gclabWidth, h);
 
-            g.setColor(LIVE_BORDER);
-            g.drawLine(x + liveWidth, y, x + liveWidth, y + height);
+            lx += gclabWidth;
+            g.setColor(SHARED_ALLOC);
+            g.fillRect(lx, ly, sharedWidth, h);
+            g.setColor(SHARED_ALLOC_BORDER);
+            g.drawRect(lx, ly, sharedWidth, h);
         }
 
         if (flags.contains(RegionFlag.IN_COLLECTION_SET)) {
@@ -120,7 +136,7 @@ public class RegionStat {
             g.fillOval(x + width/2, y + height/2, width/4, height/4);
         }
 
-        g.setColor(Color.BLACK);
+        g.setColor(Color.GRAY);
         g.drawRect(x, y, width, height);
     }
 
@@ -164,6 +180,10 @@ public class RegionStat {
 
     public float gclabAllocs() {
         return gclabLvl;
+    }
+
+    public float sharedAllocs() {
+        return sharedLvl;
     }
 
     public EnumSet<RegionFlag> flags() {

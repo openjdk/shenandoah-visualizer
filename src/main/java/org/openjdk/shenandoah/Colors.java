@@ -9,6 +9,8 @@ public class Colors {
     static final Color TIMELINE_EVACUATING  = new Color(100, 0, 0);
     static final Color TIMELINE_UPDATEREFS  = new Color(0, 100, 100);
 
+    static final Color SHARED_ALLOC         = new Color(250, 129, 0);
+    static final Color SHARED_ALLOC_BORDER  = new Color(142, 71, 0);
     static final Color TLAB_ALLOC           = new Color(0, 250, 250);
     static final Color TLAB_ALLOC_BORDER    = new Color(0, 191, 190);
     static final Color GCLAB_ALLOC          = new Color(185, 0, 250);

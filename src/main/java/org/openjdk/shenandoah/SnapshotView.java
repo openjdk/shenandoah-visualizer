@@ -9,6 +9,7 @@ public class SnapshotView {
     private final long live;
     private final long tlabAllocs;
     private final long gclabAllocs;
+    private final long sharedAllocs;
     private final long humongous;
     private final long collectionSet;
 
@@ -18,6 +19,7 @@ public class SnapshotView {
         total = total();
         used = s.used();
         live = s.live();
+        sharedAllocs = s.sharedAllocs();
         tlabAllocs = s.tlabAllocs();
         gclabAllocs = s.gclabAllocs();
         humongous = s.humongous();
@@ -38,6 +40,10 @@ public class SnapshotView {
 
     public long used() {
         return used;
+    }
+
+    public long sharedAllocs() {
+        return sharedAllocs;
     }
 
     public long tlabAllocs() {
