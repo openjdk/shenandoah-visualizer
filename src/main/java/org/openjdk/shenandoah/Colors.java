@@ -20,4 +20,6 @@ public class Colors {
     static final Color LIVE_BORDER          = new Color(0, 100, 0);
     static final Color CSET                 = Color.YELLOW;
     static final Color HUMONGOUS            = Color.RED;
+
+    static final Color BORDER               = new Color(150, 150, 150);
 }

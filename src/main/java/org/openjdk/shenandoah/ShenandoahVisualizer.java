@@ -288,6 +288,7 @@ class ShenandoahVisualizer {
             for (String key : items.keySet()) {
                 int y = (int) (i * sqSize * 1.5);
                 items.get(key).render(g, 0, y, sqSize, sqSize);
+                g.setColor(Color.BLACK);
                 g.drawString(key, (int) (sqSize * 1.5), y + sqSize);
                 i++;
             }
@@ -296,15 +297,15 @@ class ShenandoahVisualizer {
         public synchronized void renderRegions(Graphics g) {
             int area = regionWidth * regionHeight;
             int sqSize = Math.max(1, (int) Math.sqrt(1D * area / snapshot.regionCount()));
-            int cellSize = sqSize + 3;
-            int cols = regionWidth / cellSize;
+            int cols = regionWidth / sqSize;
+            int cellSize = sqSize - 2;
 
             for (int i = 0; i < snapshot.regionCount(); i++) {
-                int rectx = (i % cols) * cellSize;
-                int recty = (i / cols) * cellSize;
+                int rectx = (i % cols) * sqSize;
+                int recty = (i / cols) * sqSize;
 
                 RegionStat s = snapshot.get(i);
-                s.render(g, rectx, recty, sqSize, sqSize);
+                s.render(g, rectx, recty, cellSize, cellSize);
             }
 
             Color BASE = new Color(0, 0, 0, 20);

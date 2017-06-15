@@ -136,7 +136,7 @@ public class RegionStat {
             g.fillOval(x + width/2, y + height/2, width/4, height/4);
         }
 
-        g.setColor(Color.GRAY);
+        g.setColor(Colors.BORDER);
         g.drawRect(x, y, width, height);
     }
 
