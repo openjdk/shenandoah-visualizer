@@ -18,7 +18,7 @@ public class RegionStat {
     private static final int SHARED_SHIFT = 28;
     private static final int FLAGS_SHIFT  = 58;
 
-    private final EnumSet<RegionFlag> flags;
+    private final RegionState state;
     private final BitSet incoming;
     private final float liveLvl;
     private final float usedLvl;
@@ -26,15 +26,16 @@ public class RegionStat {
     private final float gclabLvl;
     private final float sharedLvl;
 
-    public RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float sharedLvl, EnumSet<RegionFlag> flags) {
+    public RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float sharedLvl, RegionState state) {
         this.incoming = null;
         this.usedLvl = usedLvl;
         this.liveLvl = liveLvl;
         this.tlabLvl = tlabLvl;
         this.gclabLvl = gclabLvl;
         this.sharedLvl = sharedLvl;
-        this.flags = flags;
+        this.state = state;
     }
+
 
     public RegionStat(long data, String matrix) {
         usedLvl  = ((data >>> USED_SHIFT)  & PERCENT_MASK) / 100F;
@@ -44,13 +45,7 @@ public class RegionStat {
         sharedLvl = ((data >>> SHARED_SHIFT) & PERCENT_MASK) / 100F;
 
         long stat = (data >>> FLAGS_SHIFT) & FLAGS_MASK;
-
-        flags = EnumSet.noneOf(RegionFlag.class);
-
-        if ((stat & 1) > 0) flags.add(RegionFlag.UNUSED);
-        if ((stat & 2) > 0) flags.add(RegionFlag.IN_COLLECTION_SET);
-        if ((stat & 4) > 0) flags.add(RegionFlag.HUMONGOUS);
-        if ((stat & 8) > 0) flags.add(RegionFlag.PINNED);
+        state = RegionState.fromOrdinal((int) stat);
 
         if (!matrix.isEmpty()) {
             this.incoming = new BitSet();
@@ -111,27 +106,27 @@ public class RegionStat {
             g.drawRect(lx, ly, sharedWidth, h);
         }
 
-        if (flags.contains(RegionFlag.IN_COLLECTION_SET)) {
+        if (state == RegionState.CSET) {
             g.setColor(Colors.CSET);
             g.fillRect(x, y, width, height / 3);
             g.setColor(Color.BLACK);
             g.drawRect(x, y, width, height / 3);
         }
 
-        if (flags.contains(RegionFlag.HUMONGOUS)) {
+        if (state == RegionState.HUMONGOUS) {
             g.setColor(Colors.HUMONGOUS);
             g.fillRect(x, y, width, height / 3);
             g.setColor(Color.BLACK);
             g.drawRect(x, y, width, height / 3);
         }
 
-        if (flags.contains(RegionFlag.UNUSED)) {
+        if (state == RegionState.EMPTY_UNCOMMITTED || state == RegionState.EMPTY_COMMITTED) {
             g.setColor(Color.BLACK);
             g.drawLine(x, y, x + width, y + height);
             g.drawLine(x, y + height, x + width, y);
         }
 
-        if (flags.contains(RegionFlag.PINNED)) {
+        if (state == RegionState.PINNED) {
             g.setColor(Color.RED);
             g.fillOval(x + width/2, y + height/2, width/4, height/4);
         }
@@ -151,13 +146,13 @@ public class RegionStat {
         if (Float.compare(that.usedLvl, usedLvl) != 0) return false;
         if (Float.compare(that.tlabLvl, tlabLvl) != 0) return false;
         if (Float.compare(that.gclabLvl, gclabLvl) != 0) return false;
-        if (!flags.equals(that.flags)) return false;
+        if (!state.equals(that.state)) return false;
         return incoming != null ? incoming.equals(that.incoming) : that.incoming == null;
     }
 
     @Override
     public int hashCode() {
-        int result = flags.hashCode();
+        int result = state.hashCode();
         result = 31 * result + (incoming != null ? incoming.hashCode() : 0);
         result = 31 * result + (liveLvl != +0.0f ? Float.floatToIntBits(liveLvl) : 0);
         result = 31 * result + (usedLvl != +0.0f ? Float.floatToIntBits(usedLvl) : 0);
@@ -186,8 +181,8 @@ public class RegionStat {
         return sharedLvl;
     }
 
-    public EnumSet<RegionFlag> flags() {
-        return flags;
+    public RegionState state() {
+        return state;
     }
 
     public BitSet incoming() {

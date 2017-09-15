@@ -108,7 +108,7 @@ public class Snapshot {
     public long collectionSet() {
         long used = 0L;
         for (RegionStat rs : stats) {
-            if (rs.flags().contains(RegionFlag.IN_COLLECTION_SET)) {
+            if (rs.state() == RegionState.CSET) {
                 used += regionSize * rs.used();
             }
         }
@@ -118,7 +118,7 @@ public class Snapshot {
     public long humongous() {
         long used = 0L;
         for (RegionStat rs : stats) {
-            if (rs.flags().contains(RegionFlag.HUMONGOUS)) {
+            if (rs.state() == RegionState.HUMONGOUS) {
                 used += regionSize * rs.used();
             }
         }

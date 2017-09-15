@@ -56,6 +56,14 @@
         </plugins>
     </build>
 
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+        </dependency>
+    </dependencies>
+
     <profiles>
         <profile>
             <id>tools.jar-8</id>

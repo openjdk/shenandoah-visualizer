@@ -34,7 +34,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.openjdk.shenandoah.RegionFlag.*;
+import static org.openjdk.shenandoah.RegionState.*;
 
 class ShenandoahVisualizer {
 
@@ -157,7 +157,7 @@ class ShenandoahVisualizer {
         f.get();
     }
 
-    private static class Render implements Runnable {
+    public static class Render implements Runnable {
         public static final int LINE = 20;
 
         final DataProvider data;
@@ -237,52 +237,52 @@ class ShenandoahVisualizer {
             }
         }
 
-        public synchronized void renderLegend(Graphics g) {
+        public synchronized static void renderLegend(Graphics g) {
             final int sqSize = LINE;
 
             Map<String, RegionStat> items = new LinkedHashMap<>();
 
-            items.put("Unused",
-                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, EnumSet.of(UNUSED)));
+            items.put("Empty (uncommitted)",
+                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, EMPTY_UNCOMMITTED));
 
-            items.put("Empty",
-                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+            items.put("Empty (committed)",
+                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, EMPTY_COMMITTED));
 
             items.put("1/2 Used",
-                    new RegionStat(0.5f, 0.0f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(0.5f, 0.0f, 0.0f, 0.0f, 0.0f, REGULAR));
 
             items.put("Fully Used",
-                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, REGULAR));
 
             items.put("Fully Used, 100% TLAB Allocs",
-                    new RegionStat(1.0f, 0.0f, 1.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 1.0f, 0.0f, 0.0f, REGULAR));
 
             items.put("Fully Used, 100% GCLAB Allocs",
-                    new RegionStat(1.0f, 0.0f, 0.0f, 1.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 0.0f, 1.0f, 0.0f, REGULAR));
 
             items.put("Fully Used, 100% Shared Allocs",
-                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, REGULAR));
 
             items.put("Fully Used, 50%/50% TLAB/GCLAB Allocs",
-                    new RegionStat(1.0f, 0.0f, 0.5f, 0.5f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 0.5f, 0.5f, 0.0f, REGULAR));
 
             items.put("Fully Used, 33%/33%/33% T/GC/S Allocs",
-                    new RegionStat(1.0f, 0.0f, 1f/3, 1f/3, 1f/3, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.0f, 1f/3, 1f/3, 1f/3, REGULAR));
 
             items.put("Fully Live",
-                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, REGULAR));
 
             items.put("Fully Live + Humongous",
-                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, EnumSet.of(HUMONGOUS)));
+                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, HUMONGOUS));
 
             items.put("1/3 Live",
-                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, EnumSet.noneOf(RegionFlag.class)));
+                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, REGULAR));
 
             items.put("1/3 Live + In Collection Set",
-                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, EnumSet.of(IN_COLLECTION_SET)));
+                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, CSET));
 
             items.put("1/3 Live + Pinned",
-                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, EnumSet.of(PINNED)));
+                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, PINNED));
 
             int i = 1;
             for (String key : items.keySet()) {
