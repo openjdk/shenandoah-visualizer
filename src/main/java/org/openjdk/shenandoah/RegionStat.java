@@ -1,5 +1,6 @@
 package org.openjdk.shenandoah;
 
+import javax.swing.plaf.synth.Region;
 import java.awt.*;
 import java.util.BitSet;
 import java.util.EnumSet;
@@ -64,6 +65,26 @@ public class RegionStat {
         }
     }
 
+    private Color selectLive(RegionState s) {
+        switch (s) {
+            case CSET:
+                return LIVE_CSET;
+            case HUMONGOUS:
+                return LIVE_HUMONGOUS;
+            case REGULAR:
+                return LIVE_REGULAR;
+            case TRASH:
+                return LIVE_TRASH;
+            case PINNED:
+                return LIVE_PINNED;
+            case EMPTY_COMMITTED:
+            case EMPTY_UNCOMMITTED:
+                return LIVE_EMPTY;
+            default:
+                return Color.WHITE;
+        }
+    }
+
     public void render(Graphics g, int x, int y, int width, int height) {
         g.setColor(Color.WHITE);
         g.fillRect(x, y, width, height);
@@ -73,18 +94,18 @@ public class RegionStat {
         g.fillRect(x, y, usedWidth, height);
 
         int liveWidth = (int) (width * liveLvl);
-        g.setColor(LIVE);
+        g.setColor(selectLive(state));
         g.fillRect(x, y, liveWidth, height);
 
         g.setColor(LIVE_BORDER);
         g.drawLine(x + liveWidth, y, x + liveWidth, y + height);
 
-        if (gclabLvl > 0 || tlabLvl > 0 || sharedLvl > 0) {
-            int sharedWidth = (int) (width * sharedLvl);
-            int tlabWidth = (int) (width * tlabLvl);
-            int gclabWidth = (int) (width * gclabLvl);
+        if (state == RegionState.REGULAR && (gclabLvl > 0 || tlabLvl > 0 || sharedLvl > 0)) {
+            int sharedWidth = (int) (liveWidth * sharedLvl);
+            int tlabWidth = (int) (liveWidth * tlabLvl);
+            int gclabWidth = (int) (liveWidth * gclabLvl);
 
-            int h = height / 3;
+            int h = height;
             int ly = y + (height - h);
             int lx = x;
 
@@ -106,29 +127,10 @@ public class RegionStat {
             g.drawRect(lx, ly, sharedWidth, h);
         }
 
-        if (state == RegionState.CSET) {
-            g.setColor(Colors.CSET);
-            g.fillRect(x, y, width, height / 3);
-            g.setColor(Color.BLACK);
-            g.drawRect(x, y, width, height / 3);
-        }
-
-        if (state == RegionState.HUMONGOUS) {
-            g.setColor(Colors.HUMONGOUS);
-            g.fillRect(x, y, width, height / 3);
-            g.setColor(Color.BLACK);
-            g.drawRect(x, y, width, height / 3);
-        }
-
-        if (state == RegionState.EMPTY_UNCOMMITTED || state == RegionState.EMPTY_COMMITTED) {
+        if (state == RegionState.EMPTY_UNCOMMITTED) {
             g.setColor(Color.BLACK);
             g.drawLine(x, y, x + width, y + height);
             g.drawLine(x, y + height, x + width, y);
-        }
-
-        if (state == RegionState.PINNED) {
-            g.setColor(Color.RED);
-            g.fillOval(x + width/2, y + height/2, width/4, height/4);
         }
 
         g.setColor(Colors.BORDER);

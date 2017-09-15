@@ -20,8 +20,8 @@ public enum RegionState {
 
     static RegionState fromOrdinal(int idx) {
         switch (idx) {
-            case 0: return EMPTY_COMMITTED;
-            case 1: return EMPTY_UNCOMMITTED;
+            case 0: return EMPTY_UNCOMMITTED;
+            case 1: return EMPTY_COMMITTED;
             case 2: return REGULAR;
             case 3: return HUMONGOUS;
             case 4: return HUMONGOUS;

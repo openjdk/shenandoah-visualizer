@@ -228,11 +228,11 @@ class ShenandoahVisualizer {
                 g.drawRect(x, (int) Math.round(graphHeight - s.tlabAllocs() * stepY), 1, 1);
                 g.setColor(Colors.GCLAB_ALLOC);
                 g.drawRect(x, (int) Math.round(graphHeight - s.gclabAllocs() * stepY), 1, 1);
-                g.setColor(Colors.HUMONGOUS);
+                g.setColor(Colors.LIVE_HUMONGOUS);
                 g.drawRect(x, (int) Math.round(graphHeight - s.humongous() * stepY), 1, 1);
-                g.setColor(Colors.LIVE);
+                g.setColor(Colors.LIVE_REGULAR);
                 g.drawRect(x, (int) Math.round(graphHeight - s.live() * stepY), 1, 1);
-                g.setColor(Colors.CSET);
+                g.setColor(Colors.LIVE_CSET);
                 g.drawRect(x, (int) Math.round(graphHeight - s.collectionSet() * stepY), 1, 1);
             }
         }
@@ -242,10 +242,10 @@ class ShenandoahVisualizer {
 
             Map<String, RegionStat> items = new LinkedHashMap<>();
 
-            items.put("Empty (uncommitted)",
+            items.put("Empty Uncommitted",
                     new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, EMPTY_UNCOMMITTED));
 
-            items.put("Empty (committed)",
+            items.put("Empty Committed",
                     new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, EMPTY_COMMITTED));
 
             items.put("1/2 Used",
@@ -254,31 +254,28 @@ class ShenandoahVisualizer {
             items.put("Fully Used",
                     new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, REGULAR));
 
-            items.put("Fully Used, 100% TLAB Allocs",
-                    new RegionStat(1.0f, 0.0f, 1.0f, 0.0f, 0.0f, REGULAR));
+            items.put("Fully Live, 100% TLAB Allocs",
+                    new RegionStat(1.0f, 1.0f, 1.0f, 0.0f, 0.0f, REGULAR));
 
-            items.put("Fully Used, 100% GCLAB Allocs",
-                    new RegionStat(1.0f, 0.0f, 0.0f, 1.0f, 0.0f, REGULAR));
+            items.put("Fully Live, 100% GCLAB Allocs",
+                    new RegionStat(1.0f, 1.0f, 0.0f, 1.0f, 0.0f, REGULAR));
 
-            items.put("Fully Used, 100% Shared Allocs",
-                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, REGULAR));
+            items.put("Fully Live, 100% Shared Allocs",
+                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 1.0f, REGULAR));
 
-            items.put("Fully Used, 50%/50% TLAB/GCLAB Allocs",
-                    new RegionStat(1.0f, 0.0f, 0.5f, 0.5f, 0.0f, REGULAR));
+            items.put("Fully Live, 50%/50% TLAB/GCLAB Allocs",
+                    new RegionStat(1.0f, 1.0f, 0.5f, 0.5f, 0.0f, REGULAR));
 
-            items.put("Fully Used, 33%/33%/33% T/GC/S Allocs",
-                    new RegionStat(1.0f, 0.0f, 1f/3, 1f/3, 1f/3, REGULAR));
+            items.put("Fully Live, 33%/33%/33% T/GC/S Allocs",
+                    new RegionStat(1.0f, 1.0f, 1f/3, 1f/3, 1f/3, REGULAR));
 
-            items.put("Fully Live",
-                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, REGULAR));
-
-            items.put("Fully Live + Humongous",
+            items.put("Fully Live Humongous",
                     new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, HUMONGOUS));
 
             items.put("1/3 Live",
                     new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, REGULAR));
 
-            items.put("1/3 Live + In Collection Set",
+            items.put("1/3 Live + Collection Set",
                     new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, CSET));
 
             items.put("1/3 Live + Pinned",
