@@ -93,39 +93,42 @@ public class RegionStat {
         g.setColor(USED);
         g.fillRect(x, y, usedWidth, height);
 
-        int liveWidth = (int) (width * liveLvl);
-        g.setColor(selectLive(state));
-        g.fillRect(x, y, liveWidth, height);
+        if (state == RegionState.REGULAR) {
+            if (gclabLvl > 0 || tlabLvl > 0 || sharedLvl > 0) {
+                int sharedWidth = (int) (width * liveLvl * sharedLvl);
+                int tlabWidth = (int) (width * liveLvl * tlabLvl);
+                int gclabWidth = (int) (width * liveLvl * gclabLvl);
 
-        g.setColor(LIVE_BORDER);
-        g.drawLine(x + liveWidth, y, x + liveWidth, y + height);
+                int h = height;
+                int ly = y + (height - h);
+                int lx = x;
 
-        if (state == RegionState.REGULAR && (gclabLvl > 0 || tlabLvl > 0 || sharedLvl > 0)) {
-            int sharedWidth = (int) (liveWidth * sharedLvl);
-            int tlabWidth = (int) (liveWidth * tlabLvl);
-            int gclabWidth = (int) (liveWidth * gclabLvl);
+                g.setColor(TLAB_ALLOC);
+                g.fillRect(lx, ly, tlabWidth, h);
+                g.setColor(TLAB_ALLOC_BORDER);
+                g.drawRect(lx, ly, tlabWidth, h);
 
-            int h = height;
-            int ly = y + (height - h);
-            int lx = x;
+                lx += tlabWidth;
+                g.setColor(GCLAB_ALLOC);
+                g.fillRect(lx, ly, gclabWidth, h);
+                g.setColor(GCLAB_ALLOC_BORDER);
+                g.drawRect(lx, ly, gclabWidth, h);
 
-            g.setColor(TLAB_ALLOC);
-            g.fillRect(lx, ly, tlabWidth, h);
-            g.setColor(TLAB_ALLOC_BORDER);
-            g.drawRect(lx, ly, tlabWidth, h);
+                lx += gclabWidth;
+                g.setColor(SHARED_ALLOC);
+                g.fillRect(lx, ly, sharedWidth, h);
+                g.setColor(SHARED_ALLOC_BORDER);
+                g.drawRect(lx, ly, sharedWidth, h);
+            }
+        } else {
+            int liveWidth = (int) (width * liveLvl);
+            g.setColor(selectLive(state));
+            g.fillRect(x, y, liveWidth, height);
 
-            lx += tlabWidth;
-            g.setColor(GCLAB_ALLOC);
-            g.fillRect(lx, ly, gclabWidth, h);
-            g.setColor(GCLAB_ALLOC_BORDER);
-            g.drawRect(lx, ly, gclabWidth, h);
-
-            lx += gclabWidth;
-            g.setColor(SHARED_ALLOC);
-            g.fillRect(lx, ly, sharedWidth, h);
-            g.setColor(SHARED_ALLOC_BORDER);
-            g.drawRect(lx, ly, sharedWidth, h);
+            g.setColor(LIVE_BORDER);
+            g.drawLine(x + liveWidth, y, x + liveWidth, y + height);
         }
+
 
         if (state == RegionState.EMPTY_UNCOMMITTED || state == RegionState.TRASH) {
             g.setColor(Color.BLACK);
