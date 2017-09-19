@@ -254,6 +254,9 @@ class ShenandoahVisualizer {
             items.put("Fully Used",
                     new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, REGULAR));
 
+            items.put("Fully Used, Trash",
+                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, TRASH));
+
             items.put("Fully Live, 100% TLAB Allocs",
                     new RegionStat(1.0f, 1.0f, 1.0f, 0.0f, 0.0f, REGULAR));
 
