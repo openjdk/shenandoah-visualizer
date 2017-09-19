@@ -18,6 +18,7 @@ public class Colors {
 
     static final Color USED                 = new Color(220, 220, 220);
 
+    static final Color LIVE_COMMITTED       = new Color(150, 150, 150);
     static final Color LIVE_REGULAR         = new Color(0, 200, 0);
     static final Color LIVE_HUMONGOUS       = new Color(250, 100, 0);
     static final Color LIVE_CSET            = new Color(250, 250, 0);

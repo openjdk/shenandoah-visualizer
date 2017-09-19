@@ -5,25 +5,23 @@ public class SnapshotView {
     private final long time;
     private final Phase phase;
     private final long total;
+    private final long committed;
     private final long used;
     private final long live;
-    private final long tlabAllocs;
-    private final long gclabAllocs;
-    private final long sharedAllocs;
     private final long humongous;
     private final long collectionSet;
+    private final long trash;
 
     public SnapshotView(Snapshot s) {
         time = s.time();
         phase = s.phase();
         total = total();
+        committed = s.committed();
         used = s.used();
         live = s.live();
-        sharedAllocs = s.sharedAllocs();
-        tlabAllocs = s.tlabAllocs();
-        gclabAllocs = s.gclabAllocs();
         humongous = s.humongous();
         collectionSet = s.collectionSet();
+        trash = s.trash();
     }
 
     public Phase phase() {
@@ -42,20 +40,16 @@ public class SnapshotView {
         return used;
     }
 
-    public long sharedAllocs() {
-        return sharedAllocs;
-    }
-
-    public long tlabAllocs() {
-        return tlabAllocs;
-    }
-
-    public long gclabAllocs() {
-        return gclabAllocs;
-    }
-
     public long collectionSet() {
         return collectionSet;
+    }
+
+    public long trash() {
+        return trash;
+    }
+
+    public long committed() {
+        return committed;
     }
 
     public long humongous() {

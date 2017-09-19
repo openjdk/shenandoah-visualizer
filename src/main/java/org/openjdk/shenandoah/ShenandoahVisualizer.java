@@ -220,20 +220,18 @@ class ShenandoahVisualizer {
                 }
                 g.drawRect(x, 0, 1, graphHeight);
 
+                g.setColor(Colors.LIVE_COMMITTED);
+                g.drawRect(x, (int) Math.round(graphHeight - s.committed() * stepY), 1, 1);
                 g.setColor(Colors.USED);
                 g.drawRect(x, (int) Math.round(graphHeight - s.used() * stepY), 1, 1);
-                g.setColor(Colors.SHARED_ALLOC);
-                g.drawRect(x, (int) Math.round(graphHeight - s.sharedAllocs() * stepY), 1, 1);
-                g.setColor(Colors.TLAB_ALLOC);
-                g.drawRect(x, (int) Math.round(graphHeight - s.tlabAllocs() * stepY), 1, 1);
-                g.setColor(Colors.GCLAB_ALLOC);
-                g.drawRect(x, (int) Math.round(graphHeight - s.gclabAllocs() * stepY), 1, 1);
                 g.setColor(Colors.LIVE_HUMONGOUS);
                 g.drawRect(x, (int) Math.round(graphHeight - s.humongous() * stepY), 1, 1);
                 g.setColor(Colors.LIVE_REGULAR);
                 g.drawRect(x, (int) Math.round(graphHeight - s.live() * stepY), 1, 1);
                 g.setColor(Colors.LIVE_CSET);
                 g.drawRect(x, (int) Math.round(graphHeight - s.collectionSet() * stepY), 1, 1);
+                g.setColor(Colors.LIVE_TRASH);
+                g.drawRect(x, (int) Math.round(graphHeight - s.trash() * stepY), 1, 1);
             }
         }
 

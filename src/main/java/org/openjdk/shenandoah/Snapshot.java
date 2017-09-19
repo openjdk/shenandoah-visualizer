@@ -81,26 +81,18 @@ public class Snapshot {
         return used;
     }
 
-    public long tlabAllocs() {
+    public long committed() {
         long r = 0L;
         for (RegionStat rs : stats) {
-            r += regionSize * rs.tlabAllocs();
+            r += (rs.state() == RegionState.EMPTY_UNCOMMITTED) ? 0 : regionSize * rs.used();
         }
         return r;
     }
 
-    public long gclabAllocs() {
+    public long trash() {
         long r = 0L;
         for (RegionStat rs : stats) {
-            r += regionSize * rs.gclabAllocs();
-        }
-        return r;
-    }
-
-    public long sharedAllocs() {
-        long r = 0L;
-        for (RegionStat rs : stats) {
-            r += regionSize * rs.sharedAllocs();
+            r += (rs.state() == RegionState.TRASH) ? rs.used() : 0;
         }
         return r;
     }
