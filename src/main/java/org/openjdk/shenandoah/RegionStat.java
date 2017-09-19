@@ -127,7 +127,7 @@ public class RegionStat {
             g.drawRect(lx, ly, sharedWidth, h);
         }
 
-        if (state == RegionState.EMPTY_UNCOMMITTED) {
+        if (state == RegionState.EMPTY_UNCOMMITTED || state == RegionState.TRASH) {
             g.setColor(Color.BLACK);
             g.drawLine(x, y, x + width, y + height);
             g.drawLine(x, y + height, x + width, y);
