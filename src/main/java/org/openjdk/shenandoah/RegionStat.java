@@ -138,8 +138,8 @@ public class RegionStat {
 
         if (state == RegionState.EMPTY_UNCOMMITTED) {
             g.setColor(BORDER);
-            for (int t = 0; t < 5; t++) {
-                int off = width * t / 5;
+            for (int t = 0; t < 3; t++) {
+                int off = width * t / 3;
                 g.drawLine(x, y + off, x + off, y);
                 g.drawLine(x + off, y + height, x + width, y + off);
             }
