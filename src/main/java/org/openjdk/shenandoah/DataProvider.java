@@ -49,7 +49,9 @@ public class DataProvider {
             stats.add(new RegionStat(data[c].longValue(), (mtrx == null ? "" : mtrx.stringValue())));
         }
 
-        long time = timestamp.longValue();
+        // Cannot use timestamp value from the dataset itself, because statistics
+        // is not reported continuously
+        long time = System.currentTimeMillis();
         return new Snapshot(time, maxSize, stats, (int) status.longValue());
     }
 
