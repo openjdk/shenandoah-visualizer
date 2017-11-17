@@ -100,7 +100,7 @@ public class Snapshot {
     public long collectionSet() {
         long used = 0L;
         for (RegionStat rs : stats) {
-            if (rs.state() == RegionState.CSET) {
+            if (rs.state() == RegionState.CSET || rs.state() == RegionState.PINNED_CSET) {
                 used += regionSize * rs.used();
             }
         }

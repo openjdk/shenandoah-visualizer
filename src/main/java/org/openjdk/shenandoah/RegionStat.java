@@ -77,6 +77,8 @@ public class RegionStat {
                 return LIVE_TRASH;
             case PINNED:
                 return LIVE_PINNED;
+            case PINNED_CSET:
+                return LIVE_PINNED_CSET;
             case EMPTY_COMMITTED:
             case EMPTY_UNCOMMITTED:
                 return LIVE_EMPTY;

@@ -282,6 +282,9 @@ class ShenandoahVisualizer {
             items.put("1/3 Live + Pinned",
                     new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, PINNED));
 
+            items.put("1/3 Live + Pinned CSet",
+                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, PINNED_CSET));
+
             int i = 1;
             for (String key : items.keySet()) {
                 int y = (int) (i * sqSize * 1.5);
