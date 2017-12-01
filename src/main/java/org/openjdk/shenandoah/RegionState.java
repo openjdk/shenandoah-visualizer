@@ -18,6 +18,8 @@ public enum RegionState {
 
     PINNED_CSET,
 
+    PINNED_HUMONGOUS,
+
     ;
 
     static RegionState fromOrdinal(int idx) {
@@ -31,6 +33,7 @@ public enum RegionState {
             case 6: return PINNED;
             case 7: return TRASH;
             case 8: return PINNED_CSET;
+            case 9: return PINNED_HUMONGOUS;
             default:
                 throw new IllegalStateException("Unhandled ordinal: " + idx);
         }

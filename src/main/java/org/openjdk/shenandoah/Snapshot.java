@@ -110,7 +110,7 @@ public class Snapshot {
     public long humongous() {
         long used = 0L;
         for (RegionStat rs : stats) {
-            if (rs.state() == RegionState.HUMONGOUS) {
+            if (rs.state() == RegionState.HUMONGOUS || rs.state() == RegionState.PINNED_HUMONGOUS) {
                 used += regionSize * rs.used();
             }
         }

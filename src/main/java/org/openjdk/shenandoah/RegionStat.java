@@ -71,6 +71,8 @@ public class RegionStat {
                 return LIVE_CSET;
             case HUMONGOUS:
                 return LIVE_HUMONGOUS;
+            case PINNED_HUMONGOUS:
+                return LIVE_PINNED_HUMONGOUS;
             case REGULAR:
                 return LIVE_REGULAR;
             case TRASH:
