@@ -16,7 +16,7 @@ public class Colors {
     static final Color GCLAB_ALLOC          = new Color(185, 0, 250);
     static final Color GCLAB_ALLOC_BORDER   = new Color(118, 0, 160);
 
-    static final Color USED                 = new Color(220, 220, 220);
+    static final Color USED                 = new Color(200, 200, 200);
 
     static final Color LIVE_COMMITTED       = new Color(150, 150, 150);
     static final Color LIVE_REGULAR         = new Color(0, 200, 0);
