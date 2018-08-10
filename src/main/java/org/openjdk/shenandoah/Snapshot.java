@@ -101,7 +101,7 @@ public class Snapshot {
         long used = 0L;
         for (RegionStat rs : stats) {
             if (rs.state() == RegionState.CSET || rs.state() == RegionState.PINNED_CSET) {
-                used += regionSize * rs.used();
+                used += regionSize * rs.live();
             }
         }
         return used;
