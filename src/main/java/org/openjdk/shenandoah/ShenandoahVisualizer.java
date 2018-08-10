@@ -276,9 +276,6 @@ class ShenandoahVisualizer {
             items.put("Fully Live Humongous + Pinned",
                     new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, PINNED_HUMONGOUS));
 
-            items.put("1/3 Live",
-                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, REGULAR));
-
             items.put("1/3 Live + Collection Set",
                     new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, CSET));
 
