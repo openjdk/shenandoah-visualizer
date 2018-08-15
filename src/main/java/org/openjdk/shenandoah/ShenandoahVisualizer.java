@@ -114,7 +114,7 @@ class ShenandoahVisualizer {
             c.gridx = 0;
             c.gridy = 1;
             c.weightx = 3;
-            c.weighty = 5;
+            c.weighty = 4;
             c.insets = pad;
             frame.add(regionsPanel, c);
         }
@@ -192,14 +192,26 @@ class ShenandoahVisualizer {
         public synchronized void renderGraph(Graphics g) {
             if (lastSnapshots.size() < 2) return;
 
-            g.setColor(Color.BLACK);
+            int pad = 10;
+            int bandHeight = (graphHeight - pad) / 2;
+            double stepY = 1D * bandHeight / snapshot.total();
+
+            int startDiff = graphHeight;
+            int startRaw  = graphHeight - bandHeight - pad;
+
+            g.setColor(Color.WHITE);
             g.fillRect(0, 0, graphWidth, graphHeight);
 
-            double stepY = 1D * graphHeight / snapshot.total();
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, graphWidth, bandHeight);
+            g.fillRect(0, bandHeight + pad, graphWidth, bandHeight);
+
             long firstTime = lastSnapshots.getFirst().time();
             long lastTime = lastSnapshots.getLast().time();
             double stepX = 1D * Math.min(lastSnapshots.size(), graphWidth) / (lastTime - firstTime);
-            for (SnapshotView s : lastSnapshots) {
+
+            for (int i = 0; i < lastSnapshots.size(); i++) {
+                SnapshotView s = lastSnapshots.get(i);
                 int x = (int) Math.round((s.time() - firstTime) * stepX);
 
                 switch (s.phase()) {
@@ -218,20 +230,23 @@ class ShenandoahVisualizer {
                     default:
                         g.setColor(Color.WHITE);
                 }
-                g.drawRect(x, 0, 1, graphHeight);
+                g.drawRect(x, 0, 1, bandHeight);
+                g.drawRect(x, bandHeight + pad, 1, bandHeight);
 
-                g.setColor(Colors.LIVE_COMMITTED);
-                g.drawRect(x, (int) Math.round(graphHeight - s.committed() * stepY), 1, 1);
                 g.setColor(Colors.USED);
-                g.drawRect(x, (int) Math.round(graphHeight - s.used() * stepY), 1, 1);
-                g.setColor(Colors.LIVE_HUMONGOUS);
-                g.drawRect(x, (int) Math.round(graphHeight - s.humongous() * stepY), 1, 1);
+                g.drawRect(x, (int) Math.round(startRaw - s.used() * stepY), 1, 1);
                 g.setColor(Colors.LIVE_REGULAR);
-                g.drawRect(x, (int) Math.round(graphHeight - s.live() * stepY), 1, 1);
+                g.drawRect(x, (int) Math.round(startRaw - s.live() * stepY), 1, 1);
                 g.setColor(Colors.LIVE_CSET);
-                g.drawRect(x, (int) Math.round(graphHeight - s.collectionSet() * stepY), 1, 1);
-                g.setColor(Colors.LIVE_TRASH);
-                g.drawRect(x, (int) Math.round(graphHeight - s.trash() * stepY), 1, 1);
+                g.drawRect(x, (int) Math.round(startRaw - s.collectionSet() * stepY), 1, 1);
+
+                final int smooth = Math.min(10, i + 1);
+                final int mult = 50;
+
+                SnapshotView ls = lastSnapshots.get(i - smooth + 1);
+
+                g.setColor(Colors.USED);
+                g.drawRect(x, (int) Math.round(startDiff - (s.used() - ls.used()) * stepY * mult / smooth), 1, 1);
             }
         }
 
