@@ -227,6 +227,9 @@ class ShenandoahVisualizer {
                     case UPDATE_REFS:
                         g.setColor(Colors.TIMELINE_UPDATEREFS);
                         break;
+                    case TRAVERSAL:
+                        g.setColor(Colors.TIMELINE_TRAVERSAL);
+                        break;
                     default:
                         g.setColor(Color.WHITE);
                 }
@@ -359,6 +362,9 @@ class ShenandoahVisualizer {
                     break;
                 case UPDATE_REFS:
                     status += " (updating refs)";
+                    break;
+                case TRAVERSAL:
+                    status += " (traversal)";
                     break;
             }
 

@@ -27,6 +27,9 @@ public class Snapshot {
             case 0x4:
                 this.phase = Phase.UPDATE_REFS;
                 break;
+            case 0x8:
+                this.phase = Phase.TRAVERSAL;
+                break;
             default:
                 this.phase = Phase.UNKNOWN;
                 break;
