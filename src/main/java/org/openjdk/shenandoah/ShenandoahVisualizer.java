@@ -371,12 +371,13 @@ class ShenandoahVisualizer {
                     break;
             }
 
+            final int K = 1024;
+
             g.setColor(Color.BLACK);
-            g.drawString("Time: " + (snapshot.time() / 1024 / 1024) + " ms", 0, 0 * LINE);
             g.drawString("Status: " + status, 0, 1 * LINE);
-            g.drawString("Total: " + (snapshot.total()) + " KB", 0, 2 * LINE);
-            g.drawString("Used: " + (snapshot.used()) + " KB", 0, 3 * LINE);
-            g.drawString("Live: " + (snapshot.live()) + " KB", 0, 4 * LINE);
+            g.drawString("Total: " + (snapshot.total() / K) + " MB", 0, 2 * LINE);
+            g.drawString("Used: " + (snapshot.used() / K) + " MB", 0, 3 * LINE);
+            g.drawString("Live: " + (snapshot.live() / K) + " MB", 0, 4 * LINE);
         }
 
         public synchronized void notifyRegionResized(int width, int height) {
