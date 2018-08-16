@@ -89,50 +89,73 @@ public class RegionStat {
         }
     }
 
+    private Color mixAlpha(Color c, float alpha) {
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), (int)(alpha * 150 + 105));
+    }
+
     public void render(Graphics g, int x, int y, int width, int height) {
         g.setColor(Color.WHITE);
         g.fillRect(x, y, width, height);
 
-        int usedWidth = (int) (width * usedLvl);
-        g.setColor(USED);
-        g.fillRect(x, y, usedWidth, height);
+        switch (state) {
+            case REGULAR: {
+                if (gclabLvl > 0 || tlabLvl > 0 || sharedLvl > 0) {
+                    int sharedWidth = (int) (width * sharedLvl);
+                    int tlabWidth = (int) (width * tlabLvl);
+                    int gclabWidth = (int) (width * gclabLvl);
 
-        if (state == RegionState.REGULAR) {
-            if (gclabLvl > 0 || tlabLvl > 0 || sharedLvl > 0) {
-                int sharedWidth = (int) (width * liveLvl * sharedLvl);
-                int tlabWidth = (int) (width * liveLvl * tlabLvl);
-                int gclabWidth = (int) (width * liveLvl * gclabLvl);
+                    int h = height;
+                    int ly = y + (height - h);
+                    int lx = x;
 
-                int h = height;
-                int ly = y + (height - h);
-                int lx = x;
+                    g.setColor(mixAlpha(TLAB_ALLOC, liveLvl));
+                    g.fillRect(lx, ly, tlabWidth, h);
+                    g.setColor(TLAB_ALLOC_BORDER);
+                    g.drawRect(lx, ly, tlabWidth, h);
 
-                g.setColor(TLAB_ALLOC);
-                g.fillRect(lx, ly, tlabWidth, h);
-                g.setColor(TLAB_ALLOC_BORDER);
-                g.drawRect(lx, ly, tlabWidth, h);
+                    lx += tlabWidth;
+                    g.setColor(mixAlpha(GCLAB_ALLOC, liveLvl));
+                    g.fillRect(lx, ly, gclabWidth, h);
+                    g.setColor(GCLAB_ALLOC_BORDER);
+                    g.drawRect(lx, ly, gclabWidth, h);
 
-                lx += tlabWidth;
-                g.setColor(GCLAB_ALLOC);
-                g.fillRect(lx, ly, gclabWidth, h);
-                g.setColor(GCLAB_ALLOC_BORDER);
-                g.drawRect(lx, ly, gclabWidth, h);
-
-                lx += gclabWidth;
-                g.setColor(SHARED_ALLOC);
-                g.fillRect(lx, ly, sharedWidth, h);
-                g.setColor(SHARED_ALLOC_BORDER);
-                g.drawRect(lx, ly, sharedWidth, h);
+                    lx += gclabWidth;
+                    g.setColor(mixAlpha(SHARED_ALLOC, liveLvl));
+                    g.fillRect(lx, ly, sharedWidth, h);
+                    g.setColor(SHARED_ALLOC_BORDER);
+                    g.drawRect(lx, ly, sharedWidth, h);
+                }
+                break;
             }
-        } else {
-            int liveWidth = (int) (width * liveLvl);
-            g.setColor(selectLive(state));
-            g.fillRect(x, y, liveWidth, height);
+            case PINNED: {
+                int usedWidth = (int) (width * usedLvl);
+                g.setColor(Colors.LIVE_PINNED);
+                g.fillRect(x, y, usedWidth, height);
+                break;
+            }
+            case CSET:
+            case PINNED_CSET:
+            case HUMONGOUS:
+            case PINNED_HUMONGOUS: {
+                int usedWidth = (int) (width * usedLvl);
+                g.setColor(USED);
+                g.fillRect(x, y, usedWidth, height);
 
-            g.setColor(LIVE_BORDER);
-            g.drawLine(x + liveWidth, y, x + liveWidth, y + height);
+                int liveWidth = (int) (width * liveLvl);
+                g.setColor(selectLive(state));
+                g.fillRect(x, y, liveWidth, height);
+
+                g.setColor(selectLive(state));
+                g.drawLine(x + liveWidth, y, x + liveWidth, y + height);
+                break;
+            }
+            case EMPTY_COMMITTED:
+            case EMPTY_UNCOMMITTED:
+            case TRASH:
+                break;
+            default:
+                throw new IllegalStateException("Unhandled region state: " + state);
         }
-
 
         if (state == RegionState.TRASH) {
             g.setColor(Color.BLACK);
@@ -147,7 +170,6 @@ public class RegionStat {
                 g.drawLine(x, y + off, x + off, y);
                 g.drawLine(x + off, y + height, x + width, y + off);
             }
-
         }
 
         g.setColor(Colors.BORDER);
