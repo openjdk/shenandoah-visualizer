@@ -90,7 +90,7 @@ public class RegionStat {
     }
 
     private Color mixAlpha(Color c, float alpha) {
-        return new Color(c.getRed(), c.getGreen(), c.getBlue(), (int)(alpha * 150 + 105));
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), (int)(alpha * 200 + 55));
     }
 
     public void render(Graphics g, int x, int y, int width, int height) {
