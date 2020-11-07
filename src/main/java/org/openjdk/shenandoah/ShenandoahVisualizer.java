@@ -233,9 +233,12 @@ class ShenandoahVisualizer {
                     default:
                         g.setColor(Color.WHITE);
                 }
+
+                // Draw these events in both bands.
                 g.drawRect(x, 0, 1, bandHeight);
                 g.drawRect(x, bandHeight + pad, 1, bandHeight);
 
+                // Draw these in the upper band.
                 g.setColor(Colors.USED);
                 g.drawRect(x, (int) Math.round(startRaw - s.used() * stepY), 1, 1);
                 g.setColor(Colors.LIVE_REGULAR);
@@ -243,6 +246,7 @@ class ShenandoahVisualizer {
                 g.setColor(Colors.LIVE_CSET);
                 g.drawRect(x, (int) Math.round(startRaw - s.collectionSet() * stepY), 1, 1);
 
+                // Draw this in the lower band.
                 final int smooth = Math.min(10, i + 1);
                 final int mult = 50;
 
@@ -332,6 +336,7 @@ class ShenandoahVisualizer {
 
             Color BASE = new Color(0, 0, 0, 20);
 
+            // This looks like it is just for the abandoned "matrix" project.
             for (int f = 0; f < snapshot.regionCount(); f++) {
                 RegionStat s = snapshot.get(f);
                 BitSet bs = s.incoming();

@@ -34,12 +34,13 @@ public class RegionStat {
     private static final int PERCENT_MASK = 0x7f;
     private static final int FLAGS_MASK   = 0x3f;
 
-    private static final int USED_SHIFT   = 0;
-    private static final int LIVE_SHIFT   = 7;
-    private static final int TLAB_SHIFT   = 14;
-    private static final int GCLAB_SHIFT  = 21;
-    private static final int SHARED_SHIFT = 28;
-    private static final int FLAGS_SHIFT  = 58;
+    private static final int USED_SHIFT       = 0;
+    private static final int LIVE_SHIFT       = 7;
+    private static final int TLAB_SHIFT       = 14;
+    private static final int GCLAB_SHIFT      = 21;
+    private static final int SHARED_SHIFT     = 28;
+    private static final int GENERATION_SHIFT = 51;
+    private static final int FLAGS_SHIFT      = 58;
 
     private final RegionState state;
     private final BitSet incoming;
@@ -48,7 +49,9 @@ public class RegionStat {
     private final float tlabLvl;
     private final float gclabLvl;
     private final float sharedLvl;
+    private final long age;
 
+    // This constructor is for the legend.
     public RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float sharedLvl, RegionState state) {
         this.incoming = null;
         this.usedLvl = usedLvl;
@@ -57,8 +60,8 @@ public class RegionStat {
         this.gclabLvl = gclabLvl;
         this.sharedLvl = sharedLvl;
         this.state = state;
+        this.age = 0;
     }
-
 
     public RegionStat(long data, String matrix) {
         usedLvl  = ((data >>> USED_SHIFT)  & PERCENT_MASK) / 100F;
@@ -67,6 +70,7 @@ public class RegionStat {
         gclabLvl = ((data >>> GCLAB_SHIFT) & PERCENT_MASK) / 100F;
         sharedLvl = ((data >>> SHARED_SHIFT) & PERCENT_MASK) / 100F;
 
+        age = ((data >>> GENERATION_SHIFT) & FLAGS_MASK);
         long stat = (data >>> FLAGS_SHIFT) & FLAGS_MASK;
         state = RegionState.fromOrdinal((int) stat);
 
@@ -186,7 +190,7 @@ public class RegionStat {
         }
 
         if (state == RegionState.EMPTY_UNCOMMITTED) {
-            g.setColor(BORDER);
+            g.setColor(Colors.BORDER);
             for (int t = 0; t < 3; t++) {
                 int off = width * t / 3;
                 g.drawLine(x, y + off, x + off, y);
@@ -194,8 +198,28 @@ public class RegionStat {
             }
         }
 
-        g.setColor(Colors.BORDER);
+        Color borderColor = getColorForAge();
+        g.setColor(borderColor);
         g.drawRect(x, y, width, height);
+    }
+
+    private Color getColorForAge() {
+        if (age == 0) {
+            return new Color(255, 174, 0);
+        }
+        if (age < 5) {
+            return Color.ORANGE;
+        }
+        if (age < 10) {
+            return Color.RED;
+        }
+        if (age < 15) {
+            return Color.MAGENTA;
+        }
+        if (age == 16) {
+            return new Color(141, 61,245);
+        }
+        return Color.BLUE;
     }
 
     @Override
