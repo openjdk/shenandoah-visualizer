@@ -60,7 +60,19 @@ public class RegionStat {
         this.gclabLvl = gclabLvl;
         this.sharedLvl = sharedLvl;
         this.state = state;
-        this.age = 0;
+        this.age = -1;
+    }
+
+    // Also only used for the legend.
+    public RegionStat(RegionState state, int age) {
+        this.incoming = null;
+        this.usedLvl = 0;
+        this.liveLvl = 0;
+        this.tlabLvl = 0;
+        this.gclabLvl = 0;
+        this.sharedLvl = 0;
+        this.state = state;
+        this.age = age;
     }
 
     public RegionStat(long data, String matrix) {
@@ -183,43 +195,40 @@ public class RegionStat {
                 throw new IllegalStateException("Unhandled region state: " + state);
         }
 
-        if (state == RegionState.TRASH) {
-            g.setColor(Color.BLACK);
-            g.drawLine(x, y, x + width, y + height);
-            g.drawLine(x, y + height, x + width, y);
-        }
+        if (age < 15) {
+            if (state == RegionState.TRASH) {
+                g.setColor(Color.BLACK);
+                g.drawLine(x, y, x + width, y + height);
+                g.drawLine(x, y + height, x + width, y);
+            }
 
-        if (state == RegionState.EMPTY_UNCOMMITTED) {
-            g.setColor(Colors.BORDER);
-            for (int t = 0; t < 3; t++) {
-                int off = width * t / 3;
-                g.drawLine(x, y + off, x + off, y);
-                g.drawLine(x + off, y + height, x + width, y + off);
+            if (state == RegionState.EMPTY_UNCOMMITTED) {
+                g.setColor(Colors.BORDER);
+                for (int t = 0; t < 3; t++) {
+                    int off = width * t / 3;
+                    g.drawLine(x, y + off, x + off, y);
+                    g.drawLine(x + off, y + height, x + width, y + off);
+                }
             }
         }
 
-        Color borderColor = getColorForAge();
-        g.setColor(borderColor);
-        g.drawRect(x, y, width, height);
+        if (age > -1) {
+            Color borderColor = getColorForAge();
+            g.setColor(borderColor);
+            g.drawRect(x, y, width, height);
+            g.setColor(Color.BLACK);
+            g.drawString(String.valueOf(age), x + 2, y + height - 2);
+        }
     }
 
     private Color getColorForAge() {
-        if (age == 0) {
-            return new Color(255, 174, 0);
+        final int THRESHOLD = 15;
+        final int categorySize = THRESHOLD / AGE_COLORS.length;
+        int category = (int) (age / categorySize);
+        if (category < AGE_COLORS.length) {
+            return AGE_COLORS[category];
         }
-        if (age < 5) {
-            return Color.ORANGE;
-        }
-        if (age < 10) {
-            return Color.RED;
-        }
-        if (age < 15) {
-            return Color.MAGENTA;
-        }
-        if (age == 16) {
-            return new Color(141, 61,245);
-        }
-        return Color.BLUE;
+        return AGE_5;
     }
 
     @Override

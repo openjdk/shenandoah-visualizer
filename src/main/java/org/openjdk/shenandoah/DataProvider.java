@@ -39,8 +39,7 @@ public class DataProvider {
     private final LongMonitor status;
 
     public DataProvider(String id) throws Exception {
-        MonitoredHost host = MonitoredHost.getMonitoredHost(id);
-        MonitoredVm vm = host.getMonitoredVm(new VmIdentifier(id));
+        MonitoredVm vm = getMonitoredVm(id);
         timestamp = (LongMonitor) vm.findByName("sun.gc.shenandoah.regions.timestamp");
         LongMonitor max_regions_mon = (LongMonitor) vm.findByName("sun.gc.shenandoah.regions.max_regions");
         maxRegions = (int) max_regions_mon.longValue();
@@ -64,6 +63,23 @@ public class DataProvider {
                 matrix[i] = mtrx;
             }
         }
+    }
+
+    private MonitoredVm getMonitoredVm(String id) throws Exception {
+        if (id != null) {
+            MonitoredHost host = MonitoredHost.getMonitoredHost(id);
+            return host.getMonitoredVm(new VmIdentifier(id));
+        }
+        HostIdentifier hostId = new HostIdentifier((String)null);
+        MonitoredHost host = MonitoredHost.getMonitoredHost(hostId);
+        for (Integer vmId: host.activeVms()) {
+            MonitoredVm vm = host.getMonitoredVm(new VmIdentifier(String.valueOf(vmId)));
+            String jvmArgs = MonitoredVmUtil.jvmArgs(vm);
+            if (jvmArgs.contains("ShenandoahRegionSampling")) {
+                return vm;
+            }
+        }
+        throw new IllegalStateException("Could not find a JVM running -XX:+ShenandoahRegionSampling!");
     }
 
     public Snapshot snapshot() {

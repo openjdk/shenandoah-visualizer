@@ -45,9 +45,9 @@ class ShenandoahVisualizer {
     private static final int INITIAL_HEIGHT = 800;
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 1) {
-            System.err.println("missing VM identifier");
-            System.exit(-1);
+        String vmIdentifier = null;
+        if (args.length == 1) {
+            vmIdentifier = args[0];
         }
 
         JFrame frame = new JFrame();
@@ -55,7 +55,7 @@ class ShenandoahVisualizer {
         frame.setTitle("Shenandoah GC Visualizer");
         frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
 
-        DataProvider data = new DataProvider(args[0]);
+        DataProvider data = new DataProvider(vmIdentifier);
 
         Render render = new Render(data, frame);
 
@@ -310,6 +310,13 @@ class ShenandoahVisualizer {
             items.put("1/3 Live + Pinned CSet",
                     new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, PINNED_CSET));
 
+            items.put("Age 0+", new RegionStat(REGULAR, 0));
+            items.put("Age 3+", new RegionStat(REGULAR, 3));
+            items.put("Age 6+", new RegionStat(REGULAR, 6));
+            items.put("Age 9+", new RegionStat(REGULAR, 9));
+            items.put("Age 12+", new RegionStat(REGULAR, 12));
+            items.put("Age 15+", new RegionStat(REGULAR, 15));
+
             int i = 1;
             for (String key : items.keySet()) {
                 int y = (int) (i * sqSize * 1.5);
@@ -380,6 +387,20 @@ class ShenandoahVisualizer {
             g.drawString("Total: " + (snapshot.total() / K) + " MB", 0, 2 * LINE);
             g.drawString("Used: " + (snapshot.used() / K) + " MB", 0, 3 * LINE);
             g.drawString("Live: " + (snapshot.live() / K) + " MB", 0, 4 * LINE);
+
+            int area = regionWidth * regionHeight;
+            int sqSize = Math.max(1, (int) Math.sqrt(1D * area / snapshot.regionCount()));
+
+            renderTimeLineLegendItem(g, sqSize, Colors.TIMELINE_MARK, 5, "Marking");
+            renderTimeLineLegendItem(g, sqSize, Colors.TIMELINE_EVACUATING, 6, "Evacuation");
+            renderTimeLineLegendItem(g, sqSize, Colors.TIMELINE_UPDATEREFS, 7, "Update References");
+        }
+
+        private void renderTimeLineLegendItem(Graphics g, int sqSize, Color color, int lineNumber, String label) {
+            g.setColor(color);
+            g.fillRect(0, lineNumber * LINE, sqSize, sqSize);
+            g.setColor(Color.BLACK);
+            g.drawString(label, (int) (sqSize * 1.5), lineNumber * LINE + sqSize);
         }
 
         public synchronized void notifyRegionResized(int width, int height) {
