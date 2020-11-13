@@ -128,7 +128,7 @@ public class RegionStat {
     }
 
     private Color mixAlpha(Color c, float alpha) {
-        return new Color(c.getRed(), c.getGreen(), c.getBlue(), (int)(alpha * 200 + 55));
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), (int)(alpha * 100 + 55));
     }
 
     public void render(Graphics g, int x, int y, int width, int height) {
@@ -217,7 +217,7 @@ public class RegionStat {
             g.setColor(borderColor);
             g.drawRect(x, y, width, height);
             g.setColor(Color.BLACK);
-            g.drawString(String.valueOf(age), x + 2, y + height - 2);
+            g.drawString(String.valueOf(liveLvl), x + 2, y + height - 2);
         }
     }
 
