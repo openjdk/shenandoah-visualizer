@@ -34,8 +34,6 @@ public enum Phase {
 
     UPDATE_REFS,
 
-    TRAVERSAL,
-
     UNKNOWN,
 
 }

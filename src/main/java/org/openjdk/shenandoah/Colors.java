@@ -32,7 +32,6 @@ public class Colors {
     static final Color TIMELINE_MARK        = new Color(100, 100, 0);
     static final Color TIMELINE_EVACUATING  = new Color(100, 0, 0);
     static final Color TIMELINE_UPDATEREFS  = new Color(0, 100, 100);
-    static final Color TIMELINE_TRAVERSAL   = TIMELINE_EVACUATING;
 
     static final Color SHARED_ALLOC           = new Color(0, 250, 250);
     static final Color SHARED_ALLOC_BORDER    = new Color(0, 191, 190);
