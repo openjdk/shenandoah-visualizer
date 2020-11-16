@@ -50,6 +50,7 @@ public class RegionStat {
     private final float gclabLvl;
     private final float sharedLvl;
     private final long age;
+    private final boolean showLivenessDetail;
 
     // This constructor is for the legend.
     public RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float sharedLvl, RegionState state) {
@@ -61,6 +62,7 @@ public class RegionStat {
         this.sharedLvl = sharedLvl;
         this.state = state;
         this.age = -1;
+        this.showLivenessDetail = Boolean.getBoolean("show.liveness");
     }
 
     // Also only used for the legend.
@@ -73,9 +75,12 @@ public class RegionStat {
         this.sharedLvl = 0;
         this.state = state;
         this.age = age;
+        this.showLivenessDetail = Boolean.getBoolean("show.liveness");
     }
 
     public RegionStat(long data, String matrix) {
+        this.showLivenessDetail = Boolean.getBoolean("show.liveness");
+
         usedLvl  = ((data >>> USED_SHIFT)  & PERCENT_MASK) / 100F;
         liveLvl  = ((data >>> LIVE_SHIFT)  & PERCENT_MASK) / 100F;
         tlabLvl  = ((data >>> TLAB_SHIFT)  & PERCENT_MASK) / 100F;
@@ -216,8 +221,10 @@ public class RegionStat {
             Color borderColor = getColorForAge();
             g.setColor(borderColor);
             g.drawRect(x, y, width, height);
-            g.setColor(Color.BLACK);
-            g.drawString(String.valueOf(liveLvl), x + 2, y + height - 2);
+            if (showLivenessDetail) {
+                g.setColor(Color.BLACK);
+                g.drawString(String.valueOf(liveLvl), x + 2, y + height - 2);
+            }
         }
     }
 
