@@ -4,6 +4,8 @@ Shenandoah Visualizer is the low-level tool to visualize the internal state of
 [Shenandoah GC](https://wiki.openjdk.java.net/display/Shenandoah). It relies on
 jvmstat interface to pull the data from the live JVM.
 
+![Sample Shenandoah Visualizer Screenshot](images/sample-screenshot.png)
+
 ## Building
 
 Build as any Maven-driven Java project:
