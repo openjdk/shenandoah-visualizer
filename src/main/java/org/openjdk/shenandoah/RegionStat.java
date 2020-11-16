@@ -24,10 +24,8 @@
  */
 package org.openjdk.shenandoah;
 
-import javax.swing.plaf.synth.Region;
 import java.awt.*;
 import java.util.BitSet;
-import java.util.EnumSet;
 
 import static org.openjdk.shenandoah.Colors.*;
 
