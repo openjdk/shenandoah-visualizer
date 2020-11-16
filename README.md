@@ -13,16 +13,16 @@ Build as any Maven-driven Java project:
 
 ## Usage
 
- 1. Start JVM with with these additional flags:
+*Step 1.* Start target JVM with with these additional flags:
 
     $ java -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+ShenandoahRegionSampling ...
 
- 2. Figure out the process PID:
+*Step 2.* Figure out the target JVM PID:
 
     $ jps
 
- 3. Attach Visualizer:
+*Step 3.* Attach the Visualizer:
 
     $ java -Xbootclasspath/p:<path-to-tools.jar> -jar visualizer.jar local://<pid>
 
-tools.jar is usually at `$JAVA_HOME/lib`
+`tools.jar` can usually be found at `$JAVA_HOME/lib`
