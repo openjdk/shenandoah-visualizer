@@ -26,6 +26,7 @@ package org.openjdk.shenandoah;
 
 import java.awt.*;
 import java.util.BitSet;
+import java.util.Objects;
 
 import static org.openjdk.shenandoah.Colors.*;
 
@@ -147,26 +148,24 @@ public class RegionStat {
                     int tlabWidth = (int) (width * tlabLvl);
                     int gclabWidth = (int) (width * gclabLvl);
 
-                    int h = height;
-                    int ly = y + (height - h);
                     int lx = x;
 
                     g.setColor(mixAlpha(TLAB_ALLOC, liveLvl));
-                    g.fillRect(lx, ly, tlabWidth, h);
+                    g.fillRect(lx, y, tlabWidth, height);
                     g.setColor(TLAB_ALLOC_BORDER);
-                    g.drawRect(lx, ly, tlabWidth, h);
+                    g.drawRect(lx, y, tlabWidth, height);
 
                     lx += tlabWidth;
                     g.setColor(mixAlpha(GCLAB_ALLOC, liveLvl));
-                    g.fillRect(lx, ly, gclabWidth, h);
+                    g.fillRect(lx, y, gclabWidth, height);
                     g.setColor(GCLAB_ALLOC_BORDER);
-                    g.drawRect(lx, ly, gclabWidth, h);
+                    g.drawRect(lx, y, gclabWidth, height);
 
                     lx += gclabWidth;
                     g.setColor(mixAlpha(SHARED_ALLOC, liveLvl));
-                    g.fillRect(lx, ly, sharedWidth, h);
+                    g.fillRect(lx, y, sharedWidth, height);
                     g.setColor(SHARED_ALLOC_BORDER);
-                    g.drawRect(lx, ly, sharedWidth, h);
+                    g.drawRect(lx, y, sharedWidth, height);
                 }
                 break;
             }
@@ -250,7 +249,7 @@ public class RegionStat {
         if (Float.compare(that.tlabLvl, tlabLvl) != 0) return false;
         if (Float.compare(that.gclabLvl, gclabLvl) != 0) return false;
         if (!state.equals(that.state)) return false;
-        return incoming != null ? incoming.equals(that.incoming) : that.incoming == null;
+        return Objects.equals(incoming, that.incoming);
     }
 
     @Override

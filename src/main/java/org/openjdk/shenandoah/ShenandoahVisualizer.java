@@ -68,7 +68,7 @@ class ShenandoahVisualizer {
         JPanel legendPanel = new JPanel() {
             @Override
             public void paint(Graphics g) {
-                render.renderLegend(g);
+                Render.renderLegend(g);
             }
         };
 
