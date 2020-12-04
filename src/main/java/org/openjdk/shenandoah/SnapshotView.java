@@ -35,6 +35,7 @@ public class SnapshotView {
     private final long humongous;
     private final long collectionSet;
     private final long trash;
+    private final boolean youngActive;
 
     public SnapshotView(Snapshot s) {
         time = s.time();
@@ -46,6 +47,7 @@ public class SnapshotView {
         humongous = s.humongous();
         collectionSet = s.collectionSet();
         trash = s.trash();
+        youngActive = s.isYoungActive();
     }
 
     public Phase phase() {
@@ -84,4 +86,7 @@ public class SnapshotView {
         return live;
     }
 
+    public boolean isYoungActive() {
+        return youngActive;
+    }
 }

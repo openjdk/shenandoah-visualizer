@@ -223,13 +223,13 @@ class ShenandoahVisualizer {
                         g.setColor(Colors.TIMELINE_IDLE);
                         break;
                     case MARKING:
-                        g.setColor(Colors.TIMELINE_MARK);
+                        g.setColor(s.isYoungActive() ? Colors.YOUNG_TIMELINE_MARK : Colors.GLOBAL_TIMELINE_MARK);
                         break;
                     case EVACUATING:
-                        g.setColor(Colors.TIMELINE_EVACUATING);
+                        g.setColor(s.isYoungActive() ? Colors.YOUNG_TIMELINE_EVACUATING : Colors.GLOBAL_TIMELINE_EVACUATING);
                         break;
                     case UPDATE_REFS:
-                        g.setColor(Colors.TIMELINE_UPDATEREFS);
+                        g.setColor(s.isYoungActive() ? Colors.YOUNG_TIMELINE_UPDATEREFS : Colors.GLOBAL_TIMELINE_UPDATEREFS);
                         break;
                     default:
                         g.setColor(Color.WHITE);
@@ -364,11 +364,17 @@ class ShenandoahVisualizer {
             }
         }
 
+        private String affiliation() {
+            return snapshot.isYoungActive() ? "Young" : "Global";
+        }
+
         public synchronized void renderStats(Graphics g) {
+            String mode = affiliation();
             String status = "";
             switch (snapshot.phase()) {
                 case IDLE:
                     status += " (idle)";
+                    mode = "";
                     break;
                 case MARKING:
                     status += " (marking)";
@@ -382,18 +388,23 @@ class ShenandoahVisualizer {
             }
 
             final int K = 1024;
+            int line = 0;
 
             g.setColor(Color.BLACK);
-            g.drawString("Status: " + status, 0, 1 * LINE);
-            g.drawString("Total: " + (snapshot.total() / K) + " MB", 0, 2 * LINE);
-            g.drawString("Used: " + (snapshot.used() / K) + " MB", 0, 3 * LINE);
-            g.drawString("Live: " + (snapshot.live() / K) + " MB", 0, 4 * LINE);
+            g.drawString("Status: " + status, 0, ++line * LINE);
+            g.drawString("Mode: " + mode, 0, ++line * LINE);
+            g.drawString("Total: " + (snapshot.total() / K) + " MB", 0, ++line * LINE);
+            g.drawString("Used: " + (snapshot.used() / K) + " MB", 0, ++line * LINE);
+            g.drawString("Live: " + (snapshot.live() / K) + " MB", 0, ++line * LINE);
 
-            final int sqSize = LINE;
+            renderTimeLineLegendItem(g, LINE, Colors.YOUNG_TIMELINE_MARK, ++line, "Young Marking");
+            renderTimeLineLegendItem(g, LINE, Colors.YOUNG_TIMELINE_EVACUATING, ++line, "Young Evacuation");
+            renderTimeLineLegendItem(g, LINE, Colors.YOUNG_TIMELINE_UPDATEREFS, ++line, "Young Update References");
 
-            renderTimeLineLegendItem(g, sqSize, Colors.TIMELINE_MARK, 5, "Marking");
-            renderTimeLineLegendItem(g, sqSize, Colors.TIMELINE_EVACUATING, 6, "Evacuation");
-            renderTimeLineLegendItem(g, sqSize, Colors.TIMELINE_UPDATEREFS, 7, "Update References");
+            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL_TIMELINE_MARK, ++line, "Global Marking");
+            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL_TIMELINE_EVACUATING, ++line, "Global Evacuation");
+            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL_TIMELINE_UPDATEREFS, ++line, "Global Update References");
+
         }
 
         private void renderTimeLineLegendItem(Graphics g, int sqSize, Color color, int lineNumber, String label) {

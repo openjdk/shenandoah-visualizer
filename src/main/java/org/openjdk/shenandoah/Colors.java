@@ -29,9 +29,14 @@ import java.awt.*;
 public class Colors {
 
     static final Color TIMELINE_IDLE        = Color.BLACK;
-    static final Color TIMELINE_MARK        = new Color(190, 190, 0);
-    static final Color TIMELINE_EVACUATING  = new Color(170, 0, 0);
-    static final Color TIMELINE_UPDATEREFS  = new Color(0, 200, 200);
+
+    static final Color GLOBAL_TIMELINE_MARK = new Color(227, 196, 181);
+    static final Color GLOBAL_TIMELINE_EVACUATING = new Color(203, 145, 115);
+    static final Color GLOBAL_TIMELINE_UPDATEREFS = new Color(142, 68, 61);
+
+    static final Color YOUNG_TIMELINE_MARK = new Color(207, 221, 231);
+    static final Color YOUNG_TIMELINE_EVACUATING = new Color(168, 194, 86);
+    static final Color YOUNG_TIMELINE_UPDATEREFS = new Color(51, 115, 87);
 
     static final Color SHARED_ALLOC           = new Color(0, 250, 250);
     static final Color SHARED_ALLOC_BORDER    = new Color(0, 191, 190);
