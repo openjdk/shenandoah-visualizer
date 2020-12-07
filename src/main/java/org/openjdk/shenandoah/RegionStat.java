@@ -29,19 +29,23 @@ import java.util.BitSet;
 import java.util.Objects;
 
 import static org.openjdk.shenandoah.Colors.*;
+import static org.openjdk.shenandoah.RegionAffiliation.*;
 
 public class RegionStat {
 
-    private static final int PERCENT_MASK = 0x7f;
-    private static final int FLAGS_MASK   = 0x3f;
+    private static final int PERCENT_MASK      = 0x7f;
+    private static final int AGE_MASK          = 0x0f;
+    private static final int AFFILIATION_MASK  = 0x03;
+    private static final int STATUS_MASK       = 0x3f;
 
-    private static final int USED_SHIFT       = 0;
-    private static final int LIVE_SHIFT       = 7;
-    private static final int TLAB_SHIFT       = 14;
-    private static final int GCLAB_SHIFT      = 21;
-    private static final int SHARED_SHIFT     = 28;
-    private static final int GENERATION_SHIFT = 51;
-    private static final int FLAGS_SHIFT      = 58;
+    private static final int USED_SHIFT        = 0;
+    private static final int LIVE_SHIFT        = 7;
+    private static final int TLAB_SHIFT        = 14;
+    private static final int GCLAB_SHIFT       = 21;
+    private static final int SHARED_SHIFT      = 28;
+    private static final int AGE_SHIFT         = 51;
+    private static final int AFFILIATION_SHIFT = 56;
+    private static final int FLAGS_SHIFT       = 58;
 
     private final RegionState state;
     private final BitSet incoming;
@@ -51,7 +55,10 @@ public class RegionStat {
     private final float gclabLvl;
     private final float sharedLvl;
     private final long age;
+    private final RegionAffiliation affiliation;
     private final boolean showLivenessDetail;
+    
+    private static final Stroke STROKE = new BasicStroke(2);
 
     // This constructor is for the legend.
     public RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float sharedLvl, RegionState state) {
@@ -63,6 +70,7 @@ public class RegionStat {
         this.sharedLvl = sharedLvl;
         this.state = state;
         this.age = -1;
+        this.affiliation = YOUNG;
         this.showLivenessDetail = Boolean.getBoolean("show.liveness");
     }
 
@@ -76,6 +84,7 @@ public class RegionStat {
         this.sharedLvl = 0;
         this.state = state;
         this.age = age;
+        this.affiliation = YOUNG;
         this.showLivenessDetail = Boolean.getBoolean("show.liveness");
     }
 
@@ -88,11 +97,13 @@ public class RegionStat {
         gclabLvl = ((data >>> GCLAB_SHIFT) & PERCENT_MASK) / 100F;
         sharedLvl = ((data >>> SHARED_SHIFT) & PERCENT_MASK) / 100F;
 
-        age = ((data >>> GENERATION_SHIFT) & FLAGS_MASK);
-        long stat = (data >>> FLAGS_SHIFT) & FLAGS_MASK;
-        state = RegionState.fromOrdinal((int) stat);
+        age = ((data >>> AGE_SHIFT) & AGE_MASK);
+        affiliation = RegionAffiliation.fromOrdinal((int) (data >>> AFFILIATION_SHIFT) & AFFILIATION_MASK);
+        state = RegionState.fromOrdinal((int) (data >>> FLAGS_SHIFT) & STATUS_MASK);
 
-        if (!matrix.isEmpty()) {
+        if (matrix.isEmpty()) {
+            this.incoming = null;
+        } else {
             this.incoming = new BitSet();
             int idx = 0;
             for (char c : matrix.toCharArray()) {
@@ -104,8 +115,6 @@ public class RegionStat {
                 incoming.set(idx++, (c & (1 << 4)) > 0);
                 incoming.set(idx++, (c & (1 << 5)) > 0);
             }
-        } else {
-            this.incoming = null;
         }
     }
 
@@ -137,9 +146,36 @@ public class RegionStat {
         return new Color(c.getRed(), c.getGreen(), c.getBlue(), (int)(alpha * 100 + 55));
     }
 
-    public void render(Graphics g, int x, int y, int width, int height) {
+    private void drawShape(Graphics2D g, int x, int y, int width, int height) {
+        switch (affiliation) {
+            case FREE:
+                break;
+            case YOUNG:
+                g.drawRect(x, y, width, height);
+                break;
+            case OLD:
+                g.drawOval(x, y, width, height);
+                break;
+        }
+    }
+
+    private void fillShape(Graphics2D g, int x, int y, int width, int height) {
+        switch (affiliation) {
+            case FREE:
+                break;
+            case YOUNG:
+                g.fillRect(x, y, width, height);
+                break;
+            case OLD:
+                g.fillOval(x, y, width, height);
+                break;
+        }
+    }
+
+    public void render(Graphics graphics, int x, int y, int width, int height) {
+        Graphics2D g = (Graphics2D) graphics;
         g.setColor(Color.WHITE);
-        g.fillRect(x, y, width, height);
+        fillShape(g, x, y, width, height);
 
         switch (state) {
             case REGULAR: {
@@ -151,28 +187,28 @@ public class RegionStat {
                     int lx = x;
 
                     g.setColor(mixAlpha(TLAB_ALLOC, liveLvl));
-                    g.fillRect(lx, y, tlabWidth, height);
+                    fillShape(g, lx, y, tlabWidth, height);
                     g.setColor(TLAB_ALLOC_BORDER);
-                    g.drawRect(lx, y, tlabWidth, height);
+                    drawShape(g, lx, y, tlabWidth, height);
 
                     lx += tlabWidth;
                     g.setColor(mixAlpha(GCLAB_ALLOC, liveLvl));
-                    g.fillRect(lx, y, gclabWidth, height);
+                    fillShape(g, lx, y, gclabWidth, height);
                     g.setColor(GCLAB_ALLOC_BORDER);
-                    g.drawRect(lx, y, gclabWidth, height);
+                    drawShape(g, lx, y, gclabWidth, height);
 
                     lx += gclabWidth;
                     g.setColor(mixAlpha(SHARED_ALLOC, liveLvl));
-                    g.fillRect(lx, y, sharedWidth, height);
+                    fillShape(g, lx, y, sharedWidth, height);
                     g.setColor(SHARED_ALLOC_BORDER);
-                    g.drawRect(lx, y, sharedWidth, height);
+                    drawShape(g, lx, y, sharedWidth, height);
                 }
                 break;
             }
             case PINNED: {
                 int usedWidth = (int) (width * usedLvl);
                 g.setColor(Colors.LIVE_PINNED);
-                g.fillRect(x, y, usedWidth, height);
+                fillShape(g, x, y, usedWidth, height);
                 break;
             }
             case CSET:
@@ -181,11 +217,11 @@ public class RegionStat {
             case PINNED_HUMONGOUS: {
                 int usedWidth = (int) (width * usedLvl);
                 g.setColor(USED);
-                g.fillRect(x, y, usedWidth, height);
+                fillShape(g, x, y, usedWidth, height);
 
                 int liveWidth = (int) (width * liveLvl);
                 g.setColor(selectLive(state));
-                g.fillRect(x, y, liveWidth, height);
+                fillShape(g, x, y, liveWidth, height);
 
                 g.setColor(selectLive(state));
                 g.drawLine(x + liveWidth, y, x + liveWidth, y + height);
@@ -217,9 +253,9 @@ public class RegionStat {
         }
 
         if (age > -1) {
-            Color borderColor = getColorForAge();
-            g.setColor(borderColor);
-            g.drawRect(x, y, width, height);
+            g.setColor(getColorForAge());
+            g.setStroke(STROKE);
+            drawShape(g, x, y, width, height);
             if (showLivenessDetail) {
                 g.setColor(Color.BLACK);
                 g.drawString(String.valueOf(liveLvl), x + 2, y + height - 2);

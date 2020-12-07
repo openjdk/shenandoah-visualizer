@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Amazon.com, Inc. or its affiliates All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,32 +24,18 @@
  */
 package org.openjdk.shenandoah;
 
-public enum RegionState {
-    EMPTY_UNCOMMITTED,
-    EMPTY_COMMITTED,
-    REGULAR,
-    HUMONGOUS,
-    CSET,
-    PINNED,
-    TRASH,
-    PINNED_CSET,
-    PINNED_HUMONGOUS;
+public enum RegionAffiliation {
+    FREE,
+    YOUNG,
+    OLD;
 
-    static RegionState fromOrdinal(int idx) {
-        switch (idx) {
-            case 0: return EMPTY_UNCOMMITTED;
-            case 1: return EMPTY_COMMITTED;
-            case 2: return REGULAR;
-            case 3: return HUMONGOUS;
-            case 4: return HUMONGOUS;
-            case 5: return CSET;
-            case 6: return PINNED;
-            case 7: return TRASH;
-            case 8: return PINNED_CSET;
-            case 9: return PINNED_HUMONGOUS;
+    static RegionAffiliation fromOrdinal(int ordinal) {
+        switch (ordinal) {
+            case 0: return FREE;
+            case 1: return YOUNG;
+            case 2: return OLD;
             default:
-                throw new IllegalStateException("Unhandled ordinal: " + idx);
+                throw new IllegalStateException("Unhandled ordinal: " + ordinal);
         }
     }
-
 }

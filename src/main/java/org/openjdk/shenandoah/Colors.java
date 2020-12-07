@@ -60,12 +60,12 @@ public class Colors {
     static final Color LIVE_BORDER          = new Color(0, 100, 0);
     static final Color BORDER               = new Color(150, 150, 150);
 
-    static final Color AGE_0 = new Color(255, 175, 0);
-    static final Color AGE_1 = Color.ORANGE;
-    static final Color AGE_2 = Color.RED;
-    static final Color AGE_3 = Color.MAGENTA;
-    static final Color AGE_4 = new Color(140, 60,245);
-    static final Color AGE_5 = Color.BLUE;
+    static final Color AGE_0 = Color.LIGHT_GRAY;
+    static final Color AGE_1 = Color.YELLOW;
+    static final Color AGE_2 = Color.ORANGE;
+    static final Color AGE_3 = Color.RED;
+    static final Color AGE_4 = Color.BLUE;
+    static final Color AGE_5 = Color.BLACK;
 
     static final Color[] AGE_COLORS = {AGE_0, AGE_1, AGE_2, AGE_3, AGE_4};
 }
