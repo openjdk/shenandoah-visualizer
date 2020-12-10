@@ -36,6 +36,8 @@ public class SnapshotView {
     private final long collectionSet;
     private final long trash;
     private final boolean youngActive;
+    private final boolean degenActive;
+    private final boolean fullActive;
 
     public SnapshotView(Snapshot s) {
         time = s.time();
@@ -48,6 +50,8 @@ public class SnapshotView {
         collectionSet = s.collectionSet();
         trash = s.trash();
         youngActive = s.isYoungActive();
+        degenActive = s.isDegenActive();
+        fullActive = s.isFullActive();
     }
 
     public Phase phase() {
@@ -88,5 +92,13 @@ public class SnapshotView {
 
     public boolean isYoungActive() {
         return youngActive;
+    }
+
+    public boolean isDegenActive() {
+        return degenActive;
+    }
+
+    public boolean isFullActive() {
+        return fullActive;
     }
 }

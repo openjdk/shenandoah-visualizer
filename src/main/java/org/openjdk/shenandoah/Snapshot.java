@@ -33,6 +33,8 @@ public class Snapshot {
     private final List<RegionStat> stats;
     private final Phase phase;
     private final boolean youngActive;
+    private final boolean degenActive;
+    private final boolean fullActive;
 
     public Snapshot(long time, long regionSize, List<RegionStat> stats, int status) {
         this.time = time;
@@ -40,6 +42,8 @@ public class Snapshot {
         this.stats = stats;
 
         this.youngActive = ((status & 0x8) >> 3) == 1;
+        this.degenActive = ((status & 0x10) >> 4) == 1;
+        this.fullActive  = ((status & 0x20) >> 5) == 1;
         switch (status & 0x7) {
             case 0x0:
                 this.phase = Phase.IDLE;
@@ -65,6 +69,14 @@ public class Snapshot {
 
     public boolean isYoungActive() {
         return youngActive;
+    }
+
+    public boolean isDegenActive() {
+        return degenActive;
+    }
+
+    public boolean isFullActive() {
+        return fullActive;
     }
 
     public RegionStat get(int i) {

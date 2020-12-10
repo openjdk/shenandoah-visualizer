@@ -38,6 +38,10 @@ public class Colors {
     static final Color YOUNG_TIMELINE_EVACUATING = new Color(168, 194, 86);
     static final Color YOUNG_TIMELINE_UPDATEREFS = new Color(51, 115, 87);
 
+    static final Color DEGENERATE_YOUNG  = Color.ORANGE;
+    static final Color DEGENERATE_GLOBAL = Color.MAGENTA;
+    static final Color FULL              = Color.RED;
+    
     static final Color SHARED_ALLOC           = new Color(0, 250, 250);
     static final Color SHARED_ALLOC_BORDER    = new Color(0, 191, 190);
     static final Color TLAB_ALLOC           = new Color(0, 200, 0);

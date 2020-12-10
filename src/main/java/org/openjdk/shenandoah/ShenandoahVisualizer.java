@@ -169,6 +169,7 @@ class ShenandoahVisualizer {
 
         int regionWidth, regionHeight;
         int graphWidth, graphHeight;
+        final int STEP_X = 2;
 
         final LinkedList<SnapshotView> lastSnapshots;
         volatile Snapshot snapshot;
@@ -186,13 +187,13 @@ class ShenandoahVisualizer {
             if (!cur.equals(snapshot)) {
                 snapshot = cur;
                 lastSnapshots.add(new SnapshotView(cur));
-                if (lastSnapshots.size() > graphWidth) {
+                if (lastSnapshots.size() > graphWidth / STEP_X) {
                     lastSnapshots.removeFirst();
                 }
                 frame.repaint();
             }
         }
-
+        
         public synchronized void renderGraph(Graphics g) {
             if (lastSnapshots.size() < 2) return;
 
@@ -212,31 +213,37 @@ class ShenandoahVisualizer {
 
             long firstTime = lastSnapshots.getFirst().time();
             long lastTime = lastSnapshots.getLast().time();
-            double stepX = 1D * Math.min(lastSnapshots.size(), graphWidth) / (lastTime - firstTime);
+            double stepX = (double) STEP_X * Math.min(lastSnapshots.size(), graphWidth) / (lastTime - firstTime);
 
             for (int i = 0; i < lastSnapshots.size(); i++) {
                 SnapshotView s = lastSnapshots.get(i);
                 int x = (int) Math.round((s.time() - firstTime) * stepX);
 
-                switch (s.phase()) {
-                    case IDLE:
-                        g.setColor(Colors.TIMELINE_IDLE);
-                        break;
-                    case MARKING:
-                        g.setColor(s.isYoungActive() ? Colors.YOUNG_TIMELINE_MARK : Colors.GLOBAL_TIMELINE_MARK);
-                        break;
-                    case EVACUATING:
-                        g.setColor(s.isYoungActive() ? Colors.YOUNG_TIMELINE_EVACUATING : Colors.GLOBAL_TIMELINE_EVACUATING);
-                        break;
-                    case UPDATE_REFS:
-                        g.setColor(s.isYoungActive() ? Colors.YOUNG_TIMELINE_UPDATEREFS : Colors.GLOBAL_TIMELINE_UPDATEREFS);
-                        break;
-                    default:
-                        g.setColor(Color.WHITE);
+                if (s.isFullActive()) {
+                    g.setColor(Colors.FULL);                    
+                } else if (s.isDegenActive()) {
+                    g.setColor(s.isYoungActive() ? Colors.DEGENERATE_YOUNG : Colors.DEGENERATE_GLOBAL);     
+                } else {
+                    switch (s.phase()) {
+                        case IDLE:
+                            g.setColor(Colors.TIMELINE_IDLE);
+                            break;
+                        case MARKING:
+                            g.setColor(s.isYoungActive() ? Colors.YOUNG_TIMELINE_MARK : Colors.GLOBAL_TIMELINE_MARK);
+                            break;
+                        case EVACUATING:
+                            g.setColor(s.isYoungActive() ? Colors.YOUNG_TIMELINE_EVACUATING : Colors.GLOBAL_TIMELINE_EVACUATING);
+                            break;
+                        case UPDATE_REFS:
+                            g.setColor(s.isYoungActive() ? Colors.YOUNG_TIMELINE_UPDATEREFS : Colors.GLOBAL_TIMELINE_UPDATEREFS);
+                            break;
+                        default:
+                            g.setColor(Color.WHITE);
+                    }
                 }
-
+                
                 // Draw these events in both bands.
-                g.drawRect(x, 0, 1, bandHeight);
+                //g.drawRect(x, 0, 1, bandHeight);
                 g.drawRect(x, bandHeight + pad, 1, bandHeight);
 
                 // Draw these in the upper band.
@@ -364,12 +371,18 @@ class ShenandoahVisualizer {
             }
         }
 
-        private String affiliation() {
+        private String collectionMode() {
+            if (snapshot.isFullActive()) {
+                return "Full";
+            }
+            if (snapshot.isDegenActive()) {
+                return snapshot.isYoungActive() ? "Degenerate Young" : "Degenerate Global";
+            }
             return snapshot.isYoungActive() ? "Young" : "Global";
         }
 
         public synchronized void renderStats(Graphics g) {
-            String mode = affiliation();
+            String mode = collectionMode();
             String status = "";
             switch (snapshot.phase()) {
                 case IDLE:
@@ -384,6 +397,9 @@ class ShenandoahVisualizer {
                     break;
                 case UPDATE_REFS:
                     status += " (updating refs)";
+                    break;
+                case UNKNOWN:
+                    status += " (unknown)";
                     break;
             }
 
