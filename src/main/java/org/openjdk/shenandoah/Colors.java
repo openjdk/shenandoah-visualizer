@@ -42,7 +42,7 @@ public class Colors {
     static final Color DEGENERATE_GLOBAL = Color.MAGENTA;
     static final Color FULL              = Color.RED;
     
-    static final Color SHARED_ALLOC           = new Color(0, 250, 250);
+    static final Color SHARED_ALLOC           = new Color(0, 150, 250);
     static final Color SHARED_ALLOC_BORDER    = new Color(0, 191, 190);
     static final Color TLAB_ALLOC           = new Color(0, 200, 0);
     static final Color TLAB_ALLOC_BORDER    = new Color(0, 100, 0);
