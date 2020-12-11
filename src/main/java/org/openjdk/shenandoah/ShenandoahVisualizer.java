@@ -426,6 +426,9 @@ class ShenandoahVisualizer {
             renderTimeLineLegendItem(g, LINE, Colors.GLOBAL_TIMELINE_EVACUATING, ++line, "Global Evacuation");
             renderTimeLineLegendItem(g, LINE, Colors.GLOBAL_TIMELINE_UPDATEREFS, ++line, "Global Update References");
 
+            renderTimeLineLegendItem(g, LINE, Colors.DEGENERATE_YOUNG, ++line, "Degenerated Young");
+            renderTimeLineLegendItem(g, LINE, Colors.DEGENERATE_GLOBAL, ++line, "Degenerated Global");
+            renderTimeLineLegendItem(g, LINE, Colors.FULL, ++line, "Full");
         }
 
         private void renderTimeLineLegendItem(Graphics g, int sqSize, Color color, int lineNumber, String label) {
