@@ -22,6 +22,8 @@
  */
 package org.openjdk.shenandoah;
 
+import org.HdrHistogram.Histogram;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
@@ -413,10 +415,10 @@ class ShenandoahVisualizer {
             g.drawString("Used (White): " + (snapshot.used() / K) + " MB", 0, ++line * LINE);
             g.drawString("Live (Green): " + (snapshot.live() / K) + " MB", 0, ++line * LINE);
 
-//            Histogram histogram = snapshot.getSafepointTime();
-//            String pausesText = String.format("GC Pauses: P100=%d, P95=%d, P90=%d",
-//                    histogram.getMaxValue(), histogram.getValueAtPercentile(95), histogram.getValueAtPercentile(90));
-//            g.drawString(pausesText, 0, ++line * LINE);
+            Histogram histogram = snapshot.getSafepointTime();
+            String pausesText = String.format("GC Pauses: P100=%d, P95=%d, P90=%d",
+                    histogram.getMaxValue(), histogram.getValueAtPercentile(95), histogram.getValueAtPercentile(90));
+            g.drawString(pausesText, 0, ++line * LINE);
 
             renderTimeLineLegendItem(g, LINE, Colors.YOUNG_TIMELINE_MARK, ++line, "Young Marking");
             renderTimeLineLegendItem(g, LINE, Colors.YOUNG_TIMELINE_EVACUATING, ++line, "Young Evacuation");

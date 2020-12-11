@@ -24,6 +24,8 @@
  */
 package org.openjdk.shenandoah;
 
+import org.HdrHistogram.Histogram;
+
 import java.util.List;
 
 public class Snapshot {
@@ -35,15 +37,18 @@ public class Snapshot {
     private final boolean youngActive;
     private final boolean degenActive;
     private final boolean fullActive;
+    private final Histogram histogram;
 
-    public Snapshot(long time, long regionSize, List<RegionStat> stats, int status) {
+    public Snapshot(long time, long regionSize, List<RegionStat> stats, int status, Histogram histogram) {
         this.time = time;
         this.regionSize = regionSize;
         this.stats = stats;
+        this.histogram = histogram;
 
         this.youngActive = ((status & 0x8) >> 3) == 1;
         this.degenActive = ((status & 0x10) >> 4) == 1;
         this.fullActive  = ((status & 0x20) >> 5) == 1;
+
         switch (status & 0x7) {
             case 0x0:
                 this.phase = Phase.IDLE;
@@ -65,6 +70,10 @@ public class Snapshot {
 
     public Phase phase() {
         return phase;
+    }
+
+    public Histogram getSafepointTime() {
+        return histogram;
     }
 
     public boolean isYoungActive() {
