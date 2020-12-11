@@ -386,20 +386,20 @@ class ShenandoahVisualizer {
             String status = "";
             switch (snapshot.phase()) {
                 case IDLE:
-                    status += " (idle)";
+                    status += " Idle";
                     mode = "";
                     break;
                 case MARKING:
-                    status += " (marking)";
+                    status += " Marking";
                     break;
                 case EVACUATING:                                                                                
-                    status += " (evacuating)";
+                    status += " Evacuating";
                     break;
                 case UPDATE_REFS:
-                    status += " (updating refs)";
+                    status += " Updating Refs";
                     break;
                 case UNKNOWN:
-                    status += " (unknown)";
+                    status += " Unknown";
                     break;
             }
 
@@ -410,8 +410,13 @@ class ShenandoahVisualizer {
             g.drawString("Status: " + status, 0, ++line * LINE);
             g.drawString("Mode: " + mode, 0, ++line * LINE);
             g.drawString("Total: " + (snapshot.total() / K) + " MB", 0, ++line * LINE);
-            g.drawString("Used: " + (snapshot.used() / K) + " MB", 0, ++line * LINE);
-            g.drawString("Live: " + (snapshot.live() / K) + " MB", 0, ++line * LINE);
+            g.drawString("Used (White): " + (snapshot.used() / K) + " MB", 0, ++line * LINE);
+            g.drawString("Live (Green): " + (snapshot.live() / K) + " MB", 0, ++line * LINE);
+
+//            Histogram histogram = snapshot.getSafepointTime();
+//            String pausesText = String.format("GC Pauses: P100=%d, P95=%d, P90=%d",
+//                    histogram.getMaxValue(), histogram.getValueAtPercentile(95), histogram.getValueAtPercentile(90));
+//            g.drawString(pausesText, 0, ++line * LINE);
 
             renderTimeLineLegendItem(g, LINE, Colors.YOUNG_TIMELINE_MARK, ++line, "Young Marking");
             renderTimeLineLegendItem(g, LINE, Colors.YOUNG_TIMELINE_EVACUATING, ++line, "Young Evacuation");
