@@ -299,6 +299,10 @@ public class RegionStat {
         return result;
     }
 
+    public RegionAffiliation affiliation() {
+        return affiliation;
+    }
+
     public float live() {
         return liveLvl;
     }

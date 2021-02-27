@@ -30,6 +30,8 @@ public class Colors {
 
     static final Color TIMELINE_IDLE        = Color.BLACK;
 
+    static final Color OLD_TIMELINE_MARK = new Color(120, 171, 210);
+
     static final Color GLOBAL_TIMELINE_MARK = new Color(227, 196, 181);
     static final Color GLOBAL_TIMELINE_EVACUATING = new Color(203, 145, 115);
     static final Color GLOBAL_TIMELINE_UPDATEREFS = new Color(142, 68, 61);

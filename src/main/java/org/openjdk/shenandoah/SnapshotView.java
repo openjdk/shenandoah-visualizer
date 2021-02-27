@@ -28,6 +28,7 @@ public class SnapshotView {
 
     private final long time;
     private final Phase phase;
+    private final Phase oldPhase;
     private final long total;
     private final long committed;
     private final long used;
@@ -36,6 +37,8 @@ public class SnapshotView {
     private final long collectionSet;
     private final long trash;
     private final boolean youngActive;
+    private final boolean oldActive;
+    private final boolean globalActive;
     private final boolean degenActive;
     private final boolean fullActive;
 
@@ -49,13 +52,20 @@ public class SnapshotView {
         humongous = s.humongous();
         collectionSet = s.collectionSet();
         trash = s.trash();
+        oldPhase = s.getOldPhase();
         youngActive = s.isYoungActive();
+        oldActive = s.isOldActive();
+        globalActive = s.isGlobalActive();
         degenActive = s.isDegenActive();
         fullActive = s.isFullActive();
     }
 
     public Phase phase() {
         return phase;
+    }
+
+    public Phase oldPhase() {
+        return oldPhase;
     }
 
     public long time() {
@@ -92,6 +102,14 @@ public class SnapshotView {
 
     public boolean isYoungActive() {
         return youngActive;
+    }
+
+    public boolean isOldActive() {
+        return oldActive;
+    }
+
+    public boolean isGlobalActive() {
+        return globalActive;
     }
 
     public boolean isDegenActive() {

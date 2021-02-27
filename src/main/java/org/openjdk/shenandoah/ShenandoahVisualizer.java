@@ -45,6 +45,7 @@ class ShenandoahVisualizer {
 
     private static final int INITIAL_WIDTH = 2000;
     private static final int INITIAL_HEIGHT = 1600;
+    private static final int KILO = 1024;
 
     public static void main(String[] args) throws Exception {
         String vmIdentifier = null;
@@ -226,6 +227,11 @@ class ShenandoahVisualizer {
                 } else if (s.isDegenActive()) {
                     g.setColor(s.isYoungActive() ? Colors.DEGENERATE_YOUNG : Colors.DEGENERATE_GLOBAL);     
                 } else {
+                    if (s.oldPhase() == Phase.OLD_MARKING) {
+                        g.setColor(Colors.OLD_TIMELINE_MARK);
+                        g.drawRect(x, 0, 1, bandHeight);
+                    }
+
                     switch (s.phase()) {
                         case IDLE:
                             g.setColor(Colors.TIMELINE_IDLE);
@@ -239,8 +245,6 @@ class ShenandoahVisualizer {
                         case UPDATE_REFS:
                             g.setColor(s.isYoungActive() ? Colors.YOUNG_TIMELINE_UPDATEREFS : Colors.GLOBAL_TIMELINE_UPDATEREFS);
                             break;
-                        default:
-                            g.setColor(Color.WHITE);
                     }
                 }
                 
@@ -393,6 +397,9 @@ class ShenandoahVisualizer {
                     break;
                 case MARKING:
                     status += " Marking";
+                    if (snapshot.getOldPhase() == Phase.OLD_MARKING) {
+                        status += " (Old)";
+                    }
                     break;
                 case EVACUATING:                                                                                
                     status += " Evacuating";
@@ -405,15 +412,14 @@ class ShenandoahVisualizer {
                     break;
             }
 
-            final int K = 1024;
             int line = 0;
 
             g.setColor(Color.BLACK);
             g.drawString("Status: " + status, 0, ++line * LINE);
             g.drawString("Mode: " + mode, 0, ++line * LINE);
-            g.drawString("Total: " + (snapshot.total() / K) + " MB", 0, ++line * LINE);
-            g.drawString("Used (White): " + (snapshot.used() / K) + " MB", 0, ++line * LINE);
-            g.drawString("Live (Green): " + (snapshot.live() / K) + " MB", 0, ++line * LINE);
+            g.drawString("Total: " + (snapshot.total() / KILO) + " MB", 0, ++line * LINE);
+            g.drawString(usageStatusLine(), 0, ++line * LINE);
+            g.drawString(liveStatusLine(), 0, ++line * LINE);
 
             Histogram histogram = snapshot.getSafepointTime();
             String pausesText = String.format("GC Pauses: P100=%d, P95=%d, P90=%d",
@@ -431,6 +437,20 @@ class ShenandoahVisualizer {
             renderTimeLineLegendItem(g, LINE, Colors.DEGENERATE_YOUNG, ++line, "Degenerated Young");
             renderTimeLineLegendItem(g, LINE, Colors.DEGENERATE_GLOBAL, ++line, "Degenerated Global");
             renderTimeLineLegendItem(g, LINE, Colors.FULL, ++line, "Full");
+        }
+
+        private String liveStatusLine() {
+            return "Live (Green): " +
+                    snapshot.live() / ShenandoahVisualizer.KILO + "/" +
+                    snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::live) / ShenandoahVisualizer.KILO + "/" +
+                    snapshot.generationStat(RegionAffiliation.OLD, RegionStat::live) / ShenandoahVisualizer.KILO + "MB";
+        }
+
+        private String usageStatusLine() {
+            return "Used (White): " +
+                    snapshot.used() / ShenandoahVisualizer.KILO + "/" +
+                    snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::used) / ShenandoahVisualizer.KILO + "/" +
+                    snapshot.generationStat(RegionAffiliation.OLD, RegionStat::used) / ShenandoahVisualizer.KILO + "MB";
         }
 
         private void renderTimeLineLegendItem(Graphics g, int sqSize, Color color, int lineNumber, String label) {

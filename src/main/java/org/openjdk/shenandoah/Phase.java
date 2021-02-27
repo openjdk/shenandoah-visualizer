@@ -25,15 +25,10 @@
 package org.openjdk.shenandoah;
 
 public enum Phase {
-
     IDLE,
-
     MARKING,
-
+    OLD_MARKING,
     EVACUATING,
-
     UPDATE_REFS,
-
-    UNKNOWN,
-
+    UNKNOWN
 }

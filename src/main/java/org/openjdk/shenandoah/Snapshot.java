@@ -27,14 +27,34 @@ package org.openjdk.shenandoah;
 import org.HdrHistogram.Histogram;
 
 import java.util.List;
+import java.util.function.Function;
 
 public class Snapshot {
+    public enum Generation {
+        YOUNG(0), OLD(1), GLOBAL(2);
+        public final int value;
+
+        Generation(int value) {
+            this.value = value;
+        }
+
+        static Generation fromStatus(int status) {
+            int generation = (status & 0xE0) >> 6;
+            switch (generation) {
+                case 0: return YOUNG;
+                case 1: return OLD;
+                case 2: return GLOBAL;
+                default: throw new IllegalArgumentException("Unknown generation: " + generation);
+            }
+        }
+    }
 
     private final long time;
     private final long regionSize;
     private final List<RegionStat> stats;
+    private final Generation activeGeneration;
     private final Phase phase;
-    private final boolean youngActive;
+    private final Phase oldPhase;
     private final boolean degenActive;
     private final boolean fullActive;
     private final Histogram histogram;
@@ -44,32 +64,43 @@ public class Snapshot {
         this.regionSize = regionSize;
         this.stats = stats;
         this.histogram = histogram;
-
-        this.youngActive = ((status & 0x8) >> 3) == 1;
         this.degenActive = ((status & 0x10) >> 4) == 1;
         this.fullActive  = ((status & 0x20) >> 5) == 1;
 
-        switch (status & 0x7) {
+        if ((status & 0x2) != 0) {
+            status &= ~0x2;
+            this.oldPhase = Phase.OLD_MARKING;
+        } else {
+            this.oldPhase = Phase.IDLE;
+        }
+
+        switch (status & 0xF) {
             case 0x0:
                 this.phase = Phase.IDLE;
                 break;
             case 0x1:
                 this.phase = Phase.MARKING;
                 break;
-            case 0x2:
+            case 0x4:
                 this.phase = Phase.EVACUATING;
                 break;
-            case 0x4:
+            case 0x8:
                 this.phase = Phase.UPDATE_REFS;
                 break;
             default:
                 this.phase = Phase.UNKNOWN;
                 break;
         }
+
+        this.activeGeneration  = Generation.fromStatus(status);
     }
 
     public Phase phase() {
         return phase;
+    }
+
+    public Phase getOldPhase() {
+        return oldPhase;
     }
 
     public Histogram getSafepointTime() {
@@ -77,7 +108,15 @@ public class Snapshot {
     }
 
     public boolean isYoungActive() {
-        return youngActive;
+        return phase != Phase.IDLE && activeGeneration == Generation.YOUNG;
+    }
+
+    public boolean isOldActive() {
+        return phase != Phase.IDLE && activeGeneration == Generation.OLD;
+    }
+
+    public boolean isGlobalActive() {
+        return phase != Phase.IDLE && activeGeneration == Generation.GLOBAL;
     }
 
     public boolean isDegenActive() {
@@ -128,6 +167,16 @@ public class Snapshot {
         long used = 0L;
         for (RegionStat rs : stats) {
             used += regionSize * rs.used();
+        }
+        return used;
+    }
+
+    public long generationStat(RegionAffiliation affiliation, Function<RegionStat, Float> stat) {
+        long used = 0L;
+        for (RegionStat rs : stats) {
+            if (rs.affiliation() == affiliation) {
+                used += regionSize * stat.apply(rs);
+            }
         }
         return used;
     }
