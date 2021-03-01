@@ -440,17 +440,17 @@ class ShenandoahVisualizer {
         }
 
         private String liveStatusLine() {
-            return "Live (Green): " +
-                    snapshot.live() / ShenandoahVisualizer.KILO + "/" +
-                    snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::live) / ShenandoahVisualizer.KILO + "/" +
-                    snapshot.generationStat(RegionAffiliation.OLD, RegionStat::live) / ShenandoahVisualizer.KILO + "MB";
+            return "Live (Green): MB: T:" +
+                    snapshot.live() / ShenandoahVisualizer.KILO + " Y:" +
+                    snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::live) / ShenandoahVisualizer.KILO + " O:" +
+                    snapshot.generationStat(RegionAffiliation.OLD, RegionStat::live) / ShenandoahVisualizer.KILO;
         }
 
         private String usageStatusLine() {
-            return "Used (White): " +
-                    snapshot.used() / ShenandoahVisualizer.KILO + "/" +
-                    snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::used) / ShenandoahVisualizer.KILO + "/" +
-                    snapshot.generationStat(RegionAffiliation.OLD, RegionStat::used) / ShenandoahVisualizer.KILO + "MB";
+            return "Used (White): MB: T:" +
+                    snapshot.used() / ShenandoahVisualizer.KILO + " Y:" +
+                    snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::used) / ShenandoahVisualizer.KILO + " O:" +
+                    snapshot.generationStat(RegionAffiliation.OLD, RegionStat::used) / ShenandoahVisualizer.KILO;
         }
 
         private void renderTimeLineLegendItem(Graphics g, int sqSize, Color color, int lineNumber, String label) {
