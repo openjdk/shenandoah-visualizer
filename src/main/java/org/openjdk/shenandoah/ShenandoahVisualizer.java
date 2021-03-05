@@ -126,12 +126,13 @@ class ShenandoahVisualizer {
         }
 
         {
+            statusPanel.setPreferredSize(new Dimension(25, 175));
             GridBagConstraints c = new GridBagConstraints();
             c.fill = GridBagConstraints.BOTH;
             c.gridx = 1;
             c.gridy = 0;
-            c.weightx = 1;
-            c.weighty = 1;
+            c.weightx = 0.5;
+            c.weighty = 0.5;
             c.insets = pad;
             frame.add(statusPanel, c);
         }
@@ -141,8 +142,8 @@ class ShenandoahVisualizer {
             c.fill = GridBagConstraints.BOTH;
             c.gridx = 1;
             c.gridy = 1;
-            c.weightx = 1;
-            c.weighty = 1;
+            c.weightx = 0.5;
+            c.weighty = 0.5;
             c.insets = pad;
             frame.add(legendPanel, c);
         }
@@ -331,7 +332,7 @@ class ShenandoahVisualizer {
             items.put("Age 12+", new RegionStat(REGULAR, 12));
             items.put("Age 15+", new RegionStat(REGULAR, 15));
 
-            int i = 1;
+            int i = 0;
             for (String key : items.keySet()) {
                 int y = (int) (i * sqSize * 1.5);
                 items.get(key).render(g, 0, y, sqSize, sqSize);
@@ -426,6 +427,8 @@ class ShenandoahVisualizer {
                     histogram.getMaxValue(), histogram.getValueAtPercentile(95), histogram.getValueAtPercentile(90));
             g.drawString(pausesText, 0, ++line * LINE);
 
+            line = 4;
+            renderTimeLineLegendItem(g, LINE, Colors.OLD_TIMELINE_MARK, ++line, "Old Marking");
             renderTimeLineLegendItem(g, LINE, Colors.YOUNG_TIMELINE_MARK, ++line, "Young Marking");
             renderTimeLineLegendItem(g, LINE, Colors.YOUNG_TIMELINE_EVACUATING, ++line, "Young Evacuation");
             renderTimeLineLegendItem(g, LINE, Colors.YOUNG_TIMELINE_UPDATEREFS, ++line, "Young Update References");
@@ -455,9 +458,10 @@ class ShenandoahVisualizer {
 
         private void renderTimeLineLegendItem(Graphics g, int sqSize, Color color, int lineNumber, String label) {
             g.setColor(color);
-            g.fillRect(0, lineNumber * LINE, sqSize, sqSize);
+            int y = (int) (lineNumber * LINE * 1.5);
+            g.fillRect(0, y, sqSize, sqSize);
             g.setColor(Color.BLACK);
-            g.drawString(label, (int) (sqSize * 1.5), lineNumber * LINE + sqSize);
+            g.drawString(label, (int) (sqSize * 1.5), y + sqSize);
         }
 
         public synchronized void notifyRegionResized(int width, int height) {
