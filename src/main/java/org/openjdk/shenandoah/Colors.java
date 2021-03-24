@@ -28,8 +28,10 @@ import java.awt.*;
 
 public class Colors {
 
+    static final Color OLD_TIMELINE_MARK = new Color(120, 171, 210);
+
     static final Color[] YOUNG = createColorFamily(Color.GREEN);
-    static final Color[] OLD = createColorFamily(Color.BLUE);
+    static final Color[] OLD = createColorFamily(new Color(185, 0, 250));
     static final Color[] GLOBAL = createColorFamily(Color.RED);
 
     private static Color[] createColorFamily(Color base) {
@@ -43,8 +45,6 @@ public class Colors {
     }
 
     static final Color TIMELINE_IDLE        = Color.BLACK;
-
-    static final Color OLD_TIMELINE_MARK = new Color(120, 171, 210);
 
     static final Color DEGENERATE = Color.ORANGE;
     static final Color FULL       = Color.RED;

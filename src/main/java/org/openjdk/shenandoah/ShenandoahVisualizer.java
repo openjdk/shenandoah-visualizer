@@ -201,11 +201,11 @@ class ShenandoahVisualizer {
             if (s.youngPhase() != Phase.IDLE) {
                 return Colors.YOUNG[s.youngPhase().ordinal()];
             }
-            if (s.oldPhase() != Phase.IDLE) {
-                return Colors.OLD[s.oldPhase().ordinal()];
-            }
             if (s.globalPhase() != Phase.IDLE) {
                 return Colors.GLOBAL[s.globalPhase().ordinal()];
+            }
+            if (s.oldPhase() != Phase.IDLE) {
+                return Colors.OLD[s.oldPhase().ordinal()];
             }
             return Colors.TIMELINE_IDLE;
         }
@@ -235,8 +235,8 @@ class ShenandoahVisualizer {
                 SnapshotView s = lastSnapshots.get(i);
                 int x = (int) Math.round((s.time() - firstTime) * stepX);
 
-                if (s.oldPhase() == Phase.MARKING) {
-                    g.setColor(Colors.OLD_TIMELINE_MARK);
+                if (s.oldPhase() == Phase.MARKING && s.globalPhase() == Phase.IDLE) {
+                    g.setColor(Colors.OLD[0]);
                     g.drawRect(x, 0, 1, bandHeight);
                 }
 
@@ -245,8 +245,8 @@ class ShenandoahVisualizer {
 
                 if (s.oldCsetPercentage() > 0) {
                     int height = (int) (bandHeight * s.oldCsetPercentage());
-                    g.setColor(Colors.OLD_TIMELINE_MARK);
-                    g.drawRect(x, bandHeight + pad, 1, height);
+                    g.setColor(Colors.OLD[0]);
+                    g.drawRect(x, 2*bandHeight + pad - height, 1, height);
                 }
 
                 if (s.isFullActive()) {
