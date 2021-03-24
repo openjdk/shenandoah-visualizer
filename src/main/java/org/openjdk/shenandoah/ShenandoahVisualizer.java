@@ -196,7 +196,20 @@ class ShenandoahVisualizer {
                 frame.repaint();
             }
         }
-        
+
+        private static Color getColor(SnapshotView s) {
+            if (s.youngPhase() != Phase.IDLE) {
+                return Colors.YOUNG[s.youngPhase().ordinal()];
+            }
+            if (s.oldPhase() != Phase.IDLE) {
+                return Colors.OLD[s.oldPhase().ordinal()];
+            }
+            if (s.globalPhase() != Phase.IDLE) {
+                return Colors.GLOBAL[s.globalPhase().ordinal()];
+            }
+            return Colors.TIMELINE_IDLE;
+        }
+
         public synchronized void renderGraph(Graphics g) {
             if (lastSnapshots.size() < 2) return;
 
@@ -222,35 +235,27 @@ class ShenandoahVisualizer {
                 SnapshotView s = lastSnapshots.get(i);
                 int x = (int) Math.round((s.time() - firstTime) * stepX);
 
-                if (s.isFullActive()) {
-                    g.setColor(Colors.FULL);                    
-                } else if (s.isDegenActive()) {
-                    g.setColor(s.isYoungActive() ? Colors.DEGENERATE_YOUNG : Colors.DEGENERATE_GLOBAL);     
-                } else {
-                    if (s.oldPhase() == Phase.OLD_MARKING) {
-                        g.setColor(Colors.OLD_TIMELINE_MARK);
-                        g.drawRect(x, 0, 1, bandHeight);
-                    }
-
-                    switch (s.phase()) {
-                        case IDLE:
-                            g.setColor(Colors.TIMELINE_IDLE);
-                            break;
-                        case MARKING:
-                            g.setColor(s.isYoungActive() ? Colors.YOUNG_TIMELINE_MARK : Colors.GLOBAL_TIMELINE_MARK);
-                            break;
-                        case EVACUATING:
-                            g.setColor(s.isYoungActive() ? Colors.YOUNG_TIMELINE_EVACUATING : Colors.GLOBAL_TIMELINE_EVACUATING);
-                            break;
-                        case UPDATE_REFS:
-                            g.setColor(s.isYoungActive() ? Colors.YOUNG_TIMELINE_UPDATEREFS : Colors.GLOBAL_TIMELINE_UPDATEREFS);
-                            break;
-                    }
+                if (s.oldPhase() == Phase.MARKING) {
+                    g.setColor(Colors.OLD_TIMELINE_MARK);
+                    g.drawRect(x, 0, 1, bandHeight);
                 }
-                
-                // Draw these events in both bands.
-                //g.drawRect(x, 0, 1, bandHeight);
+
+                g.setColor(getColor(s));
                 g.drawRect(x, bandHeight + pad, 1, bandHeight);
+
+                if (s.oldCsetPercentage() > 0) {
+                    int height = (int) (bandHeight * s.oldCsetPercentage());
+                    g.setColor(Colors.OLD_TIMELINE_MARK);
+                    g.drawRect(x, bandHeight + pad, 1, height);
+                }
+
+                if (s.isFullActive()) {
+                    g.setColor(Colors.FULL);
+                    g.drawRect(x, bandHeight + pad, 1, 10);
+                } else if (s.isDegenActive()) {
+                    g.setColor(Colors.DEGENERATE);
+                    g.drawRect(x, bandHeight + pad, 1, 10);
+                }
 
                 // Draw these in the upper band.
                 g.setColor(Colors.USED);
@@ -376,7 +381,7 @@ class ShenandoahVisualizer {
                     break;
                 case MARKING:
                     status += " Marking";
-                    if (snapshot.getOldPhase() == Phase.OLD_MARKING) {
+                    if (snapshot.getOldPhase() == Phase.MARKING) {
                         status += " (Old)";
                     }
                     break;
@@ -407,17 +412,16 @@ class ShenandoahVisualizer {
             g.drawString(pausesText, 0, ++line * LINE);
 
             line = 4;
-            renderTimeLineLegendItem(g, LINE, Colors.OLD_TIMELINE_MARK, ++line, "Old Marking");
-            renderTimeLineLegendItem(g, LINE, Colors.YOUNG_TIMELINE_MARK, ++line, "Young Marking");
-            renderTimeLineLegendItem(g, LINE, Colors.YOUNG_TIMELINE_EVACUATING, ++line, "Young Evacuation");
-            renderTimeLineLegendItem(g, LINE, Colors.YOUNG_TIMELINE_UPDATEREFS, ++line, "Young Update References");
+            renderTimeLineLegendItem(g, LINE, Colors.OLD[1], ++line, "Old Marking");
+            renderTimeLineLegendItem(g, LINE, Colors.YOUNG[1], ++line, "Young Marking");
+            renderTimeLineLegendItem(g, LINE, Colors.YOUNG[2], ++line, "Young Evacuation");
+            renderTimeLineLegendItem(g, LINE, Colors.YOUNG[3], ++line, "Young Update References");
 
-            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL_TIMELINE_MARK, ++line, "Global Marking");
-            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL_TIMELINE_EVACUATING, ++line, "Global Evacuation");
-            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL_TIMELINE_UPDATEREFS, ++line, "Global Update References");
+            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[1], ++line, "Global Marking");
+            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[2], ++line, "Global Evacuation");
+            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[3], ++line, "Global Update References");
 
-            renderTimeLineLegendItem(g, LINE, Colors.DEGENERATE_YOUNG, ++line, "Degenerated Young");
-            renderTimeLineLegendItem(g, LINE, Colors.DEGENERATE_GLOBAL, ++line, "Degenerated Global");
+            renderTimeLineLegendItem(g, LINE, Colors.DEGENERATE, ++line, "Degenerated Young");
             renderTimeLineLegendItem(g, LINE, Colors.FULL, ++line, "Full");
         }
 

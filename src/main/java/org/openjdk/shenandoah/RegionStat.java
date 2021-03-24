@@ -25,11 +25,8 @@
 package org.openjdk.shenandoah;
 
 import java.awt.*;
-import java.util.BitSet;
-import java.util.Objects;
 
 import static org.openjdk.shenandoah.Colors.*;
-import static org.openjdk.shenandoah.RegionAffiliation.*;
 
 public class RegionStat {
 
@@ -68,7 +65,7 @@ public class RegionStat {
         this.sharedLvl = sharedLvl;
         this.state = state;
         this.age = -1;
-        this.affiliation = YOUNG;
+        this.affiliation = RegionAffiliation.YOUNG;
         this.showLivenessDetail = Boolean.getBoolean("show.liveness");
     }
 
@@ -81,7 +78,7 @@ public class RegionStat {
         this.sharedLvl = 0;
         this.state = state;
         this.age = age;
-        this.affiliation = YOUNG;
+        this.affiliation = RegionAffiliation.YOUNG;
         this.showLivenessDetail = Boolean.getBoolean("show.liveness");
     }
 

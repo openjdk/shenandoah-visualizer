@@ -28,24 +28,29 @@ import java.awt.*;
 
 public class Colors {
 
+    static final Color[] YOUNG = createColorFamily(Color.GREEN);
+    static final Color[] OLD = createColorFamily(Color.BLUE);
+    static final Color[] GLOBAL = createColorFamily(Color.RED);
+
+    private static Color[] createColorFamily(Color base) {
+        Color[] colors = new Color[4];
+        float[] hsb = Color.RGBtoHSB(base.getRed(), base.getGreen(), base.getBlue(), null);
+        colors[0] = base;
+        colors[1] = Color.getHSBColor(hsb[0], 0.5f, 0.5f);
+        colors[2] = Color.getHSBColor(hsb[0], 0.4f, 0.6f);
+        colors[3] = Color.getHSBColor(hsb[0], 0.3f, 0.7f);
+        return colors;
+    }
+
     static final Color TIMELINE_IDLE        = Color.BLACK;
 
     static final Color OLD_TIMELINE_MARK = new Color(120, 171, 210);
 
-    static final Color GLOBAL_TIMELINE_MARK = new Color(227, 196, 181);
-    static final Color GLOBAL_TIMELINE_EVACUATING = new Color(203, 145, 115);
-    static final Color GLOBAL_TIMELINE_UPDATEREFS = new Color(142, 68, 61);
-
-    static final Color YOUNG_TIMELINE_MARK = new Color(207, 221, 231);
-    static final Color YOUNG_TIMELINE_EVACUATING = new Color(168, 194, 86);
-    static final Color YOUNG_TIMELINE_UPDATEREFS = new Color(51, 115, 87);
-
-    static final Color DEGENERATE_YOUNG  = Color.ORANGE;
-    static final Color DEGENERATE_GLOBAL = Color.MAGENTA;
-    static final Color FULL              = Color.RED;
+    static final Color DEGENERATE = Color.ORANGE;
+    static final Color FULL       = Color.RED;
     
-    static final Color SHARED_ALLOC           = new Color(0, 150, 250);
-    static final Color SHARED_ALLOC_BORDER    = new Color(0, 191, 190);
+    static final Color SHARED_ALLOC         = new Color(0, 150, 250);
+    static final Color SHARED_ALLOC_BORDER  = new Color(0, 191, 190);
     static final Color TLAB_ALLOC           = new Color(0, 200, 0);
     static final Color TLAB_ALLOC_BORDER    = new Color(0, 100, 0);
     static final Color GCLAB_ALLOC          = new Color(185, 0, 250);

@@ -27,8 +27,9 @@ package org.openjdk.shenandoah;
 public class SnapshotView {
 
     private final long time;
-    private final Phase phase;
+    private final Phase globalPhase;
     private final Phase oldPhase;
+    private final Phase youngPhase;
     private final long total;
     private final long committed;
     private final long used;
@@ -36,15 +37,12 @@ public class SnapshotView {
     private final long humongous;
     private final long collectionSet;
     private final long trash;
-    private final boolean youngActive;
-    private final boolean oldActive;
-    private final boolean globalActive;
     private final boolean degenActive;
     private final boolean fullActive;
+    private final double oldCsetPercentage;
 
     public SnapshotView(Snapshot s) {
         time = s.time();
-        phase = s.phase();
         total = total();
         committed = s.committed();
         used = s.used();
@@ -52,16 +50,20 @@ public class SnapshotView {
         humongous = s.humongous();
         collectionSet = s.collectionSet();
         trash = s.trash();
+        globalPhase = s.getGlobalPhase();
+        youngPhase = s.getYoungPhase();
         oldPhase = s.getOldPhase();
-        youngActive = s.isYoungActive();
-        oldActive = s.isOldActive();
-        globalActive = s.isGlobalActive();
         degenActive = s.isDegenActive();
         fullActive = s.isFullActive();
+        oldCsetPercentage = s.percentageOfOldRegionsInCollectionSet();
     }
 
-    public Phase phase() {
-        return phase;
+    public Phase globalPhase() {
+        return globalPhase;
+    }
+
+    public Phase youngPhase() {
+        return youngPhase;
     }
 
     public Phase oldPhase() {
@@ -84,6 +86,10 @@ public class SnapshotView {
         return collectionSet;
     }
 
+    public double oldCsetPercentage() {
+        return oldCsetPercentage;
+    }
+
     public long trash() {
         return trash;
     }
@@ -98,18 +104,6 @@ public class SnapshotView {
 
     public long live() {
         return live;
-    }
-
-    public boolean isYoungActive() {
-        return youngActive;
-    }
-
-    public boolean isOldActive() {
-        return oldActive;
-    }
-
-    public boolean isGlobalActive() {
-        return globalActive;
     }
 
     public boolean isDegenActive() {

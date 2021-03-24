@@ -31,20 +31,23 @@ import java.util.function.Function;
 
 public class Snapshot {
     public enum Generation {
-        YOUNG(0), OLD(1), GLOBAL(2);
-        public final int value;
+        YOUNG(4), OLD(2), GLOBAL(0);
 
-        Generation(int value) {
-            this.value = value;
+        public final int shift;
+
+        Generation(int shift) {
+            this.shift = shift;
         }
 
-        static Generation fromStatus(int status) {
-            int generation = (status & 0xE0) >> 6;
-            switch (generation) {
-                case 0: return YOUNG;
-                case 1: return OLD;
-                case 2: return GLOBAL;
-                default: throw new IllegalArgumentException("Unknown generation: " + generation);
+        Phase phase(long status) {
+            int phase = (int) ((status >> shift) & 0x3);
+            switch (phase) {
+                case 0: return Phase.IDLE;
+                case 1: return Phase.MARKING;
+                case 2: return Phase.EVACUATING;
+                case 3: return Phase.UPDATE_REFS;
+                default:
+                    throw new IllegalArgumentException("Unknown status: " + status);
             }
         }
     }
@@ -52,9 +55,9 @@ public class Snapshot {
     private final long time;
     private final long regionSize;
     private final List<RegionStat> stats;
-    private final Generation activeGeneration;
-    private final Phase phase;
+    private final Phase globalPhase;
     private final Phase oldPhase;
+    private final Phase youngPhase;
     private final boolean degenActive;
     private final boolean fullActive;
     private final Histogram histogram;
@@ -64,39 +67,31 @@ public class Snapshot {
         this.regionSize = regionSize;
         this.stats = stats;
         this.histogram = histogram;
-        this.degenActive = ((status & 0x10) >> 4) == 1;
-        this.fullActive  = ((status & 0x20) >> 5) == 1;
-
-        if ((status & 0x2) != 0) {
-            status &= ~0x2;
-            this.oldPhase = Phase.OLD_MARKING;
-        } else {
-            this.oldPhase = Phase.IDLE;
-        }
-
-        switch (status & 0xF) {
-            case 0x0:
-                this.phase = Phase.IDLE;
-                break;
-            case 0x1:
-                this.phase = Phase.MARKING;
-                break;
-            case 0x4:
-                this.phase = Phase.EVACUATING;
-                break;
-            case 0x8:
-                this.phase = Phase.UPDATE_REFS;
-                break;
-            default:
-                this.phase = Phase.UNKNOWN;
-                break;
-        }
-
-        this.activeGeneration  = Generation.fromStatus(status);
+        this.degenActive = ((status & 0x40) >> 6) == 1;
+        this.fullActive  = ((status & 0x80) >> 7) == 1;
+        this.globalPhase = Generation.GLOBAL.phase(status);
+        this.oldPhase = Generation.OLD.phase(status);
+        this.youngPhase = Generation.YOUNG.phase(status);
+        System.out.printf("global=%s, old=%s, young=%s, degen=%s, full=%s\n",
+                globalPhase, oldPhase, youngPhase, degenActive, fullActive);
     }
 
     public Phase phase() {
-        return phase;
+        if (oldPhase != Phase.IDLE) {
+            return oldPhase;
+        }
+        if (youngPhase != Phase.IDLE) {
+            return youngPhase;
+        }
+        return globalPhase;
+    }
+
+    public Phase getGlobalPhase() {
+        return globalPhase;
+    }
+
+    public Phase getYoungPhase() {
+        return youngPhase;
     }
 
     public Phase getOldPhase() {
@@ -108,15 +103,15 @@ public class Snapshot {
     }
 
     public boolean isYoungActive() {
-        return phase != Phase.IDLE && activeGeneration == Generation.YOUNG;
+        return youngPhase != Phase.IDLE;
     }
 
     public boolean isOldActive() {
-        return phase != Phase.IDLE && activeGeneration == Generation.OLD;
+        return oldPhase != Phase.IDLE;
     }
 
     public boolean isGlobalActive() {
-        return phase != Phase.IDLE && activeGeneration == Generation.GLOBAL;
+        return globalPhase != Phase.IDLE;
     }
 
     public boolean isDegenActive() {
@@ -144,14 +139,18 @@ public class Snapshot {
 
         if (time != snapshot.time) return false;
         if (!stats.equals(snapshot.stats)) return false;
-        return phase == snapshot.phase;
+        return youngPhase == snapshot.youngPhase
+            && globalPhase == snapshot.globalPhase
+            && oldPhase == snapshot.oldPhase;
     }
 
     @Override
     public int hashCode() {
         int result = (int) (time ^ (time >>> 32));
         result = 31 * result + stats.hashCode();
-        result = 31 * result + phase.hashCode();
+        result = 31 * result + youngPhase.hashCode();
+        result = 31 * result + oldPhase.hashCode();
+        result = 31 * result + globalPhase.hashCode();
         return result;
     }
 
@@ -223,5 +222,19 @@ public class Snapshot {
             live += regionSize * rs.live();
         }
         return live;
+    }
+
+    public double percentageOfOldRegionsInCollectionSet() {
+        long total = 0, old = 0;
+        for (RegionStat rs : stats) {
+            if (rs.state() == RegionState.CSET || rs.state() == RegionState.PINNED_CSET) {
+                if (rs.affiliation() == RegionAffiliation.OLD) {
+                    ++old;
+                }
+                ++total;
+            }
+        }
+        System.out.println("Old regions = " + old + ", total regions = " + total);
+        return total == 0 ? 0 : ((double) (old)) / total;
     }
 }
