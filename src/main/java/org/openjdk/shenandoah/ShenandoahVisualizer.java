@@ -26,10 +26,13 @@ import org.HdrHistogram.Histogram;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -48,18 +51,38 @@ class ShenandoahVisualizer {
 
     public static void main(String[] args) throws Exception {
         String vmIdentifier = null;
+        for (int i = 0; i < args.length; i++) {
+            System.out.println(i + ": " + args[i]);
+        }
         if (args.length == 1) {
             vmIdentifier = args[0];
         }
+        boolean isReplay = false;
+        final String[] filePath = {""};
+        if (args.length > 0) {
+            isReplay = args[0].equals("-playback");
+            filePath[0] = args[1];
+        }
+
+        // Allow for log file flag
+        // allow for vm argument
+        // parse args
+            // vm starts with local://
 
         JFrame frame = new JFrame();
         frame.setLayout(new GridBagLayout());
         frame.setTitle("Shenandoah GC Visualizer");
         frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
-
-        DataProvider data = new DataProvider(vmIdentifier);
-
-        Render render = new Render(data, frame);
+        // Choose data based on playback vs. realtime
+        Render tempRender = null;
+        if (isReplay) {
+            DataLogProvider logData = new DataLogProvider(filePath[0]);
+            tempRender = new Render(logData, frame);
+        } else {
+            DataProvider data = new DataProvider(vmIdentifier);
+            tempRender = new Render(data, frame);
+        }
+        final Render render = tempRender;
 
         JPanel regionsPanel = new JPanel() {
             public void paint(Graphics g) {
@@ -87,6 +110,28 @@ class ShenandoahVisualizer {
                 render.renderGraph(g);
             }
         };
+
+        JPanel buttonPanel = new JPanel();
+
+        JButton fileChooserButton = new JButton("Select File");
+        fileChooserButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                JFileChooser fc = new JFileChooser();
+                int returnValue = fc.showOpenDialog(null);
+                if (returnValue == JFileChooser.APPROVE_OPTION) {
+                    filePath[0] = fc.getSelectedFile().getAbsolutePath();
+                    try {
+                        DataLogProvider logData = new DataLogProvider(filePath[0]);
+                        render.loadLogProvider(logData);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    System.out.println(filePath[0]);
+                }
+            }
+        });
+        buttonPanel.add(fileChooserButton);
 
         regionsPanel.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent ev) {
@@ -121,6 +166,7 @@ class ShenandoahVisualizer {
             c.weightx = 3;
             c.weighty = 4;
             c.insets = pad;
+            c.gridheight = 3;
             frame.add(regionsPanel, c);
         }
 
@@ -131,7 +177,8 @@ class ShenandoahVisualizer {
             c.gridx = 1;
             c.gridy = 0;
             c.weightx = 0.5;
-            c.weighty = 0.5;
+            c.weighty = 0.2;
+//            c.weighty = 0.5;
             c.insets = pad;
             frame.add(statusPanel, c);
         }
@@ -142,9 +189,21 @@ class ShenandoahVisualizer {
             c.gridx = 1;
             c.gridy = 1;
             c.weightx = 0.5;
-            c.weighty = 0.5;
+            c.weighty = 0.75;
+//            c.weighty = 0.5;
             c.insets = pad;
             frame.add(legendPanel, c);
+        }
+
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridx = 1;
+            c.gridy = 3;
+            c.weightx = 0.5;
+            c.weighty = 0.05;
+            c.insets = pad;
+            frame.add(buttonPanel, c);
         }
 
         frame.setVisible(true);
@@ -167,8 +226,10 @@ class ShenandoahVisualizer {
     public static class Render implements Runnable {
         public static final int LINE = 20;
 
-        final DataProvider data;
+        volatile DataProvider data;
+        volatile DataLogProvider logData;
         final JFrame frame;
+        volatile boolean isLog;
 
         int regionWidth, regionHeight;
         int graphWidth, graphHeight;
@@ -179,14 +240,25 @@ class ShenandoahVisualizer {
 
         public Render(DataProvider data, JFrame frame) {
             this.data = data;
+            this.logData = null;
+            this.isLog = false;
             this.frame = frame;
             this.lastSnapshots = new LinkedList<>();
             this.snapshot = data.snapshot();
         }
 
+        public Render(DataLogProvider logData, JFrame frame) {
+            this.data = null;
+            this.logData = logData;
+            this.isLog = true;
+            this.frame = frame;
+            this.lastSnapshots = new LinkedList<>();
+            this.snapshot = logData.snapshot();
+        }
+
         @Override
         public synchronized void run() {
-            Snapshot cur = data.snapshot();
+            Snapshot cur = this.isLog ? this.logData.snapshot() : this.data.snapshot();
             if (!cur.equals(snapshot)) {
                 snapshot = cur;
                 lastSnapshots.add(new SnapshotView(cur));
@@ -195,6 +267,14 @@ class ShenandoahVisualizer {
                 }
                 frame.repaint();
             }
+        }
+
+        private void loadLogProvider(DataLogProvider logData) {
+            this.logData = logData;
+            this.data = null;
+            this.isLog  = true;
+            this.lastSnapshots.clear();
+            this.snapshot = logData.snapshot();
         }
 
         private static Color getColor(SnapshotView s) {
@@ -399,17 +479,21 @@ class ShenandoahVisualizer {
             int line = 0;
 
             g.setColor(Color.BLACK);
-            g.drawString("Status: " + data.status(), 0, ++line * LINE);
+            if (!isLog) {
+                g.drawString("Status: " + data.status(), 0, ++line * LINE);
+            }
             g.drawString("GC: " + status, 0, ++line * LINE);
             g.drawString("Mode: " + mode, 0, ++line * LINE);
             g.drawString("Total: " + (snapshot.total() / KILO) + " MB", 0, ++line * LINE);
             g.drawString(usageStatusLine(), 0, ++line * LINE);
             g.drawString(liveStatusLine(), 0, ++line * LINE);
 
-            Histogram histogram = snapshot.getSafepointTime();
-            String pausesText = String.format("GC Pauses: P100=%d, P95=%d, P90=%d",
-                    histogram.getMaxValue(), histogram.getValueAtPercentile(95), histogram.getValueAtPercentile(90));
-            g.drawString(pausesText, 0, ++line * LINE);
+            if (!this.isLog) {
+                Histogram histogram = snapshot.getSafepointTime();
+                String pausesText = String.format("GC Pauses: P100=%d, P95=%d, P90=%d",
+                        histogram.getMaxValue(), histogram.getValueAtPercentile(95), histogram.getValueAtPercentile(90));
+                g.drawString(pausesText, 0, ++line * LINE);
+            }
 
             line = 4;
             renderTimeLineLegendItem(g, LINE, Colors.OLD[1], ++line, "Old Marking");
