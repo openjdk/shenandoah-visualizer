@@ -95,7 +95,7 @@ public class DataLogProvider {
             }
             String[] regionData = regionDataLine.trim().split(" ");
 
-            snapshots.add(new Snapshot(metaData[0],
+            snapshots.add(new Snapshot(metaData[0] / 1000000,
                                        metaData[3],
                                        processRegionStats(regionData),
                                        Math.toIntExact(metaData[1]),
@@ -133,7 +133,7 @@ public class DataLogProvider {
     }
 
     public Snapshot snapshot() {
-        long currTime = System.nanoTime();
+        long currTime = System.nanoTime() / 1000000;
         if (startTime == -1) {
             startTime = currTime;
         }

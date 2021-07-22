@@ -95,6 +95,10 @@ public class DataProvider {
         return new Snapshot(time, maxSize, stats, (int) status.longValue(), connector.getPauseHistogram());
     }
 
+    protected void stopConnector() {
+        connector.stop();
+    }
+
     public String status() {
         return connector.status();
     }

@@ -25,6 +25,7 @@ package org.openjdk.shenandoah;
 import org.HdrHistogram.Histogram;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -111,10 +112,9 @@ class ShenandoahVisualizer {
             }
         };
 
-        JPanel buttonPanel = new JPanel();
+        ToolbarPanel toolbarPanel = new ToolbarPanel(isReplay);
 
-        JButton fileChooserButton = new JButton("Select File");
-        fileChooserButton.addActionListener(new ActionListener() {
+        ActionListener fileButtonListener = new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 JFileChooser fc = new JFileChooser();
                 int returnValue = fc.showOpenDialog(null);
@@ -126,12 +126,13 @@ class ShenandoahVisualizer {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-
-                    System.out.println(filePath[0]);
+                    toolbarPanel.setFileNameField(filePath[0]);
+                    System.out.println("Selected file: " + filePath[0]);
+                    render.forceRepaint();
                 }
             }
-        });
-        buttonPanel.add(fileChooserButton);
+        };
+        toolbarPanel.setFileButtonListener(fileButtonListener);
 
         regionsPanel.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent ev) {
@@ -146,6 +147,15 @@ class ShenandoahVisualizer {
         });
 
         Insets pad = new Insets(10, 10, 10, 10);
+
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridy = GridBagConstraints.SOUTHWEST;
+            c.insets = pad;
+            c.weightx = 0.5;
+            frame.add(toolbarPanel, c);
+        }
 
         {
             GridBagConstraints c = new GridBagConstraints();
@@ -166,7 +176,7 @@ class ShenandoahVisualizer {
             c.weightx = 3;
             c.weighty = 4;
             c.insets = pad;
-            c.gridheight = 3;
+            c.gridheight = GridBagConstraints.RELATIVE;
             frame.add(regionsPanel, c);
         }
 
@@ -177,8 +187,7 @@ class ShenandoahVisualizer {
             c.gridx = 1;
             c.gridy = 0;
             c.weightx = 0.5;
-            c.weighty = 0.2;
-//            c.weighty = 0.5;
+            c.weighty = 2;
             c.insets = pad;
             frame.add(statusPanel, c);
         }
@@ -189,21 +198,10 @@ class ShenandoahVisualizer {
             c.gridx = 1;
             c.gridy = 1;
             c.weightx = 0.5;
-            c.weighty = 0.75;
-//            c.weighty = 0.5;
+            c.weighty = 1;
             c.insets = pad;
+            c.gridheight = GridBagConstraints.REMAINDER;
             frame.add(legendPanel, c);
-        }
-
-        {
-            GridBagConstraints c = new GridBagConstraints();
-            c.fill = GridBagConstraints.BOTH;
-            c.gridx = 1;
-            c.gridy = 3;
-            c.weightx = 0.5;
-            c.weighty = 0.05;
-            c.insets = pad;
-            frame.add(buttonPanel, c);
         }
 
         frame.setVisible(true);
@@ -256,6 +254,10 @@ class ShenandoahVisualizer {
             this.snapshot = logData.snapshot();
         }
 
+        public synchronized void forceRepaint() {
+            frame.repaint();
+        }
+
         @Override
         public synchronized void run() {
             Snapshot cur = this.isLog ? this.logData.snapshot() : this.data.snapshot();
@@ -269,8 +271,11 @@ class ShenandoahVisualizer {
             }
         }
 
-        private void loadLogProvider(DataLogProvider logData) {
+        private synchronized void loadLogProvider(DataLogProvider logData) {
             this.logData = logData;
+            if (this.data != null) {
+                data.stopConnector();
+            }
             this.data = null;
             this.isLog  = true;
             this.lastSnapshots.clear();
