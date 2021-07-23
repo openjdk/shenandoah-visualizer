@@ -65,9 +65,14 @@ public class DataLogProvider {
     // data: region_data
     private static final Snapshot DISCONNECTED = new Snapshot(0, 1024, Collections.emptyList(), 0, null);
 
+    private static final String START = "START";
+    private static final String STOP = "STOP";
+    private static final String CLEAR = "CLEAR";
+
     private String filePath;
     private BufferedReader br;
     private List<Snapshot> snapshots;
+    public final Stopwatch stopwatch;
     private int snapshotsIndex = -1;
     private long startTime = -1;
     private Snapshot currSnapshot = DISCONNECTED;
@@ -103,7 +108,21 @@ public class DataLogProvider {
 
             metaDataLine = br.readLine();
         }
-        if (snapshots.size() > 0) snapshotsIndex = 0;
+        if (snapshots.size() > 0) {
+            snapshotsIndex = 0;
+        }
+
+        stopwatch = new Stopwatch();
+    }
+
+    public void controlStopwatch(String command) {
+        if (STOP.equals(command)) {
+            stopwatch.stop();
+        } else if (START.equals(command)) {
+            stopwatch.start();
+        } else if (CLEAR.equals(command)) {
+            stopwatch.clear();
+        }
     }
 
     private boolean isValidPath(String name) {
@@ -134,15 +153,16 @@ public class DataLogProvider {
 
     public Snapshot snapshot() {
         long currTime = System.nanoTime() / 1000000;
-        if (startTime == -1) {
-            startTime = currTime;
+        if (!stopwatch.isStarted()) {
+            stopwatch.start();
+//            startTime = currTime;
         }
         if (snapshotsIndex == -1) {
             System.out.println("No Shenandoah snapshots in file. Choose valid log file.");
             return DISCONNECTED;
         } else if (snapshotsIndex >= 0 && snapshotsIndex < snapshots.size()) {
             Snapshot tempSnapshot = snapshots.get(snapshotsIndex);
-            if (tempSnapshot.time() <= currTime - startTime) {
+            if (tempSnapshot.time() <= stopwatch.getElapsedMilli()) {
                 currSnapshot = tempSnapshot;
                 snapshotsIndex++;
             }

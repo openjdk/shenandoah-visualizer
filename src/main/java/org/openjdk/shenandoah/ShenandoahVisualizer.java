@@ -25,7 +25,6 @@ package org.openjdk.shenandoah;
 import org.HdrHistogram.Histogram;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -52,14 +51,14 @@ class ShenandoahVisualizer {
 
     public static void main(String[] args) throws Exception {
         String vmIdentifier = null;
-        for (int i = 0; i < args.length; i++) {
-            System.out.println(i + ": " + args[i]);
-        }
+
         if (args.length == 1) {
             vmIdentifier = args[0];
         }
+
         boolean isReplay = false;
         final String[] filePath = {""};
+
         if (args.length > 0) {
             isReplay = args[0].equals("-playback");
             filePath[0] = args[1];
@@ -74,7 +73,7 @@ class ShenandoahVisualizer {
         frame.setLayout(new GridBagLayout());
         frame.setTitle("Shenandoah GC Visualizer");
         frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
-        // Choose data based on playback vs. realtime
+
         Render tempRender = null;
         if (isReplay) {
             DataLogProvider logData = new DataLogProvider(filePath[0]);
@@ -127,12 +126,28 @@ class ShenandoahVisualizer {
                         e.printStackTrace();
                     }
                     toolbarPanel.setFileNameField(filePath[0]);
+                    render.isPaused = false;
                     System.out.println("Selected file: " + filePath[0]);
-                    render.forceRepaint();
+                    render.frame.repaint();
                 }
             }
         };
         toolbarPanel.setFileButtonListener(fileButtonListener);
+
+        ActionListener playPauseButtonListener = new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                System.out.println("isPaused: " + Boolean.toString(render.isPaused));
+                System.out.println("before status: " + Boolean.toString(render.logData.stopwatch.isStarted()));
+                if (render.isPaused) {
+                    render.logData.controlStopwatch("START");
+                } else {
+                    render.logData.controlStopwatch("STOP");
+                }
+                render.isPaused = !render.isPaused;
+                System.out.println("after status: " + Boolean.toString(render.logData.stopwatch.isStarted()));
+            }
+        };
+        toolbarPanel.setPlayPauseButtonListener(playPauseButtonListener);
 
         regionsPanel.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent ev) {
@@ -229,12 +244,15 @@ class ShenandoahVisualizer {
         final JFrame frame;
         volatile boolean isLog;
 
+        volatile boolean isPaused;
+
         int regionWidth, regionHeight;
         int graphWidth, graphHeight;
         final int STEP_X = 2;
 
         final LinkedList<SnapshotView> lastSnapshots;
         volatile Snapshot snapshot;
+        volatile int frontSnapshotIndex = 0;
 
         public Render(DataProvider data, JFrame frame) {
             this.data = data;
@@ -252,6 +270,7 @@ class ShenandoahVisualizer {
             this.frame = frame;
             this.lastSnapshots = new LinkedList<>();
             this.snapshot = logData.snapshot();
+            this.isPaused = false;
         }
 
         public synchronized void forceRepaint() {
@@ -260,14 +279,16 @@ class ShenandoahVisualizer {
 
         @Override
         public synchronized void run() {
-            Snapshot cur = this.isLog ? this.logData.snapshot() : this.data.snapshot();
-            if (!cur.equals(snapshot)) {
-                snapshot = cur;
-                lastSnapshots.add(new SnapshotView(cur));
-                if (lastSnapshots.size() > graphWidth / STEP_X) {
-                    lastSnapshots.removeFirst();
+            if (!isPaused) {
+                Snapshot cur = this.isLog ? this.logData.snapshot() : this.data.snapshot();
+                if (!cur.equals(snapshot)) {
+                    snapshot = cur;
+                    lastSnapshots.add(new SnapshotView(cur));
+                    if (lastSnapshots.size() > graphWidth / STEP_X) {
+                        frontSnapshotIndex++;
+                    }
+                    frame.repaint();
                 }
-                frame.repaint();
             }
         }
 
@@ -311,12 +332,12 @@ class ShenandoahVisualizer {
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, graphWidth, bandHeight);
             g.fillRect(0, bandHeight + pad, graphWidth, bandHeight);
-
-            long firstTime = lastSnapshots.getFirst().time();
+            
+            long firstTime = lastSnapshots.get(frontSnapshotIndex).time();
             long lastTime = lastSnapshots.getLast().time();
-            double stepX = (double) STEP_X * Math.min(lastSnapshots.size(), graphWidth) / (lastTime - firstTime);
+            double stepX = (double) STEP_X * Math.min(lastSnapshots.size() - frontSnapshotIndex, graphWidth) / (lastTime - firstTime);
 
-            for (int i = 0; i < lastSnapshots.size(); i++) {
+            for (int i = frontSnapshotIndex; i < lastSnapshots.size(); i++) {
                 SnapshotView s = lastSnapshots.get(i);
                 int x = (int) Math.round((s.time() - firstTime) * stepX);
 
