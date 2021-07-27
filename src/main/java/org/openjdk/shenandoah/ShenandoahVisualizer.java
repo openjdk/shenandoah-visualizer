@@ -149,6 +149,34 @@ class ShenandoahVisualizer {
         };
         toolbarPanel.setPlayPauseButtonListener(playPauseButtonListener);
 
+        ActionListener backButton_1_Listener = new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                render.stepBackSnapshots(1);
+            }
+        };
+        toolbarPanel.setBackButton_1_Listener(backButton_1_Listener);
+
+        ActionListener backButton_5_Listener = new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                render.stepBackSnapshots(5);
+            }
+        };
+        toolbarPanel.setBackButton_5_Listener(backButton_5_Listener);
+
+        ActionListener forwardButton_1_Listener = new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                render.stepForwardSnapshots(1);
+            }
+        };
+        toolbarPanel.setForwardButton_1_Listener(forwardButton_1_Listener);
+
+        ActionListener forwardButton_5_Listener = new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                render.stepForwardSnapshots(5);
+            }
+        };
+        toolbarPanel.setForwardButton_5_Listener(forwardButton_5_Listener);
+
         regionsPanel.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent ev) {
                 render.notifyRegionResized(ev.getComponent().getWidth(), ev.getComponent().getHeight());
@@ -242,8 +270,8 @@ class ShenandoahVisualizer {
         volatile DataProvider data;
         volatile DataLogProvider logData;
         final JFrame frame;
-        volatile boolean isLog;
 
+        volatile boolean isLog;
         volatile boolean isPaused;
 
         int regionWidth, regionHeight;
@@ -253,6 +281,7 @@ class ShenandoahVisualizer {
         final LinkedList<SnapshotView> lastSnapshots;
         volatile Snapshot snapshot;
         volatile int frontSnapshotIndex = 0;
+        volatile int endSnapshotIndex = 0;
 
         public Render(DataProvider data, JFrame frame) {
             this.data = data;
@@ -273,23 +302,110 @@ class ShenandoahVisualizer {
             this.isPaused = false;
         }
 
-        public synchronized void forceRepaint() {
+        public synchronized void stepBackSnapshots(int n) {
+            if (lastSnapshots.size() == 0) return;
+
+            frontSnapshotIndex = Math.max(frontSnapshotIndex - n, 0);
+            endSnapshotIndex = Math.max(endSnapshotIndex - n, 0);
+
+            int i = Math.max(endSnapshotIndex - 1, 0);
+            long time = lastSnapshots.get(i).time();
+            logData.setStopwatchTime(time * 1_000_000);
+
+            snapshot = logData.getSnapshotAtTime(time);
+            frame.repaint();
+        }
+
+        public synchronized void stepForwardSnapshots(int n) {
+            if (lastSnapshots.size() == 0) return;
+
+            for (int i = 0; i < n; i++) {
+                if (endSnapshotIndex < lastSnapshots.size()) {
+                    int index = Math.max(endSnapshotIndex - 1, 0);
+                    long time = lastSnapshots.get(index).time();
+                    snapshot = logData.getSnapshotAtTime(time);
+                } else {
+                    // keep processing snapshots from logData until it reaches a diff snapshot from this.snapshot
+                    Snapshot cur = logData.getNextSnapshot();
+                    while (cur == snapshot && !logData.isEndOfSnapshots()) {
+                        cur = logData.getNextSnapshot();
+                    }
+                    if (logData.isEndOfSnapshots()) break;
+
+                    snapshot = cur;
+                    lastSnapshots.add(new SnapshotView(cur));
+                }
+                logData.setStopwatchTime(snapshot.time() * 1_000_000);
+                endSnapshotIndex++;
+            }
+
+            while (endSnapshotIndex - frontSnapshotIndex > graphWidth / STEP_X) {
+                frontSnapshotIndex++;
+            }
+
             frame.repaint();
         }
 
         @Override
         public synchronized void run() {
             if (!isPaused) {
-                Snapshot cur = this.isLog ? this.logData.snapshot() : this.data.snapshot();
-                if (!cur.equals(snapshot)) {
-                    snapshot = cur;
-                    lastSnapshots.add(new SnapshotView(cur));
-                    if (lastSnapshots.size() > graphWidth / STEP_X) {
-                        frontSnapshotIndex++;
+//                Snapshot cur = this.isLog ? this.logData.snapshot() : this.data.snapshot();
+//                if (!cur.equals(snapshot)) {
+//                    snapshot = cur;
+//                    lastSnapshots.add(new SnapshotView(cur));
+//                    endSnapshotIndex++;
+//                    if (lastSnapshots.size() - frontSnapshotIndex > graphWidth / STEP_X) {
+//                        frontSnapshotIndex++;
+//                    }
+//                    frame.repaint();
+//                }
+                if (endSnapshotIndex < lastSnapshots.size()) {
+                    int i = Math.max(endSnapshotIndex - 1, 0);
+                    long time = lastSnapshots.get(i).time();
+                    snapshot = logData.getSnapshotAtTime(time);
+                    if (logData.snapshotTimeHasOccurred(snapshot)) {
+                        endSnapshotIndex++;
+                        frame.repaint();
                     }
-                    frame.repaint();
+                } else {
+                    Snapshot cur = this.isLog ? this.logData.snapshot() : this.data.snapshot();
+                    if (!cur.equals(snapshot)) {
+                        snapshot = cur;
+                        lastSnapshots.add(new SnapshotView(cur));
+                        endSnapshotIndex = lastSnapshots.size();
+                        if (lastSnapshots.size() - frontSnapshotIndex > graphWidth / STEP_X) {
+                            frontSnapshotIndex++;
+                        }
+                        frame.repaint();
+                    }
                 }
             }
+
+//            if (!isPaused) {
+//                Snapshot cur;
+//                if (isLog) {
+//                    if (endSnapshotIndex < lastSnapshots.size()) {
+//                        long time = lastSnapshots.get(endSnapshotIndex-1).time();
+//                        cur = this.logData.getSnapshotAtTime(time);
+//                    } else {
+//                        cur = this.logData.snapshot();
+//                    }
+////                     cur = this.logData.snapshot();
+////                     endSnapshotIndex++;
+//                } else {
+//                     cur = this.data.snapshot();
+//                }
+//                if (!cur.equals(snapshot)) {
+//                    snapshot = cur;
+//                    lastSnapshots.add(new SnapshotView(cur));
+//                    endSnapshotIndex++;
+////                    if (lastSnapshots.size() - frontSnapshotIndex > graphWidth / STEP_X) {
+//                    if (endSnapshotIndex - frontSnapshotIndex > graphWidth / STEP_X) {
+//                        frontSnapshotIndex++;
+//                    }
+//                    frame.repaint();
+//                }
+//            }
         }
 
         private synchronized void loadLogProvider(DataLogProvider logData) {
@@ -317,7 +433,8 @@ class ShenandoahVisualizer {
         }
 
         public synchronized void renderGraph(Graphics g) {
-            if (lastSnapshots.size() < 2) return;
+//            if (lastSnapshots.size() < 2) return;
+            if (endSnapshotIndex - frontSnapshotIndex < 2) return;
 
             int pad = 10;
             int bandHeight = (graphHeight - pad) / 2;
@@ -332,12 +449,15 @@ class ShenandoahVisualizer {
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, graphWidth, bandHeight);
             g.fillRect(0, bandHeight + pad, graphWidth, bandHeight);
-            
-            long firstTime = lastSnapshots.get(frontSnapshotIndex).time();
-            long lastTime = lastSnapshots.getLast().time();
-            double stepX = (double) STEP_X * Math.min(lastSnapshots.size() - frontSnapshotIndex, graphWidth) / (lastTime - firstTime);
 
-            for (int i = frontSnapshotIndex; i < lastSnapshots.size(); i++) {
+            long firstTime = lastSnapshots.get(frontSnapshotIndex).time();
+//            long lastTime = lastSnapshots.getLast().time();
+            long lastTime = lastSnapshots.get(endSnapshotIndex - 1).time();
+//            double stepX = (double) STEP_X * Math.min(lastSnapshots.size() - frontSnapshotIndex, graphWidth) / (lastTime - firstTime);
+            double stepX = (double) STEP_X * Math.min(endSnapshotIndex - frontSnapshotIndex, graphWidth) / (lastTime - firstTime);
+
+//            for (int i = frontSnapshotIndex; i < lastSnapshots.size(); i++) {
+            for (int i = frontSnapshotIndex; i < endSnapshotIndex; i++) {
                 SnapshotView s = lastSnapshots.get(i);
                 int x = (int) Math.round((s.time() - firstTime) * stepX);
 

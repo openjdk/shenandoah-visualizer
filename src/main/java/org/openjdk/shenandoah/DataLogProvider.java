@@ -51,6 +51,7 @@ package org.openjdk.shenandoah;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.io.*;
 import java.lang.IllegalArgumentException;
@@ -72,6 +73,7 @@ public class DataLogProvider {
     private String filePath;
     private BufferedReader br;
     private List<Snapshot> snapshots;
+    private HashMap<Long, Integer> snapshotsIndexByTime;
     public final Stopwatch stopwatch;
     private int snapshotsIndex = -1;
     private long startTime = -1;
@@ -84,6 +86,8 @@ public class DataLogProvider {
         }
 
         this.snapshots = new ArrayList<>();
+        this.snapshotsIndexByTime = new HashMap<>();
+        int index = 0;
 
         br = new BufferedReader(new FileReader(filePath));
         String metaDataLine = br.readLine(); // timestamp status numRegions regionSize
@@ -100,11 +104,12 @@ public class DataLogProvider {
             }
             String[] regionData = regionDataLine.trim().split(" ");
 
-            snapshots.add(new Snapshot(metaData[0] / 1000000,
+            snapshots.add(new Snapshot(metaData[0] / 1_000_000,
                                        metaData[3],
                                        processRegionStats(regionData),
                                        Math.toIntExact(metaData[1]),
                               null));
+            snapshotsIndexByTime.put(metaData[0] / 1_000_000, index++);
 
             metaDataLine = br.readLine();
         }
@@ -123,6 +128,18 @@ public class DataLogProvider {
         } else if (CLEAR.equals(command)) {
             stopwatch.clear();
         }
+    }
+
+    public void setStopwatchTime(long ns) {
+        stopwatch.setElapsedTime(ns);
+    }
+
+    public boolean snapshotTimeHasOccurred(Snapshot s) {
+        return s.time() <= stopwatch.getElapsedMilli();
+    }
+
+    public Snapshot getSnapshotAtTime(long ms) {
+        return snapshots.get(snapshotsIndexByTime.get(ms));
     }
 
     private boolean isValidPath(String name) {
@@ -151,18 +168,21 @@ public class DataLogProvider {
         return stats;
     }
 
+    public boolean isEndOfSnapshots() {
+        return snapshotsIndex >= snapshots.size();
+    }
+
     public Snapshot snapshot() {
-        long currTime = System.nanoTime() / 1000000;
         if (!stopwatch.isStarted()) {
             stopwatch.start();
-//            startTime = currTime;
         }
         if (snapshotsIndex == -1) {
             System.out.println("No Shenandoah snapshots in file. Choose valid log file.");
             return DISCONNECTED;
         } else if (snapshotsIndex >= 0 && snapshotsIndex < snapshots.size()) {
             Snapshot tempSnapshot = snapshots.get(snapshotsIndex);
-            if (tempSnapshot.time() <= stopwatch.getElapsedMilli()) {
+//            if (tempSnapshot.time() <= stopwatch.getElapsedMilli()) {
+            if (snapshotTimeHasOccurred(tempSnapshot)) {
                 currSnapshot = tempSnapshot;
                 snapshotsIndex++;
             }
@@ -170,7 +190,17 @@ public class DataLogProvider {
         } else {
             return currSnapshot;
         }
+    }
 
+    public Snapshot getNextSnapshot() {
+        if (snapshotsIndex == -1) {
+            return DISCONNECTED;
+        } else if (snapshotsIndex >= 0 && snapshotsIndex < snapshots.size()) {
+            Snapshot tempSnapshot = snapshots.get(snapshotsIndex);
+            currSnapshot = tempSnapshot;
+            snapshotsIndex++;
+        }
+        return currSnapshot;
     }
 }
 

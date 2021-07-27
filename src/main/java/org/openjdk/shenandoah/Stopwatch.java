@@ -53,7 +53,7 @@ import java.lang.System;
 
 public class Stopwatch {
     private long startTime = 0;
-    private long stopTime = 0;
+//    private long stopTime = 0;
     private long elapsedTime = 0;
     private boolean isRunning = false;
 
@@ -69,9 +69,10 @@ public class Stopwatch {
 
     public void stop() {
         if (isRunning) {
-            stopTime = System.nanoTime();
+//            stopTime = System.nanoTime();
+//            elapsedTime += stopTime - startTime;
+            elapsedTime += System.nanoTime() - startTime;
             isRunning = false;
-            elapsedTime += stopTime - startTime;
         } else {
             System.out.println("Already stopped stopwatch. Must START before STOP can be enabled again.");
         }
@@ -80,6 +81,7 @@ public class Stopwatch {
 
     public void setElapsedTime(long time) {
         if (time >= 0) {
+            startTime = System.nanoTime();
             elapsedTime = time;
         } else {
             System.out.println("Cannot set elapsed time to negative value: " + Long.toString(time));
@@ -88,7 +90,7 @@ public class Stopwatch {
 
     public void clear() {
         startTime = 0;
-        stopTime = 0;
+//        stopTime = 0;
         elapsedTime = 0;
         isRunning = false;
     }

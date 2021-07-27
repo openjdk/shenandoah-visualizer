@@ -59,15 +59,17 @@ public class ToolbarPanel extends JPanel
     private static final int INITIAL_WIDTH = 1500;
     private static final int INITIAL_HEIGHT = 1200;
     private static final String CHOOSE_FILE = "choose file";
-    private static final String BACK = "back";
+    private static final String BACK_1 = "back 1";
+    private static final String BACK_5 = "back 5";
     private static final String PLAY_PAUSE = "play/pause";
-    private static final String FORWARD = "choose file";
+    private static final String FORWARD_1 = "forward 1";
+    private static final String FORWARD_5 = "forward 5";
 
 
     private JToolBar fileToolbar;
     private JToolBar replayToolbar;
     private boolean isReplay;
-    private JButton fileButton, backButton, playPauseButton, forwardButton;
+    private JButton fileButton, backButton_1, backButton_5, playPauseButton, forwardButton_1, forwardButton_5;
     private JTextField fileNameField;
 
     public ToolbarPanel(boolean isReplay) {
@@ -108,9 +110,11 @@ public class ToolbarPanel extends JPanel
     }
 
     private void setEnableReplayButtons(boolean b) {
-        backButton.setEnabled(b);
+        backButton_1.setEnabled(b);
+        backButton_5.setEnabled(b);
         playPauseButton.setEnabled(b);
-        forwardButton.setEnabled(b);
+        forwardButton_1.setEnabled(b);
+        forwardButton_5.setEnabled(b);
     }
 
     public void addReplayToolbar() {
@@ -125,36 +129,54 @@ public class ToolbarPanel extends JPanel
     }
 
     private void addReplayButtons() {
-        this.backButton = new JButton("Back");
-        backButton.setActionCommand(BACK);
-        backButton.addActionListener(this);
-        replayToolbar.add(this.backButton);
+        this.backButton_5 = new JButton("-5");
+        backButton_5.setActionCommand(BACK_5);
+        backButton_5.addActionListener(this);
+        replayToolbar.add(this.backButton_5);
+
+        this.backButton_1 = new JButton("-1");
+        backButton_1.setActionCommand(BACK_1);
+        backButton_1.addActionListener(this);
+        replayToolbar.add(this.backButton_1);
 
         this.playPauseButton = new JButton("Play/Pause");
         playPauseButton.setActionCommand(PLAY_PAUSE);
         playPauseButton.addActionListener(this);
         replayToolbar.add(this.playPauseButton);
 
-        this.forwardButton = new JButton("Forward");
-        forwardButton.setActionCommand(FORWARD);
-        forwardButton.addActionListener(this);
-        replayToolbar.add(this.forwardButton);
+        this.forwardButton_1 = new JButton("+1");
+        forwardButton_1.setActionCommand(FORWARD_1);
+        forwardButton_1.addActionListener(this);
+        replayToolbar.add(this.forwardButton_1);
+
+        this.forwardButton_5 = new JButton("+5");
+        forwardButton_5.setActionCommand(FORWARD_5);
+        forwardButton_5.addActionListener(this);
+        replayToolbar.add(this.forwardButton_5);
     }
 
     public void setFileButtonListener(ActionListener a) {
         fileButton.addActionListener(a);
     }
 
-    public void setBackButtonListener(ActionListener a) {
-        backButton.addActionListener(a);
+    public void setBackButton_1_Listener(ActionListener a) {
+        backButton_1.addActionListener(a);
+    }
+
+    public void setBackButton_5_Listener(ActionListener a) {
+        backButton_5.addActionListener(a);
     }
 
     public void setPlayPauseButtonListener(ActionListener a) {
         playPauseButton.addActionListener(a);
     }
 
-    public void setForwardButtonListener(ActionListener a) {
-        forwardButton.addActionListener(a);
+    public void setForwardButton_1_Listener(ActionListener a) {
+        forwardButton_1.addActionListener(a);
+    }
+
+    public void setForwardButton_5_Listener(ActionListener a) {
+        forwardButton_5.addActionListener(a);
     }
 
     public void setFileNameField(String s) {
@@ -167,12 +189,12 @@ public class ToolbarPanel extends JPanel
             isReplay = true;
             setEnableReplayButtons(true);
             System.out.println(CHOOSE_FILE + " button pressed.");
-        } else if (BACK.equals(cmd)) {
-            System.out.println(BACK + " button pressed.");
+        } else if (BACK_1.equals(cmd) || BACK_5.equals(cmd)) {
+            System.out.println(cmd + " button pressed.");
         } else if (PLAY_PAUSE.equals(cmd)) {
             System.out.println(PLAY_PAUSE + " button pressed.");
-        } else if (FORWARD.equals(cmd)) {
-            System.out.println(FORWARD + " button pressed.");
+        } else if (FORWARD_1.equals(cmd) || FORWARD_5.equals(cmd)) {
+            System.out.println(cmd + " button pressed.");
         }
     }
 
