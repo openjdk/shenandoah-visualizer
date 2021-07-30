@@ -53,36 +53,48 @@ class ShenandoahVisualizer {
 
     public static void main(String[] args) throws Exception {
         String vmIdentifier = null;
-
-        if (args.length == 1) {
-            vmIdentifier = args[0];
-        }
-
         boolean isReplay = false;
         final String[] filePath = {""};
 
-        if (args.length > 0) {
-            isReplay = args[0].equals("-playback");
-            filePath[0] = args[1];
+        int i = 0;
+        String arg;
+        while (i < args.length && args[i].startsWith("-")) {
+            arg = args[i++];
+            if (arg.equals("-vm")) {
+                if (i < args.length) {
+                    vmIdentifier = args[i++];
+                } else {
+                    System.out.println("-vm requires a vm identifier");
+                    return;
+                }
+            } else if (arg.equals("-logFile")) {
+                if (i < args.length) {
+                    isReplay = true;
+                    filePath[0] = args[i++];
+                } else {
+                    System.out.println("-logFile requires a file path");
+                    return;
+                }
+            } else {
+                System.out.println("ShenandoahVisualizer: Illegal option " + arg);
+                System.out.println("Usage: [-vm vmIdentifier] [-logFile filePath]");
+                return;
+            }
         }
-
-        // Allow for log file flag
-        // allow for vm argument
-        // parse args
-            // vm starts with local://
 
         JFrame frame = new JFrame();
         frame.setLayout(new GridBagLayout());
         frame.setTitle("Shenandoah GC Visualizer");
         frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
 
-        Render tempRender = null;
+        Render tempRender;
         ToolbarPanel toolbarPanel = new ToolbarPanel(isReplay);
 
         if (isReplay) {
             DataLogProvider logData = new DataLogProvider(filePath[0]);
             tempRender = new Render(logData, frame);
             toolbarPanel.setMode(PLAYBACK);
+            toolbarPanel.setFileNameField(filePath[0]);
         } else {
             DataProvider data = new DataProvider(vmIdentifier);
             tempRender = new Render(data, frame);
@@ -362,7 +374,7 @@ class ShenandoahVisualizer {
 
         @Override
         public synchronized void run() {
-            if (!isPaused && !isLog) {
+            if (!isPaused || isLog) {
                 if (endSnapshotIndex < lastSnapshots.size()) {
                     int i = Math.max(endSnapshotIndex - 1, 0);
                     long time = lastSnapshots.get(i).time();
