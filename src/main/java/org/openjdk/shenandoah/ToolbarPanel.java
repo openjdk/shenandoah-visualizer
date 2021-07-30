@@ -59,34 +59,43 @@ public class ToolbarPanel extends JPanel
     private static final int INITIAL_WIDTH = 1500;
     private static final int INITIAL_HEIGHT = 1200;
     private static final String CHOOSE_FILE = "choose file";
-    private static final String BACK_1 = "back 1";
-    private static final String BACK_5 = "back 5";
+    private static final String BACK_1 = "Step back 1";
+    private static final String BACK_5 = "Step back 5";
     private static final String PLAY_PAUSE = "play/pause";
-    private static final String FORWARD_1 = "forward 1";
-    private static final String FORWARD_5 = "forward 5";
+    private static final String FORWARD_1 = "Step forward 1";
+    private static final String FORWARD_5 = "Step forward 5";
+    private static final String PLAYBACK = "Playback";
+    private static final String REALTIME = "Realtime";
+    private static final String PLAYING = "Playing";
+    private static final String PAUSED = "Paused";
+    private static final String IDLE = "Idle";
 
 
-    private JToolBar fileToolbar;
-    private JToolBar replayToolbar;
+    private JToolBar fileToolbar, replayToolbar, statusToolbar;
     private boolean isReplay;
     private JButton fileButton, backButton_1, backButton_5, playPauseButton, forwardButton_1, forwardButton_5;
-    private JTextField fileNameField;
+    private JButton realtimeModeButton;
+    private JTextField fileNameField, lastActionField, modeField;
+    private JLabel modeLabel, lastActionLabel;
 
     public ToolbarPanel(boolean isReplay) {
         super(new GridBagLayout());
         setPreferredSize(new Dimension(INITIAL_WIDTH, INITIAL_HEIGHT));
 
-        this.isReplay = isReplay;
-
-        this.fileToolbar = new JToolBar();
+        fileToolbar = new JToolBar();
         fileToolbar.setFloatable(false);
 
-        this.fileButton = new JButton("Load file");
+        realtimeModeButton = new JButton("Switch to Realtime");
+        realtimeModeButton.setActionCommand(REALTIME);
+        realtimeModeButton.addActionListener(this);
+        fileToolbar.add(realtimeModeButton);
+
+        fileButton = new JButton("Load file");
         fileButton.setActionCommand(CHOOSE_FILE);
         fileButton.addActionListener(this);
         fileToolbar.add(this.fileButton);
 
-        this.fileNameField = new JTextField();
+        fileNameField = new JTextField();
         fileNameField.setEditable(false);
         fileToolbar.add(fileNameField);
 
@@ -97,16 +106,52 @@ public class ToolbarPanel extends JPanel
             c.gridy = 0;
             c.weightx = 2;
             c.weighty = 1;
-            add(this.fileToolbar, c);
+            add(fileToolbar, c);
         }
 
-        this.replayToolbar = new JToolBar();
+        replayToolbar = new JToolBar();
         replayToolbar.setFloatable(false);
         addReplayButtons();
-        if (!this.isReplay) {
+        if (!isReplay) {
             setEnableReplayButtons(false);
         }
-        addReplayToolbar();
+
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridx = 1;
+            c.gridy = 0;
+            c.weightx = 2;
+            c.weighty = 1;
+            add(replayToolbar, c);
+        }
+
+        statusToolbar = new JToolBar();
+        statusToolbar.setFloatable(false);
+
+        lastActionLabel = new JLabel("Last action:");
+        statusToolbar.add(lastActionLabel);
+
+        lastActionField = new JTextField();
+        lastActionField.setEditable(false);
+        statusToolbar.add(lastActionField);
+
+        modeLabel = new JLabel("Mode:");
+        statusToolbar.add(modeLabel);
+
+        modeField = new JTextField();
+        modeField.setEditable(false);
+        statusToolbar.add(modeField);
+
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridx = 0;
+            c.gridy = 1;
+            c.weightx = 4;
+            c.weighty = 1;
+            add(statusToolbar, c);
+        }
     }
 
     private void setEnableReplayButtons(boolean b) {
@@ -115,17 +160,6 @@ public class ToolbarPanel extends JPanel
         playPauseButton.setEnabled(b);
         forwardButton_1.setEnabled(b);
         forwardButton_5.setEnabled(b);
-    }
-
-    public void addReplayToolbar() {
-        System.out.println("Inside addReplayToolbar");
-        GridBagConstraints c = new GridBagConstraints();
-        c.fill = GridBagConstraints.BOTH;
-        c.gridx = 1;
-        c.gridy = 0;
-        c.weightx = 2;
-        c.weighty = 1;
-        this.add(this.replayToolbar, c);
     }
 
     private void addReplayButtons() {
@@ -179,8 +213,26 @@ public class ToolbarPanel extends JPanel
         forwardButton_5.addActionListener(a);
     }
 
+    public void setRealtimeModeButtonListener(ActionListener a) {
+        realtimeModeButton.addActionListener(a);
+    }
+
     public void setFileNameField(String s) {
         fileNameField.setText(s);
+    }
+
+    public void setLastActionField(String s) {
+        lastActionField.setText(s);
+    }
+
+    public void setMode(String s) {
+        if (REALTIME.equals(s)) {
+            modeField.setText(REALTIME);
+            realtimeModeButton.setEnabled(false);
+        } else if (PLAYBACK.equals(s)) {
+            modeField.setText(PLAYBACK);
+            realtimeModeButton.setEnabled(true);
+        }
     }
 
     public void actionPerformed(ActionEvent a) {
@@ -188,13 +240,13 @@ public class ToolbarPanel extends JPanel
         if (CHOOSE_FILE.equals(cmd)) {
             isReplay = true;
             setEnableReplayButtons(true);
-            System.out.println(CHOOSE_FILE + " button pressed.");
-        } else if (BACK_1.equals(cmd) || BACK_5.equals(cmd)) {
-            System.out.println(cmd + " button pressed.");
-        } else if (PLAY_PAUSE.equals(cmd)) {
-            System.out.println(PLAY_PAUSE + " button pressed.");
-        } else if (FORWARD_1.equals(cmd) || FORWARD_5.equals(cmd)) {
-            System.out.println(cmd + " button pressed.");
+            setMode(PLAYBACK);
+        } else if (REALTIME.equals(cmd)) {
+            lastActionField.setText("Switched to realtime mode.");
+            setEnableReplayButtons(false);
+            setMode(REALTIME);
+        } else {
+            lastActionField.setText(cmd + " button pressed.");
         }
     }
 

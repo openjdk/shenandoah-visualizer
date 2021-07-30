@@ -48,6 +48,8 @@ class ShenandoahVisualizer {
     private static final int INITIAL_WIDTH = 2000;
     private static final int INITIAL_HEIGHT = 1600;
     private static final int KILO = 1024;
+    private static final String PLAYBACK = "Playback";
+    private static final String REALTIME = "Realtime";
 
     public static void main(String[] args) throws Exception {
         String vmIdentifier = null;
@@ -75,12 +77,16 @@ class ShenandoahVisualizer {
         frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
 
         Render tempRender = null;
+        ToolbarPanel toolbarPanel = new ToolbarPanel(isReplay);
+
         if (isReplay) {
             DataLogProvider logData = new DataLogProvider(filePath[0]);
             tempRender = new Render(logData, frame);
+            toolbarPanel.setMode(PLAYBACK);
         } else {
             DataProvider data = new DataProvider(vmIdentifier);
             tempRender = new Render(data, frame);
+            toolbarPanel.setMode(REALTIME);
         }
         final Render render = tempRender;
 
@@ -111,7 +117,13 @@ class ShenandoahVisualizer {
             }
         };
 
-        ToolbarPanel toolbarPanel = new ToolbarPanel(isReplay);
+        ActionListener realtimeModeButtonListener = new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                DataProvider data = new DataProvider(null);
+                render.loadDataProvider(data);
+            }
+        };
+        toolbarPanel.setRealtimeModeButtonListener(realtimeModeButtonListener);
 
         ActionListener fileButtonListener = new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
@@ -121,11 +133,13 @@ class ShenandoahVisualizer {
                     filePath[0] = fc.getSelectedFile().getAbsolutePath();
                     try {
                         DataLogProvider logData = new DataLogProvider(filePath[0]);
-                        render.loadLogProvider(logData);
+                        render.loadLogDataProvider(logData);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     toolbarPanel.setFileNameField(filePath[0]);
+                    toolbarPanel.setLastActionField("File selected: " + filePath[0]);
+
                     render.isPaused = false;
                     System.out.println("Selected file: " + filePath[0]);
                     render.frame.repaint();
@@ -136,19 +150,19 @@ class ShenandoahVisualizer {
 
         ActionListener playPauseButtonListener = new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
-                System.out.println("isPaused: " + Boolean.toString(render.isPaused));
-                System.out.println("before status: " + Boolean.toString(render.logData.stopwatch.isStarted()));
                 if (render.isPaused) {
                     render.logData.controlStopwatch("START");
+                    toolbarPanel.setLastActionField("Play button pressed.");
                 } else {
                     render.logData.controlStopwatch("STOP");
+                    toolbarPanel.setLastActionField("Pause button pressed.");
                 }
                 render.isPaused = !render.isPaused;
-                System.out.println("after status: " + Boolean.toString(render.logData.stopwatch.isStarted()));
             }
         };
         toolbarPanel.setPlayPauseButtonListener(playPauseButtonListener);
 
+        // Step back/forward button listeners
         ActionListener backButton_1_Listener = new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 render.stepBackSnapshots(1);
@@ -348,17 +362,7 @@ class ShenandoahVisualizer {
 
         @Override
         public synchronized void run() {
-            if (!isPaused) {
-//                Snapshot cur = this.isLog ? this.logData.snapshot() : this.data.snapshot();
-//                if (!cur.equals(snapshot)) {
-//                    snapshot = cur;
-//                    lastSnapshots.add(new SnapshotView(cur));
-//                    endSnapshotIndex++;
-//                    if (lastSnapshots.size() - frontSnapshotIndex > graphWidth / STEP_X) {
-//                        frontSnapshotIndex++;
-//                    }
-//                    frame.repaint();
-//                }
+            if (!isPaused && !isLog) {
                 if (endSnapshotIndex < lastSnapshots.size()) {
                     int i = Math.max(endSnapshotIndex - 1, 0);
                     long time = lastSnapshots.get(i).time();
@@ -368,7 +372,7 @@ class ShenandoahVisualizer {
                         frame.repaint();
                     }
                 } else {
-                    Snapshot cur = this.isLog ? this.logData.snapshot() : this.data.snapshot();
+                    Snapshot cur = isLog ? logData.snapshot() : data.snapshot();
                     if (!cur.equals(snapshot)) {
                         snapshot = cur;
                         lastSnapshots.add(new SnapshotView(cur));
@@ -379,42 +383,32 @@ class ShenandoahVisualizer {
                         frame.repaint();
                     }
                 }
+                if (logData != null && logData.isEndOfSnapshots() && endSnapshotIndex >= lastSnapshots.size()) {
+                    logData.controlStopwatch("STOP");
+                    isPaused = true;
+                }
             }
-
-//            if (!isPaused) {
-//                Snapshot cur;
-//                if (isLog) {
-//                    if (endSnapshotIndex < lastSnapshots.size()) {
-//                        long time = lastSnapshots.get(endSnapshotIndex-1).time();
-//                        cur = this.logData.getSnapshotAtTime(time);
-//                    } else {
-//                        cur = this.logData.snapshot();
-//                    }
-////                     cur = this.logData.snapshot();
-////                     endSnapshotIndex++;
-//                } else {
-//                     cur = this.data.snapshot();
-//                }
-//                if (!cur.equals(snapshot)) {
-//                    snapshot = cur;
-//                    lastSnapshots.add(new SnapshotView(cur));
-//                    endSnapshotIndex++;
-////                    if (lastSnapshots.size() - frontSnapshotIndex > graphWidth / STEP_X) {
-//                    if (endSnapshotIndex - frontSnapshotIndex > graphWidth / STEP_X) {
-//                        frontSnapshotIndex++;
-//                    }
-//                    frame.repaint();
-//                }
-//            }
         }
 
-        private synchronized void loadLogProvider(DataLogProvider logData) {
+        private synchronized void loadDataProvider(DataProvider data) {
+            this.data = data;
+            this.logData = null;
+            this.isLog = false;
+            this.lastSnapshots.clear();
+            this.snapshot = data.snapshot();
+            this.isPaused = false;
+        }
+
+        private synchronized void loadLogDataProvider(DataLogProvider logData) {
             this.logData = logData;
+
+            // Disconnect DataConnector from DataProvider
             if (this.data != null) {
                 data.stopConnector();
             }
             this.data = null;
-            this.isLog  = true;
+
+            this.isLog = true;
             this.lastSnapshots.clear();
             this.snapshot = logData.snapshot();
         }
