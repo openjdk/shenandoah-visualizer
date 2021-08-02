@@ -283,15 +283,10 @@ class ShenandoahVisualizer {
         f.get();
     }
 
-    public static class Render implements Runnable {
+    public abstract static class Render implements Runnable {
         public static final int LINE = 20;
 
-        volatile DataProvider data;
-        volatile DataLogProvider logData;
         final JFrame frame;
-
-        volatile boolean isLog;
-        volatile boolean isPaused;
 
         int regionWidth, regionHeight;
         int graphWidth, graphHeight;
@@ -299,127 +294,13 @@ class ShenandoahVisualizer {
 
         final LinkedList<SnapshotView> lastSnapshots;
         volatile Snapshot snapshot;
-        volatile int frontSnapshotIndex = 0;
-        volatile int endSnapshotIndex = 0;
 
-        public Render(DataProvider data, JFrame frame) {
-            this.data = data;
-            this.logData = null;
-            this.isLog = false;
+        public Render(JFrame frame) {
             this.frame = frame;
             this.lastSnapshots = new LinkedList<>();
-            this.snapshot = data.snapshot();
         }
 
-        public Render(DataLogProvider logData, JFrame frame) {
-            this.data = null;
-            this.logData = logData;
-            this.isLog = true;
-            this.frame = frame;
-            this.lastSnapshots = new LinkedList<>();
-            this.snapshot = logData.snapshot();
-            this.isPaused = false;
-        }
-
-        public synchronized void stepBackSnapshots(int n) {
-            if (lastSnapshots.size() == 0) return;
-
-            frontSnapshotIndex = Math.max(frontSnapshotIndex - n, 0);
-            endSnapshotIndex = Math.max(endSnapshotIndex - n, 0);
-
-            int i = Math.max(endSnapshotIndex - 1, 0);
-            long time = lastSnapshots.get(i).time();
-            logData.setStopwatchTime(TimeUnit.MILLISECONDS.toNanos(time));
-
-            snapshot = logData.getSnapshotAtTime(time);
-            frame.repaint();
-        }
-
-        public synchronized void stepForwardSnapshots(int n) {
-            if (lastSnapshots.size() == 0) return;
-
-            for (int i = 0; i < n; i++) {
-                if (endSnapshotIndex < lastSnapshots.size()) {
-                    int index = Math.max(endSnapshotIndex - 1, 0);
-                    long time = lastSnapshots.get(index).time();
-                    snapshot = logData.getSnapshotAtTime(time);
-                } else {
-                    // keep processing snapshots from logData until it reaches a diff snapshot from this.snapshot
-                    Snapshot cur = logData.getNextSnapshot();
-                    while (cur == snapshot && !logData.isEndOfSnapshots()) {
-                        cur = logData.getNextSnapshot();
-                    }
-                    if (logData.isEndOfSnapshots()) break;
-
-                    snapshot = cur;
-                    lastSnapshots.add(new SnapshotView(cur));
-                }
-                logData.setStopwatchTime(TimeUnit.MILLISECONDS.toNanos(snapshot.time()));
-                endSnapshotIndex++;
-            }
-
-            while (endSnapshotIndex - frontSnapshotIndex > graphWidth / STEP_X) {
-                frontSnapshotIndex++;
-            }
-
-            frame.repaint();
-        }
-
-        @Override
-        public synchronized void run() {
-            if ((!isPaused && isLog) || !isLog) {
-                if (endSnapshotIndex < lastSnapshots.size()) {
-                    int i = Math.max(endSnapshotIndex - 1, 0);
-                    long time = lastSnapshots.get(i).time();
-                    snapshot = logData.getSnapshotAtTime(time);
-                    if (logData.snapshotTimeHasOccurred(snapshot)) {
-                        endSnapshotIndex++;
-                        frame.repaint();
-                    }
-                } else {
-                    Snapshot cur = isLog ? logData.snapshot() : data.snapshot();
-                    if (!cur.equals(snapshot)) {
-                        snapshot = cur;
-                        lastSnapshots.add(new SnapshotView(cur));
-                        endSnapshotIndex = lastSnapshots.size();
-                        if (lastSnapshots.size() - frontSnapshotIndex > graphWidth / STEP_X) {
-                            frontSnapshotIndex++;
-                        }
-                        frame.repaint();
-                    }
-                }
-                if (logData != null && logData.isEndOfSnapshots() && endSnapshotIndex >= lastSnapshots.size()) {
-                    System.out.println("Should only enter here at end of snapshots.");
-                    logData.controlStopwatch("STOP");
-                    isPaused = true;
-                }
-            }
-        }
-
-        private synchronized void loadDataProvider(DataProvider data) {
-            this.data = data;
-            this.logData = null;
-            this.isLog = false;
-            this.lastSnapshots.clear();
-            this.snapshot = data.snapshot();
-            this.isPaused = false;
-        }
-
-        private synchronized void loadLogDataProvider(DataLogProvider logData) {
-            this.logData = logData;
-
-            // Disconnect DataConnector from DataProvider
-            if (this.data != null) {
-                data.stopConnector();
-            }
-            this.data = null;
-
-            this.isLog = true;
-            this.lastSnapshots.clear();
-            this.snapshot = logData.snapshot();
-        }
-
-        private static Color getColor(SnapshotView s) {
+        protected static Color getColor(SnapshotView s) {
             if (s.youngPhase() != Phase.IDLE) {
                 return Colors.YOUNG[s.youngPhase().ordinal()];
             }
@@ -430,76 +311,6 @@ class ShenandoahVisualizer {
                 return Colors.OLD[s.oldPhase().ordinal()];
             }
             return Colors.TIMELINE_IDLE;
-        }
-
-        public synchronized void renderGraph(Graphics g) {
-//            if (lastSnapshots.size() < 2) return;
-            if (endSnapshotIndex - frontSnapshotIndex < 2) return;
-
-            int pad = 10;
-            int bandHeight = (graphHeight - pad) / 2;
-            double stepY = 1D * bandHeight / snapshot.total();
-
-            int startDiff = graphHeight;
-            int startRaw  = graphHeight - bandHeight - pad;
-
-            g.setColor(Color.WHITE);
-            g.fillRect(0, 0, graphWidth, graphHeight);
-
-            g.setColor(Color.BLACK);
-            g.fillRect(0, 0, graphWidth, bandHeight);
-            g.fillRect(0, bandHeight + pad, graphWidth, bandHeight);
-
-            long firstTime = lastSnapshots.get(frontSnapshotIndex).time();
-//            long lastTime = lastSnapshots.getLast().time();
-            long lastTime = lastSnapshots.get(endSnapshotIndex - 1).time();
-//            double stepX = (double) STEP_X * Math.min(lastSnapshots.size() - frontSnapshotIndex, graphWidth) / (lastTime - firstTime);
-            double stepX = (double) STEP_X * Math.min(endSnapshotIndex - frontSnapshotIndex, graphWidth) / (lastTime - firstTime);
-
-//            for (int i = frontSnapshotIndex; i < lastSnapshots.size(); i++) {
-            for (int i = frontSnapshotIndex; i < endSnapshotIndex; i++) {
-                SnapshotView s = lastSnapshots.get(i);
-                int x = (int) Math.round((s.time() - firstTime) * stepX);
-
-                if (s.oldPhase() == Phase.MARKING && s.globalPhase() == Phase.IDLE) {
-                    g.setColor(Colors.OLD[0]);
-                    g.drawRect(x, 0, 1, bandHeight);
-                }
-
-                g.setColor(getColor(s));
-                g.drawRect(x, bandHeight + pad, 1, bandHeight);
-
-                if (s.oldCsetPercentage() > 0) {
-                    int height = (int) (bandHeight * s.oldCsetPercentage());
-                    g.setColor(Colors.OLD[0]);
-                    g.drawRect(x, 2*bandHeight + pad - height, 1, height);
-                }
-
-                if (s.isFullActive()) {
-                    g.setColor(Colors.FULL);
-                    g.drawRect(x, bandHeight + pad, 1, 10);
-                } else if (s.isDegenActive()) {
-                    g.setColor(Colors.DEGENERATE);
-                    g.drawRect(x, bandHeight + pad, 1, 10);
-                }
-
-                // Draw these in the upper band.
-                g.setColor(Colors.USED);
-                g.drawRect(x, (int) Math.round(startRaw - s.used() * stepY), 1, 1);
-                g.setColor(Colors.LIVE_REGULAR);
-                g.drawRect(x, (int) Math.round(startRaw - s.live() * stepY), 1, 1);
-                g.setColor(Colors.LIVE_CSET);
-                g.drawRect(x, (int) Math.round(startRaw - s.collectionSet() * stepY), 1, 1);
-
-                // Draw this in the lower band.
-                final int smooth = Math.min(10, i + 1);
-                final int mult = 50;
-
-                SnapshotView ls = lastSnapshots.get(i - smooth + 1);
-
-                g.setColor(Colors.USED);
-                g.drawRect(x, (int) Math.round(startDiff - (s.used() - ls.used()) * stepY * mult / smooth), 1, 1);
-            }
         }
 
         public synchronized static void renderLegend(Graphics g) {
@@ -587,7 +398,7 @@ class ShenandoahVisualizer {
             }
         }
 
-        private String collectionMode() {
+        protected String collectionMode() {
             if (snapshot.isFullActive()) {
                 return "Full";
             }
@@ -597,79 +408,21 @@ class ShenandoahVisualizer {
             return snapshot.isYoungActive() ? "Young" : "Global";
         }
 
-        public synchronized void renderStats(Graphics g) {
-            String mode = collectionMode();
-            String status = "";
-            switch (snapshot.phase()) {
-                case IDLE:
-                    status += " Idle";
-                    mode = "";
-                    break;
-                case MARKING:
-                    status += " Marking";
-                    if (snapshot.getOldPhase() == Phase.MARKING) {
-                        status += " (Old)";
-                    }
-                    break;
-                case EVACUATING:                                                                                
-                    status += " Evacuating";
-                    break;
-                case UPDATE_REFS:
-                    status += " Updating Refs";
-                    break;
-                case UNKNOWN:
-                    status += " Unknown";
-                    break;
-            }
-
-            int line = 0;
-
-            g.setColor(Color.BLACK);
-            if (!isLog) {
-                g.drawString("Status: " + data.status(), 0, ++line * LINE);
-            }
-            g.drawString("GC: " + status, 0, ++line * LINE);
-            g.drawString("Mode: " + mode, 0, ++line * LINE);
-            g.drawString("Total: " + (snapshot.total() / KILO) + " MB", 0, ++line * LINE);
-            g.drawString(usageStatusLine(), 0, ++line * LINE);
-            g.drawString(liveStatusLine(), 0, ++line * LINE);
-
-            if (!this.isLog) {
-                Histogram histogram = snapshot.getSafepointTime();
-                String pausesText = String.format("GC Pauses: P100=%d, P95=%d, P90=%d",
-                        histogram.getMaxValue(), histogram.getValueAtPercentile(95), histogram.getValueAtPercentile(90));
-                g.drawString(pausesText, 0, ++line * LINE);
-            }
-
-            line = 4;
-            renderTimeLineLegendItem(g, LINE, Colors.OLD[1], ++line, "Old Marking");
-            renderTimeLineLegendItem(g, LINE, Colors.YOUNG[1], ++line, "Young Marking");
-            renderTimeLineLegendItem(g, LINE, Colors.YOUNG[2], ++line, "Young Evacuation");
-            renderTimeLineLegendItem(g, LINE, Colors.YOUNG[3], ++line, "Young Update References");
-
-            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[1], ++line, "Global Marking");
-            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[2], ++line, "Global Evacuation");
-            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[3], ++line, "Global Update References");
-
-            renderTimeLineLegendItem(g, LINE, Colors.DEGENERATE, ++line, "Degenerated Young");
-            renderTimeLineLegendItem(g, LINE, Colors.FULL, ++line, "Full");
-        }
-
-        private String liveStatusLine() {
+        protected String liveStatusLine() {
             return "Live (Green): MB: T:" +
                     snapshot.live() / ShenandoahVisualizer.KILO + " Y:" +
                     snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::live) / ShenandoahVisualizer.KILO + " O:" +
                     snapshot.generationStat(RegionAffiliation.OLD, RegionStat::live) / ShenandoahVisualizer.KILO;
         }
 
-        private String usageStatusLine() {
+        protected String usageStatusLine() {
             return "Used (White): MB: T:" +
                     snapshot.used() / ShenandoahVisualizer.KILO + " Y:" +
                     snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::used) / ShenandoahVisualizer.KILO + " O:" +
                     snapshot.generationStat(RegionAffiliation.OLD, RegionStat::used) / ShenandoahVisualizer.KILO;
         }
 
-        private void renderTimeLineLegendItem(Graphics g, int sqSize, Color color, int lineNumber, String label) {
+        protected void renderTimeLineLegendItem(Graphics g, int sqSize, Color color, int lineNumber, String label) {
             g.setColor(color);
             int y = (int) (lineNumber * LINE * 1.5);
             g.fillRect(0, y, sqSize, sqSize);
@@ -686,6 +439,379 @@ class ShenandoahVisualizer {
             this.graphWidth = width;
             this.graphHeight = height;
         }
+    }
+
+    public static class RenderLive extends Render {
+        volatile DataProvider data;
+
+        public RenderLive(DataProvider data, JFrame frame) {
+            super(frame);
+            this.data = data;
+            this.snapshot = data.snapshot();
+        }
+
+        @Override
+        public synchronized void run() {
+            Snapshot cur = data.snapshot();
+            if (!cur.equals(snapshot)) {
+                snapshot = cur;
+                lastSnapshots.add(new SnapshotView(cur));
+                if (lastSnapshots.size() > graphWidth / STEP_X) {
+                    lastSnapshots.removeFirst();
+                }
+                frame.repaint();
+            }
+        }
+
+        public synchronized void loadDataProvider(DataProvider data) {
+            this.data = data;
+            this.lastSnapshots.clear();
+            this.snapshot = data.snapshot();
+        }
+
+        public synchronized void closeDataProvider() {
+            if (this.data != null) {
+                data.stopConnector();
+            }
+            this.data = null;
+        }
+
+        public synchronized void renderGraph(Graphics g) {
+            if (lastSnapshots.size() < 2) return;
+
+            int pad = 10;
+            int bandHeight = (graphHeight - pad) / 2;
+            double stepY = 1D * bandHeight / snapshot.total();
+
+            int startDiff = graphHeight;
+            int startRaw  = graphHeight - bandHeight - pad;
+
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, graphWidth, graphHeight);
+
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, graphWidth, bandHeight);
+            g.fillRect(0, bandHeight + pad, graphWidth, bandHeight);
+
+            long firstTime = lastSnapshots.getFirst().time();
+            long lastTime = lastSnapshots.getLast().time();
+            double stepX = (double) STEP_X * Math.min(lastSnapshots.size(), graphWidth) / (lastTime - firstTime);
+
+            for (int i = 0; i < lastSnapshots.size(); i++) {
+                SnapshotView s = lastSnapshots.get(i);
+                int x = (int) Math.round((s.time() - firstTime) * stepX);
+
+                if (s.oldPhase() == Phase.MARKING && s.globalPhase() == Phase.IDLE) {
+                    g.setColor(Colors.OLD[0]);
+                    g.drawRect(x, 0, 1, bandHeight);
+                }
+
+                g.setColor(getColor(s));
+                g.drawRect(x, bandHeight + pad, 1, bandHeight);
+
+                if (s.oldCsetPercentage() > 0) {
+                    int height = (int) (bandHeight * s.oldCsetPercentage());
+                    g.setColor(Colors.OLD[0]);
+                    g.drawRect(x, 2*bandHeight + pad - height, 1, height);
+                }
+
+                if (s.isFullActive()) {
+                    g.setColor(Colors.FULL);
+                    g.drawRect(x, bandHeight + pad, 1, 10);
+                } else if (s.isDegenActive()) {
+                    g.setColor(Colors.DEGENERATE);
+                    g.drawRect(x, bandHeight + pad, 1, 10);
+                }
+
+                // Draw these in the upper band.
+                g.setColor(Colors.USED);
+                g.drawRect(x, (int) Math.round(startRaw - s.used() * stepY), 1, 1);
+                g.setColor(Colors.LIVE_REGULAR);
+                g.drawRect(x, (int) Math.round(startRaw - s.live() * stepY), 1, 1);
+                g.setColor(Colors.LIVE_CSET);
+                g.drawRect(x, (int) Math.round(startRaw - s.collectionSet() * stepY), 1, 1);
+
+                // Draw this in the lower band.
+                final int smooth = Math.min(10, i + 1);
+                final int mult = 50;
+
+                SnapshotView ls = lastSnapshots.get(i - smooth + 1);
+
+                g.setColor(Colors.USED);
+                g.drawRect(x, (int) Math.round(startDiff - (s.used() - ls.used()) * stepY * mult / smooth), 1, 1);
+            }
+        }
+
+        public synchronized void renderStats(Graphics g) {
+            String mode = collectionMode();
+            String status = "";
+            switch (snapshot.phase()) {
+                case IDLE:
+                    status += " Idle";
+                    mode = "";
+                    break;
+                case MARKING:
+                    status += " Marking";
+                    if (snapshot.getOldPhase() == Phase.MARKING) {
+                        status += " (Old)";
+                    }
+                    break;
+                case EVACUATING:
+                    status += " Evacuating";
+                    break;
+                case UPDATE_REFS:
+                    status += " Updating Refs";
+                    break;
+                case UNKNOWN:
+                    status += " Unknown";
+                    break;
+            }
+
+            int line = 0;
+
+            g.setColor(Color.BLACK);
+            g.drawString("Status: " + data.status(), 0, ++line * LINE);
+            g.drawString("GC: " + status, 0, ++line * LINE);
+            g.drawString("Mode: " + mode, 0, ++line * LINE);
+            g.drawString("Total: " + (snapshot.total() / KILO) + " MB", 0, ++line * LINE);
+            g.drawString(usageStatusLine(), 0, ++line * LINE);
+            g.drawString(liveStatusLine(), 0, ++line * LINE);
+
+            Histogram histogram = snapshot.getSafepointTime();
+            String pausesText = String.format("GC Pauses: P100=%d, P95=%d, P90=%d",
+                    histogram.getMaxValue(), histogram.getValueAtPercentile(95), histogram.getValueAtPercentile(90));
+            g.drawString(pausesText, 0, ++line * LINE);
+
+            line = 4;
+            renderTimeLineLegendItem(g, LINE, Colors.OLD[1], ++line, "Old Marking");
+            renderTimeLineLegendItem(g, LINE, Colors.YOUNG[1], ++line, "Young Marking");
+            renderTimeLineLegendItem(g, LINE, Colors.YOUNG[2], ++line, "Young Evacuation");
+            renderTimeLineLegendItem(g, LINE, Colors.YOUNG[3], ++line, "Young Update References");
+
+            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[1], ++line, "Global Marking");
+            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[2], ++line, "Global Evacuation");
+            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[3], ++line, "Global Update References");
+
+            renderTimeLineLegendItem(g, LINE, Colors.DEGENERATE, ++line, "Degenerated Young");
+            renderTimeLineLegendItem(g, LINE, Colors.FULL, ++line, "Full");
+        }
+    }
+
+    public static class RenderPlayback extends Render {
+        volatile DataLogProvider data;
+        volatile boolean isPaused;
+
+        volatile int frontSnapshotIndex = 0;
+        volatile int endSnapshotIndex = 0;
+
+        public RenderPlayback(DataLogProvider data, JFrame frame) {
+            super(frame);
+            this.data = data;
+            this.snapshot = data.snapshot();
+            this.isPaused = false;
+            }
+
+        @Override
+        public synchronized void run() {
+            if (!isPaused) {
+                if (endSnapshotIndex < lastSnapshots.size()) {
+                    int i = Math.max(endSnapshotIndex - 1, 0);
+                    long time = lastSnapshots.get(i).time();
+                    snapshot = data.getSnapshotAtTime(time);
+                    if (data.snapshotTimeHasOccurred(snapshot)) {
+                        endSnapshotIndex++;
+                        frame.repaint();
+                    }
+                } else {
+                    Snapshot cur = data.snapshot();
+                    if (!cur.equals(snapshot)) {
+                        snapshot = cur;
+                        lastSnapshots.add(new SnapshotView(cur));
+                        endSnapshotIndex = lastSnapshots.size();
+                        if (lastSnapshots.size() - frontSnapshotIndex > graphWidth / STEP_X) {
+                            frontSnapshotIndex++;
+                        }
+                        frame.repaint();
+                    }
+                }
+                if (data.isEndOfSnapshots() && endSnapshotIndex >= lastSnapshots.size()) {
+                    System.out.println("Should only enter here at end of snapshots.");
+                    data.controlStopwatch("STOP");
+                    isPaused = true;
+                }
+            }
+        }
+
+        public synchronized void stepBackSnapshots(int n) {
+            if (lastSnapshots.size() == 0) return;
+
+            frontSnapshotIndex = Math.max(frontSnapshotIndex - n, 0);
+            endSnapshotIndex = Math.max(endSnapshotIndex - n, 0);
+
+            int i = Math.max(endSnapshotIndex - 1, 0);
+            long time = lastSnapshots.get(i).time();
+            data.setStopwatchTime(TimeUnit.MILLISECONDS.toNanos(time));
+
+            snapshot = data.getSnapshotAtTime(time);
+            frame.repaint();
+        }
+
+        public synchronized void stepForwardSnapshots(int n) {
+            if (lastSnapshots.size() == 0) return;
+
+            for (int i = 0; i < n; i++) {
+                if (endSnapshotIndex < lastSnapshots.size()) {
+                    int index = Math.max(endSnapshotIndex - 1, 0);
+                    long time = lastSnapshots.get(index).time();
+                    snapshot = data.getSnapshotAtTime(time);
+                } else {
+                    // keep processing snapshots from logData until it reaches a diff snapshot from this.snapshot
+                    Snapshot cur = data.getNextSnapshot();
+                    while (cur == snapshot && !data.isEndOfSnapshots()) {
+                        cur = data.getNextSnapshot();
+                    }
+                    if (data.isEndOfSnapshots()) break;
+
+                    snapshot = cur;
+                    lastSnapshots.add(new SnapshotView(cur));
+                }
+                data.setStopwatchTime(TimeUnit.MILLISECONDS.toNanos(snapshot.time()));
+                endSnapshotIndex++;
+            }
+
+            while (endSnapshotIndex - frontSnapshotIndex > graphWidth / STEP_X) {
+                frontSnapshotIndex++;
+            }
+
+            frame.repaint();
+        }
+
+        private synchronized void loadLogDataProvider(DataLogProvider data) {
+            this.data = data;
+            this.lastSnapshots.clear();
+            this.snapshot = data.snapshot();
+            this.isPaused = false;
+        }
+
+        public synchronized void renderGraph(Graphics g) {
+            if (endSnapshotIndex - frontSnapshotIndex < 2) return;
+
+            int pad = 10;
+            int bandHeight = (graphHeight - pad) / 2;
+            double stepY = 1D * bandHeight / snapshot.total();
+
+            int startDiff = graphHeight;
+            int startRaw  = graphHeight - bandHeight - pad;
+
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, graphWidth, graphHeight);
+
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, graphWidth, bandHeight);
+            g.fillRect(0, bandHeight + pad, graphWidth, bandHeight);
+
+            long firstTime = lastSnapshots.get(frontSnapshotIndex).time();
+            long lastTime = lastSnapshots.get(endSnapshotIndex - 1).time();
+            double stepX = (double) STEP_X * Math.min(endSnapshotIndex - frontSnapshotIndex, graphWidth) / (lastTime - firstTime);
+
+            for (int i = frontSnapshotIndex; i < endSnapshotIndex; i++) {
+                SnapshotView s = lastSnapshots.get(i);
+                int x = (int) Math.round((s.time() - firstTime) * stepX);
+
+                if (s.oldPhase() == Phase.MARKING && s.globalPhase() == Phase.IDLE) {
+                    g.setColor(Colors.OLD[0]);
+                    g.drawRect(x, 0, 1, bandHeight);
+                }
+
+                g.setColor(getColor(s));
+                g.drawRect(x, bandHeight + pad, 1, bandHeight);
+
+                if (s.oldCsetPercentage() > 0) {
+                    int height = (int) (bandHeight * s.oldCsetPercentage());
+                    g.setColor(Colors.OLD[0]);
+                    g.drawRect(x, 2*bandHeight + pad - height, 1, height);
+                }
+
+                if (s.isFullActive()) {
+                    g.setColor(Colors.FULL);
+                    g.drawRect(x, bandHeight + pad, 1, 10);
+                } else if (s.isDegenActive()) {
+                    g.setColor(Colors.DEGENERATE);
+                    g.drawRect(x, bandHeight + pad, 1, 10);
+                }
+
+                // Draw these in the upper band.
+                g.setColor(Colors.USED);
+                g.drawRect(x, (int) Math.round(startRaw - s.used() * stepY), 1, 1);
+                g.setColor(Colors.LIVE_REGULAR);
+                g.drawRect(x, (int) Math.round(startRaw - s.live() * stepY), 1, 1);
+                g.setColor(Colors.LIVE_CSET);
+                g.drawRect(x, (int) Math.round(startRaw - s.collectionSet() * stepY), 1, 1);
+
+                // Draw this in the lower band.
+                final int smooth = Math.min(10, i + 1);
+                final int mult = 50;
+
+                SnapshotView ls = lastSnapshots.get(i - smooth + 1);
+
+                g.setColor(Colors.USED);
+                g.drawRect(x, (int) Math.round(startDiff - (s.used() - ls.used()) * stepY * mult / smooth), 1, 1);
+            }
+        }
+
+        public synchronized void renderStats(Graphics g) {
+            String mode = collectionMode();
+            String status = "";
+            switch (snapshot.phase()) {
+                case IDLE:
+                    status += " Idle";
+                    mode = "";
+                    break;
+                case MARKING:
+                    status += " Marking";
+                    if (snapshot.getOldPhase() == Phase.MARKING) {
+                        status += " (Old)";
+                    }
+                    break;
+                case EVACUATING:
+                    status += " Evacuating";
+                    break;
+                case UPDATE_REFS:
+                    status += " Updating Refs";
+                    break;
+                case UNKNOWN:
+                    status += " Unknown";
+                    break;
+            }
+
+            int line = 0;
+
+            g.setColor(Color.BLACK);
+            g.drawString("GC: " + status, 0, ++line * LINE);
+            g.drawString("Mode: " + mode, 0, ++line * LINE);
+            g.drawString("Total: " + (snapshot.total() / KILO) + " MB", 0, ++line * LINE);
+            g.drawString(usageStatusLine(), 0, ++line * LINE);
+            g.drawString(liveStatusLine(), 0, ++line * LINE);
+
+            Histogram histogram = snapshot.getSafepointTime();
+            String pausesText = String.format("GC Pauses: P100=%d, P95=%d, P90=%d",
+                    histogram.getMaxValue(), histogram.getValueAtPercentile(95), histogram.getValueAtPercentile(90));
+            g.drawString(pausesText, 0, ++line * LINE);
+
+            line = 4;
+            renderTimeLineLegendItem(g, LINE, Colors.OLD[1], ++line, "Old Marking");
+            renderTimeLineLegendItem(g, LINE, Colors.YOUNG[1], ++line, "Young Marking");
+            renderTimeLineLegendItem(g, LINE, Colors.YOUNG[2], ++line, "Young Evacuation");
+            renderTimeLineLegendItem(g, LINE, Colors.YOUNG[3], ++line, "Young Update References");
+
+            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[1], ++line, "Global Marking");
+            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[2], ++line, "Global Evacuation");
+            renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[3], ++line, "Global Update References");
+
+            renderTimeLineLegendItem(g, LINE, Colors.DEGENERATE, ++line, "Degenerated Young");
+            renderTimeLineLegendItem(g, LINE, Colors.FULL, ++line, "Full");
+        }
+
     }
 }
 
