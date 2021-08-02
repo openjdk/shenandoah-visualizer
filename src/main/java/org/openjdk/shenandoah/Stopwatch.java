@@ -1,6 +1,6 @@
 /*
  * ====
- *     Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ *     Copyright (c) 2021, Amazon.com, Inc. All rights reserved.
  *     DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *     This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,13 @@
 package org.openjdk.shenandoah;
 
 import java.lang.System;
+import java.util.concurrent.TimeUnit;
 
 public class Stopwatch {
     private long startTime = 0;
-//    private long stopTime = 0;
     private long elapsedTime = 0;
     private boolean isRunning = false;
+    private double speedMultiplier = 1.0;
 
     public void start() {
         if (!isRunning) {
@@ -69,9 +70,7 @@ public class Stopwatch {
 
     public void stop() {
         if (isRunning) {
-//            stopTime = System.nanoTime();
-//            elapsedTime += stopTime - startTime;
-            elapsedTime += System.nanoTime() - startTime;
+            elapsedTime += Math.round((System.nanoTime() - startTime) * speedMultiplier);
             isRunning = false;
         } else {
             System.out.println("Already stopped stopwatch. Must START before STOP can be enabled again.");
@@ -88,28 +87,33 @@ public class Stopwatch {
         }
     }
 
+    public void setSpeedMultiplier(double speed) {
+        speedMultiplier = speed;
+        System.out.println("Set speed to: " + speed);
+    }
+
     public void clear() {
         startTime = 0;
-//        stopTime = 0;
         elapsedTime = 0;
         isRunning = false;
+        speedMultiplier = 1.0;
     }
 
     public long getElapsedNano() {
         long currentTime = System.nanoTime();
         if (isRunning) {
-            return elapsedTime + currentTime - startTime;
+            return elapsedTime + Math.round((currentTime - startTime) * speedMultiplier);
         } else {
             return elapsedTime;
         }
     }
 
     public long getElapsedMilli() {
-        return getElapsedNano() / 1000000;
+        return TimeUnit.NANOSECONDS.toMillis(getElapsedNano());
     }
 
     public long getCurrentMilli() {
-        return System.nanoTime() / 1000000;
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
     }
 
     public boolean isStarted() {

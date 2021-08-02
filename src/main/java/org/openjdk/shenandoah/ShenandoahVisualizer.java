@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2021, Amazon.com, Inc. All rights reserved.
  * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,12 +94,14 @@ class ShenandoahVisualizer {
         if (isReplay) {
             DataLogProvider logData = new DataLogProvider(filePath[0]);
             tempRender = new Render(logData, frame);
-            toolbarPanel.setMode(PLAYBACK);
+            toolbarPanel.setModeField(PLAYBACK);
+            toolbarPanel.setEnabledRealtimeModeButton(true);
             toolbarPanel.setFileNameField(filePath[0]);
         } else {
             DataProvider data = new DataProvider(vmIdentifier);
             tempRender = new Render(data, frame);
-            toolbarPanel.setMode(REALTIME);
+            toolbarPanel.setModeField(REALTIME);
+            toolbarPanel.setEnabledRealtimeModeButton(false);
         }
         final Render render = tempRender;
 
@@ -162,6 +165,7 @@ class ShenandoahVisualizer {
 
         ActionListener playPauseButtonListener = new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
+                System.out.println("isPaused before: " + render.isPaused);
                 if (render.isPaused) {
                     render.logData.controlStopwatch("START");
                     toolbarPanel.setLastActionField("Play button pressed.");
@@ -170,38 +174,27 @@ class ShenandoahVisualizer {
                     toolbarPanel.setLastActionField("Pause button pressed.");
                 }
                 render.isPaused = !render.isPaused;
+                System.out.println("isPaused after: " + render.isPaused);
             }
         };
         toolbarPanel.setPlayPauseButtonListener(playPauseButtonListener);
 
+        ActionListener speedButtonListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                render.logData.setSpeed(2);
+            }
+        };
+        toolbarPanel.setSpeedButtonListener(speedButtonListener);
+
         // Step back/forward button listeners
-        ActionListener backButton_1_Listener = new ActionListener() {
-            public void actionPerformed(ActionEvent ae) {
-                render.stepBackSnapshots(1);
-            }
-        };
-        toolbarPanel.setBackButton_1_Listener(backButton_1_Listener);
+        toolbarPanel.setBackButton_1_Listener((ae) -> render.stepBackSnapshots(1));
 
-        ActionListener backButton_5_Listener = new ActionListener() {
-            public void actionPerformed(ActionEvent ae) {
-                render.stepBackSnapshots(5);
-            }
-        };
-        toolbarPanel.setBackButton_5_Listener(backButton_5_Listener);
+        toolbarPanel.setBackButton_5_Listener((ae) -> render.stepBackSnapshots(5));
 
-        ActionListener forwardButton_1_Listener = new ActionListener() {
-            public void actionPerformed(ActionEvent ae) {
-                render.stepForwardSnapshots(1);
-            }
-        };
-        toolbarPanel.setForwardButton_1_Listener(forwardButton_1_Listener);
+        toolbarPanel.setForwardButton_1_Listener((ae) -> render.stepForwardSnapshots(1));
 
-        ActionListener forwardButton_5_Listener = new ActionListener() {
-            public void actionPerformed(ActionEvent ae) {
-                render.stepForwardSnapshots(5);
-            }
-        };
-        toolbarPanel.setForwardButton_5_Listener(forwardButton_5_Listener);
+        toolbarPanel.setForwardButton_5_Listener((ae) -> render.stepForwardSnapshots(5));
 
         regionsPanel.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent ev) {
@@ -336,7 +329,7 @@ class ShenandoahVisualizer {
 
             int i = Math.max(endSnapshotIndex - 1, 0);
             long time = lastSnapshots.get(i).time();
-            logData.setStopwatchTime(time * 1_000_000);
+            logData.setStopwatchTime(TimeUnit.MILLISECONDS.toNanos(time));
 
             snapshot = logData.getSnapshotAtTime(time);
             frame.repaint();
@@ -361,7 +354,7 @@ class ShenandoahVisualizer {
                     snapshot = cur;
                     lastSnapshots.add(new SnapshotView(cur));
                 }
-                logData.setStopwatchTime(snapshot.time() * 1_000_000);
+                logData.setStopwatchTime(TimeUnit.MILLISECONDS.toNanos(snapshot.time()));
                 endSnapshotIndex++;
             }
 
@@ -374,7 +367,7 @@ class ShenandoahVisualizer {
 
         @Override
         public synchronized void run() {
-            if (!isPaused || isLog) {
+            if ((!isPaused && isLog) || !isLog) {
                 if (endSnapshotIndex < lastSnapshots.size()) {
                     int i = Math.max(endSnapshotIndex - 1, 0);
                     long time = lastSnapshots.get(i).time();
@@ -396,6 +389,7 @@ class ShenandoahVisualizer {
                     }
                 }
                 if (logData != null && logData.isEndOfSnapshots() && endSnapshotIndex >= lastSnapshots.size()) {
+                    System.out.println("Should only enter here at end of snapshots.");
                     logData.controlStopwatch("STOP");
                     isPaused = true;
                 }

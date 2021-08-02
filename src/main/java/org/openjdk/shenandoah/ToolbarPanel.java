@@ -1,6 +1,6 @@
 /*
  * ====
- *     Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ *     Copyright (c) 2021, Amazon.com, Inc. All rights reserved.
  *     DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *     This code is free software; you can redistribute it and/or modify it
@@ -66,16 +66,14 @@ public class ToolbarPanel extends JPanel
     private static final String FORWARD_5 = "Step forward 5";
     private static final String PLAYBACK = "Playback";
     private static final String REALTIME = "Realtime";
-    private static final String PLAYING = "Playing";
-    private static final String PAUSED = "Paused";
-    private static final String IDLE = "Idle";
+    private static final String SET_SPEED = "Set speed";
 
 
     private JToolBar fileToolbar, replayToolbar, statusToolbar;
     private boolean isReplay;
     private JButton fileButton, backButton_1, backButton_5, playPauseButton, forwardButton_1, forwardButton_5;
-    private JButton realtimeModeButton;
-    private JTextField fileNameField, lastActionField, modeField;
+    private JButton realtimeModeButton, speedButton;
+    private JTextField fileNameField, lastActionField, modeField, speedField;
     private JLabel modeLabel, lastActionLabel;
 
     public ToolbarPanel(boolean isReplay) {
@@ -142,6 +140,13 @@ public class ToolbarPanel extends JPanel
         modeField = new JTextField();
         modeField.setEditable(false);
         statusToolbar.add(modeField);
+
+//        speedField = new JTextField();
+//        speedField.setActionCommand(SET_SPEED);
+//        statusToolbar.add(speedField);
+        speedButton = new JButton("2x");
+        speedButton.setActionCommand(SET_SPEED);
+        statusToolbar.add(speedButton);
 
         {
             GridBagConstraints c = new GridBagConstraints();
@@ -217,6 +222,10 @@ public class ToolbarPanel extends JPanel
         realtimeModeButton.addActionListener(a);
     }
 
+    public void setSpeedButtonListener(ActionListener a) {
+        speedButton.addActionListener(a);
+    }
+
     public void setFileNameField(String s) {
         fileNameField.setText(s);
     }
@@ -225,13 +234,15 @@ public class ToolbarPanel extends JPanel
         lastActionField.setText(s);
     }
 
-    public void setMode(String s) {
+    public void setEnabledRealtimeModeButton(boolean b) {
+        realtimeModeButton.setEnabled(b);
+    }
+
+    public void setModeField(String s) {
         if (REALTIME.equals(s)) {
             modeField.setText(REALTIME);
-            realtimeModeButton.setEnabled(false);
         } else if (PLAYBACK.equals(s)) {
             modeField.setText(PLAYBACK);
-            realtimeModeButton.setEnabled(true);
         }
     }
 
@@ -240,14 +251,18 @@ public class ToolbarPanel extends JPanel
         if (CHOOSE_FILE.equals(cmd)) {
             isReplay = true;
             setEnableReplayButtons(true);
-            setMode(PLAYBACK);
+            setModeField(PLAYBACK);
+            setEnabledRealtimeModeButton(true);
         } else if (REALTIME.equals(cmd)) {
             lastActionField.setText("Switched to realtime mode.");
             setEnableReplayButtons(false);
-            setMode(REALTIME);
-        } else {
+            setModeField(REALTIME);
+            setEnabledRealtimeModeButton(false);
+        } else if (SET_SPEED.equals(cmd)){
+//            lastActionField.setText("Speed set to: " + speedField.getText());
+            lastActionField.setText("Speed set to: 2x");
+        } else if (!PLAY_PAUSE.equals(cmd)){
             lastActionField.setText(cmd + " button pressed.");
         }
     }
-
 }

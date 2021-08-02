@@ -1,6 +1,6 @@
 /*
  * ====
- *     Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ *     Copyright (c) 2021, Amazon.com, Inc. All rights reserved.
  *     DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *     This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,8 @@
  */
 package org.openjdk.shenandoah;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,31 +58,23 @@ import java.util.List;
 import java.io.*;
 import java.lang.IllegalArgumentException;
 import java.lang.System;
+import java.util.concurrent.TimeUnit;
 
 public class DataLogProvider {
-    // take in file
-    // parse snapshot header and data until reach EOL or next snapshot
-    // create snapshot with data and header
-
-    // metadata: timestamp status numRegions regionSize
-    // data: region_data
     private static final Snapshot DISCONNECTED = new Snapshot(0, 1024, Collections.emptyList(), 0, null);
 
     private static final String START = "START";
     private static final String STOP = "STOP";
     private static final String CLEAR = "CLEAR";
 
-    private String filePath;
-    private BufferedReader br;
     private List<Snapshot> snapshots;
     private HashMap<Long, Integer> snapshotsIndexByTime;
     public final Stopwatch stopwatch;
     private int snapshotsIndex = -1;
-    private long startTime = -1;
     private Snapshot currSnapshot = DISCONNECTED;
 
     public DataLogProvider(String path) throws IOException, NumberFormatException {
-        filePath = path;
+        String filePath = path;
         if (!isValidPath(filePath)) {
             throw new FileNotFoundException("Invalid file path supplied. Please try again.");
         }
@@ -89,30 +83,33 @@ public class DataLogProvider {
         this.snapshotsIndexByTime = new HashMap<>();
         int index = 0;
 
-        br = new BufferedReader(new FileReader(filePath));
-        String metaDataLine = br.readLine(); // timestamp status numRegions regionSize
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String metaDataLine = br.readLine(); // timestamp status numRegions regionSize
 
-        while (metaDataLine != null && metaDataLine.trim().length() > 0) {
-            long[] metaData = processLongData(metaDataLine);
-            if (metaData.length != 4) {
-                throw new IllegalArgumentException(String.format("Metadata line has %d values. Expected 4 values.", metaData.length));
+            while (metaDataLine != null && metaDataLine.trim().length() > 0) {
+                long[] metaData = processLongData(metaDataLine);
+                if (metaData.length != 4) {
+                    throw new IllegalArgumentException(String.format("Metadata line has %d values. Expected 4 values.", metaData.length));
+                }
+
+                String regionDataLine = br.readLine();
+                if (regionDataLine == null) {
+                    throw new NullPointerException("Invalid file format: Missing region data.");
+                }
+                String[] regionData = regionDataLine.trim().split(" ");
+
+                long tsMilli = TimeUnit.NANOSECONDS.toMillis(metaData[0]);
+                snapshots.add(new Snapshot(tsMilli,
+                        metaData[3],
+                        processRegionStats(regionData),
+                        Math.toIntExact(metaData[1]),
+                        null));
+                snapshotsIndexByTime.put(tsMilli, index++);
+
+                metaDataLine = br.readLine();
             }
-
-            String regionDataLine = br.readLine();
-            if (regionDataLine == null) {
-                throw new NullPointerException("Invalid file format: Missing region data.");
-            }
-            String[] regionData = regionDataLine.trim().split(" ");
-
-            snapshots.add(new Snapshot(metaData[0] / 1_000_000,
-                                       metaData[3],
-                                       processRegionStats(regionData),
-                                       Math.toIntExact(metaData[1]),
-                              null));
-            snapshotsIndexByTime.put(metaData[0] / 1_000_000, index++);
-
-            metaDataLine = br.readLine();
         }
+
         if (snapshots.size() > 0) {
             snapshotsIndex = 0;
         }
@@ -134,6 +131,10 @@ public class DataLogProvider {
         stopwatch.setElapsedTime(ns);
     }
 
+    public void setSpeed(double speed) {
+        stopwatch.setSpeedMultiplier(speed);
+    }
+
     public boolean snapshotTimeHasOccurred(Snapshot s) {
         return s.time() <= stopwatch.getElapsedMilli();
     }
@@ -143,14 +144,11 @@ public class DataLogProvider {
     }
 
     private boolean isValidPath(String name) {
-        if (name == null) {
-            return false;
-        }
-        return true;
+        return name != null && Files.isReadable(Paths.get(name));
     }
 
     private long[] processLongData(String data) throws NumberFormatException {
-        String[] dataArray = data.trim().split(" ");
+        String[] dataArray = data.trim().split(" ", 5000);
         long[] longArray = new long[dataArray.length];
 
         for (int i = 0; i < dataArray.length; i++) {
@@ -161,7 +159,7 @@ public class DataLogProvider {
     }
 
     private List<RegionStat> processRegionStats(String[] regionData) throws NumberFormatException {
-        List<RegionStat> stats = new ArrayList<>();
+        List<RegionStat> stats = new ArrayList<>(regionData.length);
         for (String d : regionData) {
             stats.add(new RegionStat(Long.parseLong(d)));
         }
@@ -181,7 +179,6 @@ public class DataLogProvider {
             return DISCONNECTED;
         } else if (snapshotsIndex >= 0 && snapshotsIndex < snapshots.size()) {
             Snapshot tempSnapshot = snapshots.get(snapshotsIndex);
-//            if (tempSnapshot.time() <= stopwatch.getElapsedMilli()) {
             if (snapshotTimeHasOccurred(tempSnapshot)) {
                 currSnapshot = tempSnapshot;
                 snapshotsIndex++;
