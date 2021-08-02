@@ -53,15 +53,6 @@ class ShenandoahVisualizer {
     private static final String REALTIME = "Realtime";
 
 
-    private static void changeScheduleInterval(int n, ScheduledExecutorService service, ScheduledFuture<?> f, Runnable task) {
-        if (service == null || f == null) return;
-        if (n > 0) {
-            if (f != null) {
-                f.cancel(false);
-            }
-            f = service.scheduleAtFixedRate(task, 500, n, TimeUnit.MILLISECONDS);
-        }
-    }
 
     public static void main(String[] args) throws Exception {
         // Command line argument parsing
@@ -96,8 +87,6 @@ class ShenandoahVisualizer {
         }
         //
 
-
-
         JFrame frame = new JFrame();
         frame.setLayout(new GridBagLayout());
         frame.setTitle("Shenandoah GC Visualizer");
@@ -120,9 +109,9 @@ class ShenandoahVisualizer {
         }
 
         // Executors
-//        ScheduledExecutorService service = Executors.newScheduledThreadPool(1);;
-//        ScheduledFuture<?> f = service.scheduleAtFixedRate(renderRunner,
-//                0, renderRunner.isLive ? 100 : 1, TimeUnit.MILLISECONDS);;
+        ScheduledExecutorService service = Executors.newScheduledThreadPool(1);;
+        ScheduledFuture<?> f = service.scheduleAtFixedRate(renderRunner,
+                0, renderRunner.isLive ? 100 : 1, TimeUnit.MILLISECONDS);;
 
 
         JPanel regionsPanel = new JPanel() {
@@ -156,7 +145,6 @@ class ShenandoahVisualizer {
             public void actionPerformed(ActionEvent ae) {
                 DataProvider data = new DataProvider(null);
                 renderRunner.loadLive(data);
-//                ShenandoahVisualizer.changeScheduleInterval(100,service,f,renderRunner);
             }
         };
         toolbarPanel.setRealtimeModeButtonListener(realtimeModeButtonListener);
@@ -173,8 +161,6 @@ class ShenandoahVisualizer {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-
-//                    ShenandoahVisualizer.changeScheduleInterval(1, service, f, renderRunner);
 
                     toolbarPanel.setFileNameField(filePath[0]);
                     toolbarPanel.setLastActionField("File selected: " + filePath[0]);
@@ -289,10 +275,6 @@ class ShenandoahVisualizer {
 
         frame.setVisible(true);
 
-        ScheduledExecutorService service = Executors.newScheduledThreadPool(1);;
-        ScheduledFuture<?> f = service.scheduleAtFixedRate(renderRunner,
-                0, renderRunner.isLive ? 100 : 1, TimeUnit.MILLISECONDS);;
-
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 f.cancel(true);
@@ -300,7 +282,6 @@ class ShenandoahVisualizer {
                 frame.dispose();
             }
         });
-
         f.get();
     }
 
@@ -413,11 +394,7 @@ class ShenandoahVisualizer {
             int sqSize = Math.max(1, (int) Math.sqrt(1D * area / snapshot.regionCount()));
             int cols = regionWidth / sqSize;
             int cellSize = sqSize - 2;
-
-            System.out.println("Area: " + area + ", snapshot.regionCount(): " + snapshot.regionCount());
-
             for (int i = 0; i < snapshot.regionCount(); i++) {
-                System.out.println("i: " + i + ", cols: " + cols + ", sqSize: " + sqSize);
                 int rectx = (i % cols) * sqSize;
                 int recty = (i / cols) * sqSize;
 
@@ -876,7 +853,6 @@ class ShenandoahVisualizer {
             }
             isLive = false;
             playback.loadLogDataProvider(data);
-            System.out.println("Finished loading playback");
         }
 
         public synchronized void loadLive(DataProvider data) {
@@ -919,19 +895,13 @@ class ShenandoahVisualizer {
         }
 
         public synchronized void notifyRegionResized(int width, int height) {
-            if (isLive) {
-                live.notifyRegionResized(width, height);
-            } else {
-                playback.notifyRegionResized(width, height);
-            }
+            live.notifyRegionResized(width, height);
+            playback.notifyRegionResized(width, height);
         }
 
         public synchronized void notifyGraphResized(int width, int height) {
-            if (isLive) {
-                live.notifyGraphResized(width, height);
-            } else {
-                playback.notifyGraphResized(width, height);
-            }
+            live.notifyGraphResized(width, height);
+            playback.notifyGraphResized(width, height);
         }
     }
 }
