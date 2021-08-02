@@ -52,7 +52,19 @@ class ShenandoahVisualizer {
     private static final String PLAYBACK = "Playback";
     private static final String REALTIME = "Realtime";
 
+
+    private static void changeScheduleInterval(int n, ScheduledExecutorService service, ScheduledFuture<?> f, Runnable task) {
+        if (service == null || f == null) return;
+        if (n > 0) {
+            if (f != null) {
+                f.cancel(false);
+            }
+            f = service.scheduleAtFixedRate(task, 500, n, TimeUnit.MILLISECONDS);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        // Command line argument parsing
         String vmIdentifier = null;
         boolean isReplay = false;
         final String[] filePath = {""};
@@ -82,32 +94,40 @@ class ShenandoahVisualizer {
                 return;
             }
         }
+        //
+
+
 
         JFrame frame = new JFrame();
         frame.setLayout(new GridBagLayout());
         frame.setTitle("Shenandoah GC Visualizer");
         frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
 
-        Render tempRender;
+        final RenderRunner renderRunner;
         ToolbarPanel toolbarPanel = new ToolbarPanel(isReplay);
 
         if (isReplay) {
-            DataLogProvider logData = new DataLogProvider(filePath[0]);
-            tempRender = new Render(logData, frame);
+            DataLogProvider data = new DataLogProvider(filePath[0]);
+            renderRunner = new RenderRunner(data, frame);
             toolbarPanel.setModeField(PLAYBACK);
             toolbarPanel.setEnabledRealtimeModeButton(true);
             toolbarPanel.setFileNameField(filePath[0]);
         } else {
             DataProvider data = new DataProvider(vmIdentifier);
-            tempRender = new Render(data, frame);
+            renderRunner = new RenderRunner(data, frame);
             toolbarPanel.setModeField(REALTIME);
             toolbarPanel.setEnabledRealtimeModeButton(false);
         }
-        final Render render = tempRender;
+
+        // Executors
+//        ScheduledExecutorService service = Executors.newScheduledThreadPool(1);;
+//        ScheduledFuture<?> f = service.scheduleAtFixedRate(renderRunner,
+//                0, renderRunner.isLive ? 100 : 1, TimeUnit.MILLISECONDS);;
+
 
         JPanel regionsPanel = new JPanel() {
             public void paint(Graphics g) {
-                render.renderRegions(g);
+                renderRunner.renderRegions(g);
             }
         };
 
@@ -121,21 +141,22 @@ class ShenandoahVisualizer {
         JPanel statusPanel = new JPanel() {
             @Override
             public void paint(Graphics g) {
-                render.renderStats(g);
+                renderRunner.renderStats(g);
             }
         };
 
         JPanel graphPanel = new JPanel() {
             @Override
             public void paint(Graphics g) {
-                render.renderGraph(g);
+                renderRunner.renderGraph(g);
             }
         };
 
         ActionListener realtimeModeButtonListener = new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 DataProvider data = new DataProvider(null);
-                render.loadDataProvider(data);
+                renderRunner.loadLive(data);
+//                ShenandoahVisualizer.changeScheduleInterval(100,service,f,renderRunner);
             }
         };
         toolbarPanel.setRealtimeModeButtonListener(realtimeModeButtonListener);
@@ -147,17 +168,19 @@ class ShenandoahVisualizer {
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     filePath[0] = fc.getSelectedFile().getAbsolutePath();
                     try {
-                        DataLogProvider logData = new DataLogProvider(filePath[0]);
-                        render.loadLogDataProvider(logData);
+                        DataLogProvider data = new DataLogProvider(filePath[0]);
+                        renderRunner.loadPlayback(data);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
+//                    ShenandoahVisualizer.changeScheduleInterval(1, service, f, renderRunner);
+
                     toolbarPanel.setFileNameField(filePath[0]);
                     toolbarPanel.setLastActionField("File selected: " + filePath[0]);
 
-                    render.isPaused = false;
                     System.out.println("Selected file: " + filePath[0]);
-                    render.frame.repaint();
+                    renderRunner.frame.repaint();
                 }
             }
         };
@@ -165,16 +188,14 @@ class ShenandoahVisualizer {
 
         ActionListener playPauseButtonListener = new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
-                System.out.println("isPaused before: " + render.isPaused);
-                if (render.isPaused) {
-                    render.logData.controlStopwatch("START");
+                if (renderRunner.playback.isPaused) {
+                    renderRunner.playback.data.controlStopwatch("START");
                     toolbarPanel.setLastActionField("Play button pressed.");
                 } else {
-                    render.logData.controlStopwatch("STOP");
+                    renderRunner.playback.data.controlStopwatch("STOP");
                     toolbarPanel.setLastActionField("Pause button pressed.");
                 }
-                render.isPaused = !render.isPaused;
-                System.out.println("isPaused after: " + render.isPaused);
+                renderRunner.playback.isPaused = !renderRunner.playback.isPaused;
             }
         };
         toolbarPanel.setPlayPauseButtonListener(playPauseButtonListener);
@@ -182,29 +203,29 @@ class ShenandoahVisualizer {
         ActionListener speedButtonListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                render.logData.setSpeed(2);
+                renderRunner.playback.data.setSpeed(2);
             }
         };
         toolbarPanel.setSpeedButtonListener(speedButtonListener);
 
         // Step back/forward button listeners
-        toolbarPanel.setBackButton_1_Listener((ae) -> render.stepBackSnapshots(1));
+        toolbarPanel.setBackButton_1_Listener((ae) -> renderRunner.playback.stepBackSnapshots(1));
 
-        toolbarPanel.setBackButton_5_Listener((ae) -> render.stepBackSnapshots(5));
+        toolbarPanel.setBackButton_5_Listener((ae) -> renderRunner.playback.stepBackSnapshots(5));
 
-        toolbarPanel.setForwardButton_1_Listener((ae) -> render.stepForwardSnapshots(1));
+        toolbarPanel.setForwardButton_1_Listener((ae) -> renderRunner.playback.stepForwardSnapshots(1));
 
-        toolbarPanel.setForwardButton_5_Listener((ae) -> render.stepForwardSnapshots(5));
+        toolbarPanel.setForwardButton_5_Listener((ae) -> renderRunner.playback.stepForwardSnapshots(5));
 
         regionsPanel.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent ev) {
-                render.notifyRegionResized(ev.getComponent().getWidth(), ev.getComponent().getHeight());
+                renderRunner.notifyRegionResized(ev.getComponent().getWidth(), ev.getComponent().getHeight());
             }
         });
 
         graphPanel.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent ev) {
-                render.notifyGraphResized(ev.getComponent().getWidth(), ev.getComponent().getHeight());
+                renderRunner.notifyGraphResized(ev.getComponent().getWidth(), ev.getComponent().getHeight());
             }
         });
 
@@ -268,9 +289,9 @@ class ShenandoahVisualizer {
 
         frame.setVisible(true);
 
-        ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
-        ScheduledFuture<?> f = service.scheduleAtFixedRate(render,
-                0, 100, TimeUnit.MILLISECONDS);
+        ScheduledExecutorService service = Executors.newScheduledThreadPool(1);;
+        ScheduledFuture<?> f = service.scheduleAtFixedRate(renderRunner,
+                0, renderRunner.isLive ? 100 : 1, TimeUnit.MILLISECONDS);;
 
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
@@ -283,7 +304,7 @@ class ShenandoahVisualizer {
         f.get();
     }
 
-    public abstract static class Render implements Runnable {
+    public abstract static class Render {
         public static final int LINE = 20;
 
         final JFrame frame;
@@ -312,6 +333,10 @@ class ShenandoahVisualizer {
             }
             return Colors.TIMELINE_IDLE;
         }
+
+        public abstract void renderGraph(Graphics g);
+
+        public abstract void renderStats(Graphics g);
 
         public synchronized static void renderLegend(Graphics g) {
             final int sqSize = LINE;
@@ -389,7 +414,10 @@ class ShenandoahVisualizer {
             int cols = regionWidth / sqSize;
             int cellSize = sqSize - 2;
 
+            System.out.println("Area: " + area + ", snapshot.regionCount(): " + snapshot.regionCount());
+
             for (int i = 0; i < snapshot.regionCount(); i++) {
+                System.out.println("i: " + i + ", cols: " + cols + ", sqSize: " + sqSize);
                 int rectx = (i % cols) * sqSize;
                 int recty = (i / cols) * sqSize;
 
@@ -444,13 +472,18 @@ class ShenandoahVisualizer {
     public static class RenderLive extends Render {
         volatile DataProvider data;
 
+        public RenderLive(JFrame frame) {
+            super(frame);
+            this.data = new DataProvider(null);
+            this.snapshot = data.snapshot();
+        }
+
         public RenderLive(DataProvider data, JFrame frame) {
             super(frame);
             this.data = data;
             this.snapshot = data.snapshot();
         }
 
-        @Override
         public synchronized void run() {
             Snapshot cur = data.snapshot();
             if (!cur.equals(snapshot)) {
@@ -464,6 +497,7 @@ class ShenandoahVisualizer {
         }
 
         public synchronized void loadDataProvider(DataProvider data) {
+            closeDataProvider();
             this.data = data;
             this.lastSnapshots.clear();
             this.snapshot = data.snapshot();
@@ -604,14 +638,19 @@ class ShenandoahVisualizer {
         volatile int frontSnapshotIndex = 0;
         volatile int endSnapshotIndex = 0;
 
+        public RenderPlayback(JFrame frame) {
+            super(frame);
+            this.snapshot = null;
+            this.isPaused = true;
+        }
+
         public RenderPlayback(DataLogProvider data, JFrame frame) {
             super(frame);
             this.data = data;
             this.snapshot = data.snapshot();
             this.isPaused = false;
-            }
+        }
 
-        @Override
         public synchronized void run() {
             if (!isPaused) {
                 if (endSnapshotIndex < lastSnapshots.size()) {
@@ -793,11 +832,6 @@ class ShenandoahVisualizer {
             g.drawString(usageStatusLine(), 0, ++line * LINE);
             g.drawString(liveStatusLine(), 0, ++line * LINE);
 
-            Histogram histogram = snapshot.getSafepointTime();
-            String pausesText = String.format("GC Pauses: P100=%d, P95=%d, P90=%d",
-                    histogram.getMaxValue(), histogram.getValueAtPercentile(95), histogram.getValueAtPercentile(90));
-            g.drawString(pausesText, 0, ++line * LINE);
-
             line = 4;
             renderTimeLineLegendItem(g, LINE, Colors.OLD[1], ++line, "Old Marking");
             renderTimeLineLegendItem(g, LINE, Colors.YOUNG[1], ++line, "Young Marking");
@@ -812,6 +846,93 @@ class ShenandoahVisualizer {
             renderTimeLineLegendItem(g, LINE, Colors.FULL, ++line, "Full");
         }
 
+    }
+
+    public static class RenderRunner implements Runnable {
+        final RenderLive live;
+        final RenderPlayback playback;
+
+        final JFrame frame;
+        private boolean isLive;
+
+        public RenderRunner(DataProvider data, JFrame frame) {
+            this.frame = frame;
+            live = new RenderLive(data, frame);
+            playback = new RenderPlayback(frame);
+            isLive = true;
+        }
+
+        public RenderRunner(DataLogProvider data, JFrame frame) {
+            this.frame = frame;
+            live = new RenderLive(frame);
+            live.closeDataProvider();
+            playback = new RenderPlayback(data, frame);
+            isLive = false;
+        }
+
+        public synchronized void loadPlayback(DataLogProvider data) {
+            if (isLive) {
+                live.closeDataProvider();
+            }
+            isLive = false;
+            playback.loadLogDataProvider(data);
+            System.out.println("Finished loading playback");
+        }
+
+        public synchronized void loadLive(DataProvider data) {
+            if (!isLive) {
+                isLive = true;
+                live.loadDataProvider(data);
+            }
+        }
+
+        public synchronized void run() {
+            if (isLive) {
+                live.run();
+            } else {
+                playback.run();
+            }
+        }
+
+        public synchronized void renderGraph(Graphics g) {
+            if (isLive) {
+                live.renderGraph(g);
+            } else {
+                playback.renderGraph(g);
+            }
+        }
+
+        public synchronized void renderStats(Graphics g) {
+            if (isLive) {
+                live.renderStats(g);
+            } else {
+                playback.renderStats(g);
+            }
+        }
+
+        public synchronized void renderRegions(Graphics g) {
+            if (isLive) {
+                live.renderRegions(g);
+            } else {
+                playback.renderRegions(g);
+            }
+        }
+
+        public synchronized void notifyRegionResized(int width, int height) {
+            if (isLive) {
+                live.notifyRegionResized(width, height);
+            } else {
+                playback.notifyRegionResized(width, height);
+            }
+        }
+
+        public synchronized void notifyGraphResized(int width, int height) {
+            if (isLive) {
+                live.notifyGraphResized(width, height);
+            } else {
+                playback.notifyGraphResized(width, height);
+            }
+        }
     }
 }
 
