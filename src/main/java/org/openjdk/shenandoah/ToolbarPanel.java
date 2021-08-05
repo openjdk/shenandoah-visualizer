@@ -50,31 +50,43 @@
 package org.openjdk.shenandoah;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.ParseException;
 
 public class ToolbarPanel extends JPanel
                           implements ActionListener {
     private static final int INITIAL_WIDTH = 1500;
     private static final int INITIAL_HEIGHT = 1200;
-    private static final String CHOOSE_FILE = "choose file";
+
     private static final String BACK_1 = "Step back 1";
     private static final String BACK_5 = "Step back 5";
     private static final String PLAY_PAUSE = "play/pause";
     private static final String FORWARD_1 = "Step forward 1";
     private static final String FORWARD_5 = "Step forward 5";
+
     private static final String PLAYBACK = "Playback";
     private static final String REALTIME = "Realtime";
-    private static final String SET_SPEED = "Set speed";
+    private static final String CHOOSE_FILE = "choose file";
+
+    private static final String SPEED_0_5 = "Multiplied speed by 0.5";
+    private static final String SPEED_2 = "Multiplied speed by 2";
+    private static final String SPEED_RESET = "Reset speed to 1";
 
 
-    private JToolBar fileToolbar, replayToolbar, statusToolbar;
-    private boolean isReplay;
-    private JButton fileButton, backButton_1, backButton_5, playPauseButton, forwardButton_1, forwardButton_5;
-    private JButton realtimeModeButton, speedButton;
-    private JTextField fileNameField, lastActionField, modeField, speedField;
-    private JLabel modeLabel, lastActionLabel;
+    private JToolBar fileToolbar, replayToolbar, statusToolbar, speedToolbar;
+    private JButton fileButton, backButton_1, backButton_5, playPauseButton, forwardButton_1, forwardButton_5, realtimeModeButton;
+    private JButton speedMultiplierButton_0_5, speedMultiplierButton_2, resetSpeedMultiplierButton;
+    private JSpinner speedSpinner;
+    JSpinner.NumberEditor speedEditor;
+    private JTextField fileNameField, lastActionField, modeField;
+    private JLabel modeLabel, lastActionLabel, speedLabel;
+
+    public boolean speedButtonPressed = false;
+
 
     public ToolbarPanel(boolean isReplay) {
         super(new GridBagLayout());
@@ -109,23 +121,12 @@ public class ToolbarPanel extends JPanel
 
         replayToolbar = new JToolBar();
         replayToolbar.setFloatable(false);
-        addReplayButtons();
-        if (!isReplay) {
-            setEnableReplayButtons(false);
-        }
-
-        {
-            GridBagConstraints c = new GridBagConstraints();
-            c.fill = GridBagConstraints.BOTH;
-            c.gridx = 1;
-            c.gridy = 0;
-            c.weightx = 2;
-            c.weighty = 1;
-            add(replayToolbar, c);
-        }
 
         statusToolbar = new JToolBar();
         statusToolbar.setFloatable(false);
+
+        speedToolbar = new JToolBar();
+        speedToolbar.setFloatable(false);
 
         lastActionLabel = new JLabel("Last action:");
         statusToolbar.add(lastActionLabel);
@@ -141,25 +142,50 @@ public class ToolbarPanel extends JPanel
         modeField.setEditable(false);
         statusToolbar.add(modeField);
 
-//        speedField = new JTextField();
-//        speedField.setActionCommand(SET_SPEED);
-//        statusToolbar.add(speedField);
-        speedButton = new JButton("2x");
-        speedButton.setActionCommand(SET_SPEED);
-        statusToolbar.add(speedButton);
+        addPlaybackButtons();
+        addSpeedButtons();
+
+        if (!isReplay) {
+            setEnabledPlaybackToolbars(false);
+        }
+
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridx = 1;
+            c.gridy = 0;
+            c.weightx = 2;
+            c.weighty = 1;
+            add(replayToolbar, c);
+        }
 
         {
             GridBagConstraints c = new GridBagConstraints();
             c.fill = GridBagConstraints.BOTH;
             c.gridx = 0;
             c.gridy = 1;
-            c.weightx = 4;
+            c.weightx = 2;
             c.weighty = 1;
             add(statusToolbar, c);
         }
+
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridx = 1;
+            c.gridy = 1;
+            c.weightx = 2;
+            c.weighty = 1;
+            add(speedToolbar, c);
+        }
     }
 
-    private void setEnableReplayButtons(boolean b) {
+    private void setEnabledPlaybackToolbars(boolean b) {
+        setEnablePlaybackButtons(b);
+        setEnableSpeedButtons(b);
+    }
+
+    private void setEnablePlaybackButtons(boolean b) {
         backButton_1.setEnabled(b);
         backButton_5.setEnabled(b);
         playPauseButton.setEnabled(b);
@@ -167,7 +193,14 @@ public class ToolbarPanel extends JPanel
         forwardButton_5.setEnabled(b);
     }
 
-    private void addReplayButtons() {
+    private void setEnableSpeedButtons(boolean b) {
+        speedSpinner.setEnabled(b);
+        speedMultiplierButton_0_5.setEnabled(b);
+        speedMultiplierButton_2.setEnabled(b);
+        resetSpeedMultiplierButton.setEnabled(b);
+    }
+
+    private void addPlaybackButtons() {
         this.backButton_5 = new JButton("-5");
         backButton_5.setActionCommand(BACK_5);
         backButton_5.addActionListener(this);
@@ -194,10 +227,73 @@ public class ToolbarPanel extends JPanel
         replayToolbar.add(this.forwardButton_5);
     }
 
+    private void addSpeedButtons() {
+        speedLabel = new JLabel("Playback Speed: ");
+        statusToolbar.add(speedLabel);
+
+        this.speedSpinner = new JSpinner(new SpinnerNumberModel(1.0,0.1,10.0,0.1));
+        this.speedEditor = new JSpinner.NumberEditor(speedSpinner,"#.#");
+        speedSpinner.setEditor(speedEditor);
+        statusToolbar.add(speedSpinner);
+
+        speedMultiplierButton_0_5 = new JButton("0.5x");
+        speedMultiplierButton_0_5.setActionCommand(SPEED_0_5);
+        speedMultiplierButton_0_5.addActionListener(this);
+        speedToolbar.add(speedMultiplierButton_0_5);
+
+        speedMultiplierButton_2 = new JButton("2x");
+        speedMultiplierButton_2.setActionCommand(SPEED_2);
+        speedMultiplierButton_2.addActionListener(this);
+        speedToolbar.add(speedMultiplierButton_2);
+
+        resetSpeedMultiplierButton = new JButton("RESET");
+        resetSpeedMultiplierButton.setActionCommand(SPEED_RESET);
+        resetSpeedMultiplierButton.addActionListener(this);
+        speedToolbar.add(resetSpeedMultiplierButton);
+    }
+
+    public double getSpeedValue() {
+        JFormattedTextField speedField = getTextField(speedSpinner);
+        double speedValue = (double) speedField.getValue();
+        try {
+            speedEditor.commitEdit();
+            speedSpinner.commitEdit();
+        } catch (ParseException e) {
+            System.out.println("Speed value must be a double in range (0.0,10.0]. Inputted value: " + speedValue);
+        }
+        return speedValue;
+    }
+
+    public void setSpeedValue(double speed) {
+        JFormattedTextField speedField = getTextField(speedSpinner);
+        try {
+            speedField.setValue(speed);
+            speedEditor.commitEdit();
+            speedSpinner.commitEdit();
+        } catch (ParseException e) {
+            System.out.println("Speed value must be a double in range (0.0,10.0]. Inputted value: " + speed);
+        }
+    }
+
+    private JFormattedTextField getTextField(JSpinner spinner) {
+        JComponent editor = spinner.getEditor();
+        if (editor instanceof JSpinner.DefaultEditor) {
+            return ((JSpinner.DefaultEditor)editor).getTextField();
+        } else {
+            return null;
+        }
+    }
+
+    // File Toolbar Listeners
     public void setFileButtonListener(ActionListener a) {
         fileButton.addActionListener(a);
     }
 
+    public void setRealtimeModeButtonListener(ActionListener a) {
+        realtimeModeButton.addActionListener(a);
+    }
+
+    // Replay Toolbar Listeners
     public void setBackButton_1_Listener(ActionListener a) {
         backButton_1.addActionListener(a);
     }
@@ -218,12 +314,21 @@ public class ToolbarPanel extends JPanel
         forwardButton_5.addActionListener(a);
     }
 
-    public void setRealtimeModeButtonListener(ActionListener a) {
-        realtimeModeButton.addActionListener(a);
+    // Speed Toolbar Listeners
+    public void setSpeedSpinnerListener(ChangeListener c) {
+        speedSpinner.addChangeListener(c);
     }
 
-    public void setSpeedButtonListener(ActionListener a) {
-        speedButton.addActionListener(a);
+    public void setSpeed_0_5_Listener(ActionListener ae) {
+        speedMultiplierButton_0_5.addActionListener(ae);
+    }
+
+    public void setSpeed_2_Listener(ActionListener ae) {
+        speedMultiplierButton_2.addActionListener(ae);
+    }
+
+    public void setResetSpeedListener(ActionListener ae) {
+        resetSpeedMultiplierButton.addActionListener(ae);
     }
 
     public void setFileNameField(String s) {
@@ -249,19 +354,15 @@ public class ToolbarPanel extends JPanel
     public void actionPerformed(ActionEvent a) {
         String cmd = a.getActionCommand();
         if (CHOOSE_FILE.equals(cmd)) {
-            isReplay = true;
-            setEnableReplayButtons(true);
+            setEnabledPlaybackToolbars(true);
             setModeField(PLAYBACK);
             setEnabledRealtimeModeButton(true);
         } else if (REALTIME.equals(cmd)) {
             lastActionField.setText("Switched to realtime mode.");
-            setEnableReplayButtons(false);
+            setEnabledPlaybackToolbars(false);
             setModeField(REALTIME);
             setEnabledRealtimeModeButton(false);
-        } else if (SET_SPEED.equals(cmd)){
-//            lastActionField.setText("Speed set to: " + speedField.getText());
-            lastActionField.setText("Speed set to: 2x");
-        } else if (!PLAY_PAUSE.equals(cmd)){
+        } else if ( !(PLAY_PAUSE.equals(cmd) || SPEED_0_5.equals(cmd) || SPEED_2.equals(cmd) || SPEED_RESET.equals(cmd)) ){
             lastActionField.setText(cmd + " button pressed.");
         }
     }

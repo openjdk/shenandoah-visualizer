@@ -26,6 +26,8 @@ package org.openjdk.shenandoah;
 import org.HdrHistogram.Histogram;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,10 +39,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.openjdk.shenandoah.RegionState.*;
 
@@ -52,7 +51,18 @@ class ShenandoahVisualizer {
     private static final String PLAYBACK = "Playback";
     private static final String REALTIME = "Realtime";
 
-
+    private static ScheduledFuture<?> changeScheduleInterval(int n, ScheduledExecutorService service, ScheduledFuture<?> f, Runnable task) {
+        if (service == null || f == null) return null;
+        if (n > 0) {
+            boolean res = true;
+            if (f != null) {
+                res = f.cancel(true);
+            }
+            f = service.scheduleAtFixedRate(task, 0, n, TimeUnit.MILLISECONDS);
+            return f;
+        }
+        return null;
+    }
 
     public static void main(String[] args) throws Exception {
         // Command line argument parsing
@@ -110,8 +120,9 @@ class ShenandoahVisualizer {
 
         // Executors
         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);;
-        ScheduledFuture<?> f = service.scheduleAtFixedRate(renderRunner,
-                0, renderRunner.isLive ? 100 : 1, TimeUnit.MILLISECONDS);;
+        final ScheduledFuture<?>[] f = {service.scheduleAtFixedRate(renderRunner,
+                0, renderRunner.isLive ? 100 : 1, TimeUnit.MILLISECONDS)};
+        ;
 
 
         JPanel regionsPanel = new JPanel() {
@@ -145,6 +156,8 @@ class ShenandoahVisualizer {
             public void actionPerformed(ActionEvent ae) {
                 DataProvider data = new DataProvider(null);
                 renderRunner.loadLive(data);
+                toolbarPanel.setFileNameField("");
+                f[0] = changeScheduleInterval(100, service, f[0], renderRunner);
             }
         };
         toolbarPanel.setRealtimeModeButtonListener(realtimeModeButtonListener);
@@ -161,12 +174,15 @@ class ShenandoahVisualizer {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-
+                    renderRunner.playback.speed = 1.0;
+                    toolbarPanel.setSpeedValue(1.0);
                     toolbarPanel.setFileNameField(filePath[0]);
                     toolbarPanel.setLastActionField("File selected: " + filePath[0]);
 
                     System.out.println("Selected file: " + filePath[0]);
                     renderRunner.frame.repaint();
+
+                    f[0] = changeScheduleInterval(1, service, f[0], renderRunner);
                 }
             }
         };
@@ -186,14 +202,6 @@ class ShenandoahVisualizer {
         };
         toolbarPanel.setPlayPauseButtonListener(playPauseButtonListener);
 
-        ActionListener speedButtonListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                renderRunner.playback.data.setSpeed(2);
-            }
-        };
-        toolbarPanel.setSpeedButtonListener(speedButtonListener);
-
         // Step back/forward button listeners
         toolbarPanel.setBackButton_1_Listener((ae) -> renderRunner.playback.stepBackSnapshots(1));
 
@@ -202,6 +210,65 @@ class ShenandoahVisualizer {
         toolbarPanel.setForwardButton_1_Listener((ae) -> renderRunner.playback.stepForwardSnapshots(1));
 
         toolbarPanel.setForwardButton_5_Listener((ae) -> renderRunner.playback.stepForwardSnapshots(5));
+
+        // Speed button listeners
+        ChangeListener speedSpinnerListener = new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                if (!toolbarPanel.speedButtonPressed) {
+                    double speed = toolbarPanel.getSpeedValue();
+                    if (speed != renderRunner.playback.speed) {
+                        toolbarPanel.setLastActionField("Changed playback speed to: " + speed);
+                        renderRunner.playback.data.setSpeed(speed);
+                        renderRunner.playback.speed = speed;
+                    }
+                }
+            }
+        };
+        toolbarPanel.setSpeedSpinnerListener(speedSpinnerListener);
+
+        ActionListener speed_0_5_Listener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                toolbarPanel.speedButtonPressed = true;
+                double speed = Math.max(0.1, renderRunner.playback.speed * 0.5);
+                renderRunner.playback.data.setSpeed(speed);
+                renderRunner.playback.speed = speed;
+                toolbarPanel.setSpeedValue(speed);
+                toolbarPanel.speedButtonPressed = false;
+                toolbarPanel.setLastActionField("Multiplied speed by 0.5x. Min speed = 0.1");
+            }
+        };
+        toolbarPanel.setSpeed_0_5_Listener(speed_0_5_Listener);
+
+        ActionListener speed_2_Listener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                toolbarPanel.speedButtonPressed = true;
+                double speed = Math.min(10.0, renderRunner.playback.speed * 2);
+                renderRunner.playback.data.setSpeed(speed);
+                renderRunner.playback.speed = speed;
+                toolbarPanel.setSpeedValue(speed);
+                toolbarPanel.speedButtonPressed = false;
+                toolbarPanel.setLastActionField("Multiplied speed by 2x. Max speed = 10.0");
+            }
+        };
+        toolbarPanel.setSpeed_2_Listener(speed_2_Listener);
+
+        ActionListener resetSpeedListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (renderRunner.playback.speed != 1) {
+                    toolbarPanel.speedButtonPressed = true;
+                    renderRunner.playback.data.setSpeed(1.0);
+                    renderRunner.playback.speed = 1.0;
+                    toolbarPanel.setSpeedValue(1.0);
+                    toolbarPanel.speedButtonPressed = false;
+                    toolbarPanel.setLastActionField("Speed reset to 1.0");
+                }
+            }
+        };
+        toolbarPanel.setResetSpeedListener(resetSpeedListener);
 
         regionsPanel.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent ev) {
@@ -277,12 +344,12 @@ class ShenandoahVisualizer {
 
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
-                f.cancel(true);
+                f[0].cancel(true);
                 service.shutdown();
                 frame.dispose();
             }
         });
-        f.get();
+        f[0].get();
     }
 
     public abstract static class Render {
@@ -612,6 +679,7 @@ class ShenandoahVisualizer {
         volatile DataLogProvider data;
         volatile boolean isPaused;
 
+        volatile double speed = 1.0;
         volatile int frontSnapshotIndex = 0;
         volatile int endSnapshotIndex = 0;
 
@@ -707,6 +775,9 @@ class ShenandoahVisualizer {
             this.lastSnapshots.clear();
             this.snapshot = data.snapshot();
             this.isPaused = false;
+            this.speed = 1.0;
+            endSnapshotIndex = 0;
+            frontSnapshotIndex = 0;
         }
 
         public synchronized void renderGraph(Graphics g) {

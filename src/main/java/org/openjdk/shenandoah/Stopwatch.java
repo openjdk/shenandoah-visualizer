@@ -88,7 +88,14 @@ public class Stopwatch {
     }
 
     public void setSpeedMultiplier(double speed) {
+        boolean wasRunning = isRunning;
+        if (wasRunning) {
+            stop();
+        }
         speedMultiplier = speed;
+        if (wasRunning) {
+            start();
+        }
         System.out.println("Set speed to: " + speed);
     }
 
