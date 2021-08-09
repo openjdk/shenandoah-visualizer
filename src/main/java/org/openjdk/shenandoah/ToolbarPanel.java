@@ -59,7 +59,7 @@ import java.text.ParseException;
 
 public class ToolbarPanel extends JPanel
                           implements ActionListener {
-    private static final int INITIAL_WIDTH = 1500;
+    private static final int INITIAL_WIDTH = 2000;
     private static final int INITIAL_HEIGHT = 1200;
 
     private static final String BACK_1 = "Step back 1";

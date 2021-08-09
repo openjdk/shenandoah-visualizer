@@ -16,7 +16,9 @@ Build as any Maven-driven Java project:
 
 ## Usage
 
-*Step 1.* Start target JVM with with these additional flags:
+
+#### Realtime
+*Step 1.* Start target JVM with these additional flags:
 
     $ java -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+ShenandoahRegionSampling ...
 
@@ -24,8 +26,27 @@ Build as any Maven-driven Java project:
 
     $ jps
 
-*Step 3.* Attach the Visualizer:
+*Step 3a.* Run the Visualizer; Visualizer will attempt to detect a JVM running Shenandoah:
+    
+    $ java -jar visualizer.jar
 
-    $ java -Xbootclasspath/p:<path-to-tools.jar> -jar visualizer.jar local://<pid>
+*Step 3b.* Optionally attach the Visualizer using the -vm flag:
+
+    $ java -Xbootclasspath/p:<path-to-tools.jar> -jar visualizer.jar -vm local://<pid>
 
 `tools.jar` can usually be found at `$JAVA_HOME/lib`
+
+
+#### Saving JVM session
+*Step 1.* Add this additional flag to an active JVM running Shenandoah:
+
+    $ -XX:+ShenandoahLogRegionSampling
+
+*Step 2.* Optionally specify the file path to save the session's log file using the ShenandoahRegionSamplingFile flag:
+
+    $ -XX:ShenandoahRegionSamplingFile=<file path>
+
+#### Replaying JVM session
+*Step 1.* Run the Visualizer using the -logFile flag:
+
+    $ java -jar visualizer.jar -logFile <file path>

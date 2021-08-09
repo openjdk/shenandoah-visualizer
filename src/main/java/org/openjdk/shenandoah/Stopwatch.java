@@ -119,10 +119,6 @@ public class Stopwatch {
         return TimeUnit.NANOSECONDS.toMillis(getElapsedNano());
     }
 
-    public long getCurrentMilli() {
-        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
-    }
-
     public boolean isStarted() {
         return isRunning;
     }

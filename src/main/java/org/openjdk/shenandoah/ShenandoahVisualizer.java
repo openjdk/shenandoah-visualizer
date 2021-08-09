@@ -287,19 +287,10 @@ class ShenandoahVisualizer {
         {
             GridBagConstraints c = new GridBagConstraints();
             c.fill = GridBagConstraints.BOTH;
-            c.gridy = GridBagConstraints.SOUTHWEST;
-            c.insets = pad;
-            c.weightx = 0.5;
-            frame.add(toolbarPanel, c);
-        }
-
-        {
-            GridBagConstraints c = new GridBagConstraints();
-            c.fill = GridBagConstraints.BOTH;
             c.gridx = 0;
             c.gridy = 0;
             c.weightx = 3;
-            c.weighty = 1;
+            c.weighty = 3;
             c.insets = pad;
             frame.add(graphPanel, c);
         }
@@ -317,12 +308,22 @@ class ShenandoahVisualizer {
         }
 
         {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridx = 0;
+            c.gridy = 2;
+            c.insets = pad;
+            c.weightx = 3;
+            frame.add(toolbarPanel, c);
+        }
+
+        {
             statusPanel.setPreferredSize(new Dimension(25, 175));
             GridBagConstraints c = new GridBagConstraints();
             c.fill = GridBagConstraints.BOTH;
             c.gridx = 1;
             c.gridy = 0;
-            c.weightx = 0.5;
+            c.weightx = 1;
             c.weighty = 2;
             c.insets = pad;
             frame.add(statusPanel, c);
@@ -333,7 +334,7 @@ class ShenandoahVisualizer {
             c.fill = GridBagConstraints.BOTH;
             c.gridx = 1;
             c.gridy = 1;
-            c.weightx = 0.5;
+            c.weightx = 1;
             c.weighty = 1;
             c.insets = pad;
             c.gridheight = GridBagConstraints.REMAINDER;
