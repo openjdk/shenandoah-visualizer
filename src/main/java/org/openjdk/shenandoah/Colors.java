@@ -55,6 +55,8 @@ public class Colors {
     static final Color TLAB_ALLOC_BORDER    = new Color(0, 100, 0);
     static final Color GCLAB_ALLOC          = new Color(185, 0, 250);
     static final Color GCLAB_ALLOC_BORDER   = new Color(118, 0, 160);
+    static final Color PLAB_ALLOC           = new Color(111, 78, 55);
+    static final Color PLAB_ALLOC_BORDER    = new Color(92, 64, 51);
 
     static final Color USED                 = new Color(220, 220, 220);
 

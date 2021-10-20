@@ -72,8 +72,8 @@ public class Snapshot {
         this.globalPhase = Generation.GLOBAL.phase(status);
         this.oldPhase = Generation.OLD.phase(status);
         this.youngPhase = Generation.YOUNG.phase(status);
-        System.out.printf("global=%s, old=%s, young=%s, degen=%s, full=%s\n",
-                globalPhase, oldPhase, youngPhase, degenActive, fullActive);
+//        System.out.printf("global=%s, old=%s, young=%s, degen=%s, full=%s\n",
+//                globalPhase, oldPhase, youngPhase, degenActive, fullActive);
     }
 
     public Phase phase() {
@@ -225,16 +225,21 @@ public class Snapshot {
     }
 
     public double percentageOfOldRegionsInCollectionSet() {
-        long total = 0, old = 0;
+        long total_in_cset = 0, old_in_cset = 0, old = 0, total = 0;
         for (RegionStat rs : stats) {
             if (rs.state() == RegionState.CSET || rs.state() == RegionState.PINNED_CSET) {
                 if (rs.affiliation() == RegionAffiliation.OLD) {
-                    ++old;
+                    ++old_in_cset;
                 }
-                ++total;
+                ++total_in_cset;
             }
+            if (rs.affiliation() == RegionAffiliation.OLD) {
+                ++old;
+            }
+            ++total;
         }
-        System.out.println("Old regions = " + old + ", total regions = " + total);
-        return total == 0 ? 0 : ((double) (old)) / total;
+        System.out.printf("cset: %s old/ %s cset total: %s old/ %s total\n",
+                old_in_cset, total_in_cset, old, total);
+        return total_in_cset == 0 ? 0 : ((double) (old_in_cset)) / total_in_cset;
     }
 }

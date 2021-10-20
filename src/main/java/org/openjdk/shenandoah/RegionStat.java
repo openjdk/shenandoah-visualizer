@@ -40,6 +40,7 @@ public class RegionStat {
     private static final int TLAB_SHIFT        = 14;
     private static final int GCLAB_SHIFT       = 21;
     private static final int SHARED_SHIFT      = 28;
+    private static final int PLAB_SHIFT        = 35;
     private static final int AGE_SHIFT         = 51;
     private static final int AFFILIATION_SHIFT = 56;
     private static final int FLAGS_SHIFT       = 58;
@@ -49,6 +50,7 @@ public class RegionStat {
     private final float usedLvl;
     private final float tlabLvl;
     private final float gclabLvl;
+    private final float plabLvl;
     private final float sharedLvl;
     private final long age;
     private final RegionAffiliation affiliation;
@@ -57,11 +59,12 @@ public class RegionStat {
     private static final Stroke STROKE = new BasicStroke(2);
 
     // This constructor is for the legend.
-    public RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float sharedLvl, RegionState state) {
+    public RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float plabLvl, float sharedLvl, RegionState state) {
         this.usedLvl = usedLvl;
         this.liveLvl = liveLvl;
         this.tlabLvl = tlabLvl;
         this.gclabLvl = gclabLvl;
+        this.plabLvl = plabLvl;
         this.sharedLvl = sharedLvl;
         this.state = state;
         this.age = -1;
@@ -75,6 +78,7 @@ public class RegionStat {
         this.liveLvl = 0;
         this.tlabLvl = 0;
         this.gclabLvl = 0;
+        this.plabLvl = 0;
         this.sharedLvl = 0;
         this.state = state;
         this.age = age;
@@ -89,6 +93,7 @@ public class RegionStat {
         liveLvl  = ((data >>> LIVE_SHIFT)  & PERCENT_MASK) / 100F;
         tlabLvl  = ((data >>> TLAB_SHIFT)  & PERCENT_MASK) / 100F;
         gclabLvl = ((data >>> GCLAB_SHIFT) & PERCENT_MASK) / 100F;
+        plabLvl =  ((data >>> PLAB_SHIFT)  & PERCENT_MASK) / 100F;
         sharedLvl = ((data >>> SHARED_SHIFT) & PERCENT_MASK) / 100F;
 
         age = ((data >>> AGE_SHIFT) & AGE_MASK);
@@ -157,10 +162,11 @@ public class RegionStat {
 
         switch (state) {
             case REGULAR: {
-                if (gclabLvl > 0 || tlabLvl > 0 || sharedLvl > 0) {
+                if (gclabLvl > 0 || tlabLvl > 0 || sharedLvl > 0 || plabLvl > 0) {
                     int sharedWidth = (int) (width * sharedLvl);
                     int tlabWidth = (int) (width * tlabLvl);
                     int gclabWidth = (int) (width * gclabLvl);
+                    int plabWidth = (int) (width * plabLvl);
 
                     int lx = x;
 
@@ -168,18 +174,30 @@ public class RegionStat {
                     fillShape(g, lx, y, tlabWidth, height);
                     g.setColor(TLAB_ALLOC_BORDER);
                     drawShape(g, lx, y, tlabWidth, height);
-
                     lx += tlabWidth;
-                    g.setColor(mixAlpha(GCLAB_ALLOC, liveLvl));
-                    fillShape(g, lx, y, gclabWidth, height);
-                    g.setColor(GCLAB_ALLOC_BORDER);
-                    drawShape(g, lx, y, gclabWidth, height);
 
-                    lx += gclabWidth;
-                    g.setColor(mixAlpha(SHARED_ALLOC, liveLvl));
-                    fillShape(g, lx, y, sharedWidth, height);
-                    g.setColor(SHARED_ALLOC_BORDER);
-                    drawShape(g, lx, y, sharedWidth, height);
+                    if (gclabWidth > 0) {
+                        g.setColor(mixAlpha(GCLAB_ALLOC, liveLvl));
+                        fillShape(g, lx, y, gclabWidth, height);
+                        g.setColor(GCLAB_ALLOC_BORDER);
+                        drawShape(g, lx, y, gclabWidth, height);
+                        lx += gclabWidth;
+                    }
+
+                    if (sharedWidth > 0) {
+                        g.setColor(mixAlpha(SHARED_ALLOC, liveLvl));
+                        fillShape(g, lx, y, sharedWidth, height);
+                        g.setColor(SHARED_ALLOC_BORDER);
+                        drawShape(g, lx, y, sharedWidth, height);
+                        lx += sharedWidth;
+                    }
+
+                    if (plabWidth > 0) {
+                        g.setColor(mixAlpha(PLAB_ALLOC, liveLvl));
+                        fillShape(g, lx, y, plabWidth, height);
+                        g.setColor(PLAB_ALLOC_BORDER);
+                        drawShape(g, lx, y, plabWidth, height);
+                    }
                 }
                 break;
             }

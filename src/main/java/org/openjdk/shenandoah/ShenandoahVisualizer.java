@@ -393,52 +393,58 @@ class ShenandoahVisualizer {
             Map<String, RegionStat> items = new LinkedHashMap<>();
 
             items.put("Empty Uncommitted",
-                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, EMPTY_UNCOMMITTED));
+                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, EMPTY_UNCOMMITTED));
 
             items.put("Empty Committed",
-                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, EMPTY_COMMITTED));
+                    new RegionStat(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, EMPTY_COMMITTED));
 
             items.put("Trash",
-                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, TRASH));
+                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, TRASH));
 
             items.put("Fully Live, 100% TLAB Allocs",
-                    new RegionStat(1.0f, 1.0f, 1.0f, 0.0f, 0.0f, REGULAR));
+                    new RegionStat(1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, REGULAR));
 
             items.put("0% Live, 100% TLAB Allocs",
-                    new RegionStat(1.0f, 0.0f, 1.0f, 0.0f, 0.0f, REGULAR));
+                    new RegionStat(1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, REGULAR));
 
             items.put("Fully Live, 100% GCLAB Allocs",
-                    new RegionStat(1.0f, 1.0f, 0.0f, 1.0f, 0.0f, REGULAR));
+                    new RegionStat(1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, REGULAR));
 
             items.put("0% Live, 100% GCLAB Allocs",
-                    new RegionStat(1.0f, 0.0f, 0.0f, 1.0f, 0.0f, REGULAR));
+                    new RegionStat(1.0f, 0.0f, 0.0f, 1.0f, 0.0f,0.0f, REGULAR));
+
+            items.put("Fully Live, 100% PLAB Allocs",
+                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, REGULAR));
+
+            items.put("0% Live, 100% PLAB Allocs",
+                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 1.0f,0.0f, REGULAR));
 
             items.put("Fully Live, 100% Shared Allocs",
-                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 1.0f, REGULAR));
+                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, REGULAR));
 
             items.put("0% Live, 100% Shared Allocs",
-                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, REGULAR));
+                    new RegionStat(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, REGULAR));
 
             items.put("Fully Live, 50%/50% TLAB/GCLAB Allocs",
-                    new RegionStat(1.0f, 1.0f, 0.5f, 0.5f, 0.0f, REGULAR));
+                    new RegionStat(1.0f, 1.0f, 0.5f, 0.5f, 0.0f, 0.0f, REGULAR));
 
-            items.put("Fully Live, 33%/33%/33% T/GC/S Allocs",
-                    new RegionStat(1.0f, 1.0f, 1f/3, 1f/3, 1f/3, REGULAR));
+            items.put("Fully Live, 25%/25%/25%/25% T/GC/P/S Allocs",
+                    new RegionStat(1.0f, 1.0f, 1f/4, 1f/4, 1f/4, 1f/4, REGULAR));
 
             items.put("Fully Live Humongous",
-                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, HUMONGOUS));
+                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, HUMONGOUS));
 
             items.put("Fully Live Humongous + Pinned",
-                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, PINNED_HUMONGOUS));
+                    new RegionStat(1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, PINNED_HUMONGOUS));
 
             items.put("1/3 Live + Collection Set",
-                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, CSET));
+                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, 0.0f, CSET));
 
             items.put("1/3 Live + Pinned",
-                    new RegionStat(1.0f, 0.3f, 0.3f, 0.0f, 0.0f, PINNED));
+                    new RegionStat(1.0f, 0.3f, 0.3f, 0.0f, 0.0f, 0.0f, PINNED));
 
             items.put("1/3 Live + Pinned CSet",
-                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, PINNED_CSET));
+                    new RegionStat(1.0f, 0.3f, 0.0f, 0.0f, 0.0f, 0.0f, PINNED_CSET));
 
             items.put("Age 0+", new RegionStat(REGULAR, 0));
             items.put("Age 3+", new RegionStat(REGULAR, 3));
@@ -580,9 +586,14 @@ class ShenandoahVisualizer {
                 SnapshotView s = lastSnapshots.get(i);
                 int x = (int) Math.round((s.time() - firstTime) * stepX);
 
-                if (s.oldPhase() == Phase.MARKING && s.globalPhase() == Phase.IDLE) {
-                    g.setColor(Colors.OLD[0]);
-                    g.drawRect(x, 0, 1, bandHeight);
+                if (s.globalPhase() == Phase.IDLE) {
+                    if (s.oldPhase() == Phase.MARKING) {
+                        g.setColor(Colors.OLD[0]);
+                        g.drawRect(x, 0, 1, bandHeight);
+                    } else if (s.oldPhase() == Phase.EVACUATING) {
+                        g.setColor(Colors.OLD[1]);
+                        g.drawRect(x, 0, 1, bandHeight);
+                    }
                 }
 
                 g.setColor(getColor(s));
@@ -671,7 +682,7 @@ class ShenandoahVisualizer {
             renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[2], ++line, "Global Evacuation");
             renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[3], ++line, "Global Update References");
 
-            renderTimeLineLegendItem(g, LINE, Colors.DEGENERATE, ++line, "Degenerated Young");
+            renderTimeLineLegendItem(g, LINE, Colors.DEGENERATE, ++line, "Degenerated Cycle");
             renderTimeLineLegendItem(g, LINE, Colors.FULL, ++line, "Full");
         }
     }
