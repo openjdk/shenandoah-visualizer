@@ -170,11 +170,13 @@ public class RegionStat {
 
                     int lx = x;
 
-                    g.setColor(mixAlpha(TLAB_ALLOC, liveLvl));
-                    fillShape(g, lx, y, tlabWidth, height);
-                    g.setColor(TLAB_ALLOC_BORDER);
-                    drawShape(g, lx, y, tlabWidth, height);
-                    lx += tlabWidth;
+                    if (tlabWidth > 0) {
+                        g.setColor(mixAlpha(TLAB_ALLOC, liveLvl));
+                        fillShape(g, lx, y, tlabWidth, height);
+                        g.setColor(TLAB_ALLOC_BORDER);
+                        drawShape(g, lx, y, tlabWidth, height);
+                        lx += tlabWidth;
+                    }
 
                     if (gclabWidth > 0) {
                         g.setColor(mixAlpha(GCLAB_ALLOC, liveLvl));
