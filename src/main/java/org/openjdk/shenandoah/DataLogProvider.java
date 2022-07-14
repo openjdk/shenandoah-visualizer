@@ -61,17 +61,21 @@ import java.lang.System;
 import java.util.concurrent.TimeUnit;
 
 public class DataLogProvider {
-    private static final Snapshot DISCONNECTED = new Snapshot(0, 1024, Collections.emptyList(), 0, null);
+    //default Snapshot as version 2
+    private static final long LATEST_VERSION = 2;
+    private static final Snapshot DISCONNECTED = new Snapshot(0, 1024, LATEST_VERSION, Collections.emptyList(), 0, null);
 
     private static final String START = "START";
     private static final String STOP = "STOP";
     private static final String CLEAR = "CLEAR";
+
 
     private List<Snapshot> snapshots;
     private HashMap<Long, Integer> snapshotsIndexByTime;
     public final Stopwatch stopwatch;
     private int snapshotsIndex = -1;
     private Snapshot currSnapshot = DISCONNECTED;
+
 
     public DataLogProvider(String path) throws IOException, NumberFormatException {
         String filePath = path;
@@ -82,14 +86,17 @@ public class DataLogProvider {
         this.snapshots = new ArrayList<>();
         this.snapshotsIndexByTime = new HashMap<>();
         int index = 0;
+        long protocolVersion = LATEST_VERSION;
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String metaDataLine = br.readLine(); // timestamp status numRegions regionSize
 
             while (metaDataLine != null && metaDataLine.trim().length() > 0) {
                 long[] metaData = processLongData(metaDataLine);
-                if (metaData.length != 4) {
-                    throw new IllegalArgumentException(String.format("Metadata line has %d values. Expected 4 values.", metaData.length));
+                if (metaData.length != 5 && metaData.length != 4) {
+                    throw new IllegalArgumentException(String.format("Metadata line has %d values. Expected 5 values.", metaData.length));
+                } else if (metaData.length > 4) {
+                    protocolVersion = metaData[4];
                 }
 
                 String regionDataLine = br.readLine();
@@ -100,7 +107,7 @@ public class DataLogProvider {
 
                 long tsMilli = TimeUnit.NANOSECONDS.toMillis(metaData[0]);
                 snapshots.add(new Snapshot(tsMilli,
-                        metaData[3],
+                        metaData[3], protocolVersion,
                         processRegionStats(regionData),
                         Math.toIntExact(metaData[1]),
                         null));

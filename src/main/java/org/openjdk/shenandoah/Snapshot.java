@@ -50,6 +50,19 @@ public class Snapshot {
                     throw new IllegalArgumentException("Unknown status: " + status);
             }
         }
+
+        //decodes for 3 bits older versions of shenandoah collector
+        Phase version1_phase(long status) {
+            int phase = (int) status;
+            switch (phase) {
+                case 0: return Phase.IDLE;
+                case 1: return Phase.MARKING;
+                case 2: return Phase.EVACUATING;
+                case 4: return Phase.UPDATE_REFS;
+                default:
+                    throw new IllegalArgumentException("Unknown status: " + status);
+            }
+        }
     }
 
     private final long time;
@@ -62,18 +75,23 @@ public class Snapshot {
     private final boolean fullActive;
     private final Histogram histogram;
 
-    public Snapshot(long time, long regionSize, List<RegionStat> stats, int status, Histogram histogram) {
+    public Snapshot(long time, long regionSize, long protocolVersion, List<RegionStat> stats, int status, Histogram histogram) {
         this.time = time;
         this.regionSize = regionSize;
         this.stats = stats;
         this.histogram = histogram;
         this.degenActive = ((status & 0x40) >> 6) == 1;
         this.fullActive  = ((status & 0x80) >> 7) == 1;
-        this.globalPhase = Generation.GLOBAL.phase(status);
-        this.oldPhase = Generation.OLD.phase(status);
-        this.youngPhase = Generation.YOUNG.phase(status);
-//        System.out.printf("global=%s, old=%s, young=%s, degen=%s, full=%s\n",
-//                globalPhase, oldPhase, youngPhase, degenActive, fullActive);
+        //decodes differently according to different version value
+        if (protocolVersion == 1) {
+            this.globalPhase = Generation.GLOBAL.version1_phase(status);
+            this.oldPhase = Phase.IDLE;
+            this.youngPhase = Phase.IDLE;
+        } else {
+            this.globalPhase = Generation.GLOBAL.phase(status);
+            this.oldPhase = Generation.OLD.phase(status);
+            this.youngPhase = Generation.YOUNG.phase(status);
+        }
     }
 
     public Phase phase() {
