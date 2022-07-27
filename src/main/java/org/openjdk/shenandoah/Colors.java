@@ -66,8 +66,8 @@ public class Colors {
     static final Color LIVE_PINNED_HUMONGOUS = new Color(255, 0, 0);
     static final Color LIVE_CSET            = new Color(250, 250, 0);
     static final Color LIVE_TRASH           = new Color(100, 100, 100);
-    static final Color LIVE_PINNED          = new Color(255, 0, 0);
-    static final Color LIVE_PINNED_CSET     = new Color(255, 120, 0);
+    static final Color LIVE_PINNED          = new Color(252, 201, 156);
+    static final Color LIVE_PINNED_CSET     = new Color(59, 88, 124);
     static final Color LIVE_EMPTY           = new Color(255, 255, 255);
 
     static final Color LIVE_BORDER          = new Color(0, 100, 0);

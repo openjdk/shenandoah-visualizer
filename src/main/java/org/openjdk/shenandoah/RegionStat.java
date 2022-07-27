@@ -25,6 +25,8 @@
 package org.openjdk.shenandoah;
 
 import java.awt.*;
+import java.util.Arrays;
+import java.util.Collections;
 
 import static org.openjdk.shenandoah.Colors.*;
 
@@ -69,6 +71,19 @@ public class RegionStat {
         this.state = state;
         this.age = -1;
         this.affiliation = RegionAffiliation.YOUNG;
+        this.showLivenessDetail = Boolean.getBoolean("show.liveness");
+    }
+    //This constructor is for CounterTest
+    public RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float plabLvl, float sharedLvl, RegionAffiliation affiliation,RegionState state) {
+        this.usedLvl = usedLvl;
+        this.liveLvl = liveLvl;
+        this.tlabLvl = tlabLvl;
+        this.gclabLvl = gclabLvl;
+        this.plabLvl = plabLvl;
+        this.sharedLvl = sharedLvl;
+        this.state = state;
+        this.age = -1;
+        this.affiliation = affiliation;
         this.showLivenessDetail = Boolean.getBoolean("show.liveness");
     }
 
@@ -319,6 +334,15 @@ public class RegionStat {
         return gclabLvl;
     }
 
+    public float plabAllocs() { return plabLvl; }
+
+    public float maxAllocsYoung() {
+        return Collections.max(Arrays.asList(tlabLvl, gclabLvl, sharedLvl));
+    }
+    public float maxAllocsOld() {
+        return Collections.max(Arrays.asList(plabLvl, sharedLvl));
+    }
+
     public float sharedAllocs() {
         return sharedLvl;
     }
@@ -326,4 +350,5 @@ public class RegionStat {
     public RegionState state() {
         return state;
     }
+    public long age() { return age; }
 }
