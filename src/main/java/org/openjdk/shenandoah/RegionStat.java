@@ -248,6 +248,10 @@ public class RegionStat {
                     g.drawLine(x + off, y + height, x + width, y + off);
                 }
             }
+            if (state == RegionState.EMPTY_COMMITTED) {
+                g.setColor(Color.RED);
+                g.drawLine(x, y, x + width, y + height);
+            }
         }
 
         if (age > -1) {
