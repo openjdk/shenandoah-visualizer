@@ -422,5 +422,7 @@ public class Snapshot {
     public int getAge15Count() {
         return age15Count;
     }
-
+    public int statsSize() {
+        return stats.size();
+    }
 }

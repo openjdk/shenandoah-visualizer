@@ -29,15 +29,12 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -269,11 +266,49 @@ class ShenandoahVisualizer {
             }
         };
         toolbarPanel.setResetSpeedListener(resetSpeedListener);
-
+        final int[] regionWidth = new int[1];
+        final int[] regionHeight = new int[1];
         regionsPanel.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent ev) {
+                regionWidth[0] = ev.getComponent().getWidth();
+                regionHeight[0] = ev.getComponent().getHeight();
                 renderRunner.notifyRegionResized(ev.getComponent().getWidth(), ev.getComponent().getHeight());
             }
+        });
+        final boolean isReplayFinal = isReplay;
+        regionsPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                Snapshot snapshot;
+                if (isReplayFinal) {
+                    snapshot = renderRunner.playback.snapshot;
+                } else {
+                    snapshot = renderRunner.live.snapshot;
+                }
+//                System.out.println(e.getX() + ", " + e.getY());
+                int area = regionWidth[0] * regionHeight[0];
+                int sqSize = Math.max(1, (int) Math.sqrt(1D * area / snapshot.regionCount()));
+                int cols = regionWidth[0] / sqSize;
+                int regionNumber = (e.getX() / sqSize) + ((e.getY() / sqSize) * cols) ;
+                if (regionNumber >= 0 && regionNumber < snapshot.statsSize()) {
+                    RegionPopUp popup = new RegionPopUp(snapshot, regionNumber);
+                    popup.setSize(310, 310);
+                    popup.setLocation(e.getX(), e.getY());
+                    popup.setVisible(true);
+                    popup.addWindowListener(new WindowAdapter() {
+                        @Override
+                        public void windowClosing(WindowEvent e) {
+                            super.windowClosing(e);
+                            popup.setVisible(false);
+                            popup.dispose();
+                            renderRunner.deletePopup(popup);
+                        }
+                    });
+                    renderRunner.addPopup(popup);
+                }
+
+            }
+
         });
 
         graphPanel.addComponentListener(new ComponentAdapter() {
@@ -357,6 +392,8 @@ class ShenandoahVisualizer {
         public static final int LINE = 15;
 
         final JFrame frame;
+
+        List<RegionPopUp> popups = new ArrayList<RegionPopUp>();
 
         int regionWidth, regionHeight;
         int graphWidth, graphHeight;
@@ -487,7 +524,6 @@ class ShenandoahVisualizer {
             for (int i = 0; i < snapshot.regionCount(); i++) {
                 int rectx = (i % cols) * sqSize;
                 int recty = (i / cols) * sqSize;
-
                 RegionStat s = snapshot.get(i);
                 s.render(g, rectx, recty, cellSize, cellSize);
             }
@@ -534,6 +570,21 @@ class ShenandoahVisualizer {
             this.graphWidth = width;
             this.graphHeight = height;
         }
+
+        public void addPopup(RegionPopUp popup) {
+            popups.add(popup);
+        }
+        public void deletePopup(RegionPopUp popup) {
+            popups.remove(popup);
+        }
+        public void repaintPopups() {
+            if (popups != null) {
+                for (RegionPopUp popup : popups) {
+                    popup.setSnapshot(snapshot);
+                    popup.repaint();
+                }
+            }
+        }
     }
 
     public static class RenderLive extends Render {
@@ -560,6 +611,7 @@ class ShenandoahVisualizer {
                     lastSnapshots.removeFirst();
                 }
                 frame.repaint();
+                repaintPopups();
             }
         }
 
@@ -733,6 +785,7 @@ class ShenandoahVisualizer {
                     if (data.snapshotTimeHasOccurred(snapshot)) {
                         endSnapshotIndex++;
                         frame.repaint();
+                        repaintPopups();
                     }
                 } else {
                     Snapshot cur = data.snapshot();
@@ -744,6 +797,7 @@ class ShenandoahVisualizer {
                             frontSnapshotIndex++;
                         }
                         frame.repaint();
+                        repaintPopups();
                     }
                 }
                 if (data.isEndOfSnapshots() && endSnapshotIndex >= lastSnapshots.size()) {
@@ -766,6 +820,7 @@ class ShenandoahVisualizer {
 
             snapshot = data.getSnapshotAtTime(time);
             frame.repaint();
+            repaintPopups();
         }
 
         public synchronized void stepForwardSnapshots(int n) {
@@ -796,6 +851,7 @@ class ShenandoahVisualizer {
             }
 
             frame.repaint();
+            repaintPopups();
         }
 
         private synchronized void loadLogDataProvider(DataLogProvider data) {
@@ -1008,6 +1064,20 @@ class ShenandoahVisualizer {
         public synchronized void notifyGraphResized(int width, int height) {
             live.notifyGraphResized(width, height);
             playback.notifyGraphResized(width, height);
+        }
+        public void addPopup(RegionPopUp popup) {
+            if (isLive) {
+                this.live.addPopup(popup);
+            } else {
+                this.playback.addPopup(popup);
+            }
+        }
+        public void deletePopup(RegionPopUp popup) {
+            if (isLive) {
+                this.live.deletePopup(popup);
+            } else {
+                this.playback.deletePopup(popup);
+            }
         }
     }
 }

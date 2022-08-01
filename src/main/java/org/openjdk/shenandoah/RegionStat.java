@@ -188,32 +188,32 @@ public class RegionStat {
                     if (tlabWidth > 0) {
                         g.setColor(mixAlpha(TLAB_ALLOC, liveLvl));
                         fillShape(g, lx, y, tlabWidth, height);
-                        g.setColor(TLAB_ALLOC_BORDER);
-                        drawShape(g, lx, y, tlabWidth, height);
+//                        g.setColor(TLAB_ALLOC_BORDER);
+//                        drawShape(g, lx, y, tlabWidth, height);
                         lx += tlabWidth;
                     }
 
                     if (gclabWidth > 0) {
                         g.setColor(mixAlpha(GCLAB_ALLOC, liveLvl));
                         fillShape(g, lx, y, gclabWidth, height);
-                        g.setColor(GCLAB_ALLOC_BORDER);
-                        drawShape(g, lx, y, gclabWidth, height);
+//                        g.setColor(GCLAB_ALLOC_BORDER);
+//                        drawShape(g, lx, y, gclabWidth, height);
                         lx += gclabWidth;
                     }
 
                     if (sharedWidth > 0) {
                         g.setColor(mixAlpha(SHARED_ALLOC, liveLvl));
                         fillShape(g, lx, y, sharedWidth, height);
-                        g.setColor(SHARED_ALLOC_BORDER);
-                        drawShape(g, lx, y, sharedWidth, height);
+//                        g.setColor(SHARED_ALLOC_BORDER);
+//                        drawShape(g, lx, y, sharedWidth, height);
                         lx += sharedWidth;
                     }
 
                     if (plabWidth > 0) {
                         g.setColor(mixAlpha(PLAB_ALLOC, liveLvl));
                         fillShape(g, lx, y, plabWidth, height);
-                        g.setColor(PLAB_ALLOC_BORDER);
-                        drawShape(g, lx, y, plabWidth, height);
+//                        g.setColor(PLAB_ALLOC_BORDER);
+//                        drawShape(g, lx, y, plabWidth, height);
                     }
                 }
                 break;
@@ -334,7 +334,9 @@ public class RegionStat {
         return gclabLvl;
     }
 
-    public float plabAllocs() { return plabLvl; }
+    public float plabAllocs() {
+        return plabLvl;
+    }
 
     public float maxAllocsYoung() {
         return Collections.max(Arrays.asList(tlabLvl, gclabLvl, sharedLvl));
