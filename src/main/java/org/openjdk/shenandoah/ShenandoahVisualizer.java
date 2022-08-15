@@ -283,14 +283,13 @@ class ShenandoahVisualizer {
                 } else {
                     snapshot = renderRunner.live.snapshot;
                 }
-//                System.out.println(e.getX() + ", " + e.getY());
                 int area = regionWidth[0] * regionHeight[0];
                 int sqSize = Math.max(1, (int) Math.sqrt(1D * area / snapshot.regionCount()));
                 int cols = regionWidth[0] / sqSize;
                 int regionNumber = (e.getX() / sqSize) + ((e.getY() / sqSize) * cols) ;
                 if (regionNumber >= 0 && regionNumber < snapshot.statsSize()) {
-                    RegionPopUp popup = new RegionPopUp(snapshot, regionNumber);
-                    popup.setSize(310, 310);
+                    RegionPopUp popup = new RegionPopUp(regionNumber);
+                    popup.setSize(450, 450);
                     popup.setLocation(e.getX(), e.getY());
                     popup.setVisible(true);
                     popup.addWindowListener(new WindowAdapter() {
@@ -398,11 +397,13 @@ class ShenandoahVisualizer {
         final int STEP_X = 2;
 
         final LinkedList<SnapshotView> lastSnapshots;
+        final LinkedList<Snapshot> popupSnapshots;
         volatile Snapshot snapshot;
 
         public Render(JFrame frame) {
             this.frame = frame;
             this.lastSnapshots = new LinkedList<>();
+            this.popupSnapshots = new LinkedList<>();
         }
 
         protected static Color getColor(SnapshotView s) {
@@ -578,7 +579,7 @@ class ShenandoahVisualizer {
         public void repaintPopups() {
             if (popups != null) {
                 for (RegionPopUp popup : popups) {
-                    popup.setSnapshot(snapshot);
+                    popup.setSnapshots(popupSnapshots);
                     popup.repaint();
                 }
             }
@@ -605,6 +606,7 @@ class ShenandoahVisualizer {
             if (!cur.equals(snapshot)) {
                 snapshot = cur;
                 lastSnapshots.add(new SnapshotView(cur));
+                popupSnapshots.add(cur);
                 if (lastSnapshots.size() > graphWidth / STEP_X) {
                     lastSnapshots.removeFirst();
                 }
@@ -617,6 +619,7 @@ class ShenandoahVisualizer {
             closeDataProvider();
             this.data = data;
             this.lastSnapshots.clear();
+            this.popupSnapshots.clear();
             this.snapshot = data.snapshot();
         }
 
@@ -784,6 +787,7 @@ class ShenandoahVisualizer {
                     long time = lastSnapshots.get(i).time();
                     snapshot = data.getSnapshotAtTime(time);
                     if (data.snapshotTimeHasOccurred(snapshot)) {
+                        popupSnapshots.add(snapshot);
                         endSnapshotIndex++;
                         frame.repaint();
                         repaintPopups();
@@ -793,6 +797,7 @@ class ShenandoahVisualizer {
                     if (!cur.equals(snapshot)) {
                         snapshot = cur;
                         lastSnapshots.add(new SnapshotView(cur));
+                        popupSnapshots.add(cur);
                         endSnapshotIndex = lastSnapshots.size();
                         if (lastSnapshots.size() - frontSnapshotIndex > graphWidth / STEP_X) {
                             frontSnapshotIndex++;
@@ -802,11 +807,13 @@ class ShenandoahVisualizer {
                     }
                 }
                 if (data.isEndOfSnapshots() && endSnapshotIndex >= lastSnapshots.size()) {
+                    popupSnapshots.add(snapshot);
                     System.out.println("Should only enter here at end of snapshots.");
                     data.controlStopwatch("STOP");
                     isPaused = true;
                 }
             } else {
+                repaintPopups();
                 if (data.stopwatch.isStarted()) {
                     data.controlStopwatch("STOP");
                 }
@@ -824,6 +831,13 @@ class ShenandoahVisualizer {
             data.setStopwatchTime(TimeUnit.MILLISECONDS.toNanos(time));
 
             snapshot = data.getSnapshotAtTime(time);
+
+            for (int j = 0; j < n; j++) {
+                if (popupSnapshots.size() > 0) {
+                    popupSnapshots.remove(popupSnapshots.size() - 1);
+                }
+            }
+
             frame.repaint();
             repaintPopups();
         }
@@ -836,6 +850,7 @@ class ShenandoahVisualizer {
                     int index = Math.max(endSnapshotIndex - 1, 0);
                     long time = lastSnapshots.get(index).time();
                     snapshot = data.getSnapshotAtTime(time);
+                    popupSnapshots.add(snapshot);
                 } else {
                     // keep processing snapshots from logData until it reaches a diff snapshot from this.snapshot
                     Snapshot cur = data.getNextSnapshot();
@@ -846,6 +861,7 @@ class ShenandoahVisualizer {
 
                     snapshot = cur;
                     lastSnapshots.add(new SnapshotView(cur));
+                    popupSnapshots.add(cur);
                 }
                 data.setStopwatchTime(TimeUnit.MILLISECONDS.toNanos(snapshot.time()));
                 endSnapshotIndex++;
@@ -862,6 +878,7 @@ class ShenandoahVisualizer {
         private synchronized void loadLogDataProvider(DataLogProvider data) {
             this.data = data;
             this.lastSnapshots.clear();
+            this.popupSnapshots.clear();
             this.snapshot = data.snapshot();
             this.isPaused = false;
             this.speed = 1.0;

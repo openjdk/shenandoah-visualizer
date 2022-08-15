@@ -26,63 +26,122 @@ package org.openjdk.shenandoah;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
+import java.util.LinkedList;
+import java.util.List;
 
 public class RegionPopUp extends JFrame {
     private int regionNumber;
-    private float usedLvl;
-    private float liveLvl;
-    private float tlabLvl;
-    private float gclabLvl;
-    private float plabLvl;
-    private float sharedLvl;
-    private RegionState state;
-    private long age;
-    private RegionAffiliation affiliation;
+    private float spotlightUsedLvl;
+    private float spotlightLiveLvl;
+    private float spotlightTlabLvl;
+    private float spotlightGclabLvl;
+    private float spotlightPlabLvl;
+    private float spotlightSharedLvl;
+    private RegionState spotlightState;
+    private long spotlightAge;
+    private RegionAffiliation spotlightAffiliation;
+    private int squareSize = 15;
+    private int spotlightSquareSize = 28;
+    private int initialY = 1;
 
-    Snapshot snapshot;
+    RegionStat spotlightRegionData;
 
-    public RegionPopUp(Snapshot snapshot, int regionNumber) {
-        this.snapshot = snapshot;
+    List<Snapshot> snapshots = new LinkedList<Snapshot>();
+
+    public RegionPopUp(int regionNumber) {
         this.regionNumber = regionNumber;
-        JPanel detailedState = new JPanel() {
-            public void paint(Graphics g) {
-                renderDetailedRegion(g);
+
+        JPanel timelinePanel = new JPanel() {
+            public void paint (Graphics g) {
+                timelinePaint(g);
             }
         };
-        this.add(detailedState);
-//        System.out.println(regionNumber);
-        setSnapshot(snapshot);
+        JPanel spotlightPanel = new JPanel() {
+            public void paint (Graphics g) {
+                spotlightPaint(g);
+            }
+        };
+
+        this.setLayout(new GridBagLayout());
+
+        Insets pad = new Insets(7, 7, 7, 7);
+
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridx = 0;
+            c.gridy = 0;
+            c.weightx = 4;
+            c.weighty = 5;
+            c.insets = pad;
+            this.add(spotlightPanel, c);
+        }
+
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridx = 1;
+            c.gridy = 0;
+            c.weightx = 3;
+            c.weighty = 7;
+            c.insets = pad;
+            c.gridheight = 2;
+            this.add(timelinePanel, c);
+        }
 
 
     }
-    public synchronized void renderDetailedRegion(Graphics g) {
+    public synchronized void timelinePaint(Graphics g) {
+        int y = initialY;
+        for (int i = snapshots.size() - 1; i >= 0; i--) {
+            RegionStat r = snapshots.get(i).get(regionNumber);
+            if (y == initialY) {
+                r.render(g, 1, y, spotlightSquareSize, spotlightSquareSize);
+                g.setColor(Color.LIGHT_GRAY);
+                g.drawString(Long.toString(snapshots.get(i).time()) + " ms", 35, y + spotlightSquareSize);
+                setSpotlightRegionStat(r);
+                y += spotlightSquareSize;
+            } else {
+                r.render(g, 7, y, squareSize, squareSize);
+                y += squareSize;
+            }
+            if (i % 10 == 0) {
+                g.setColor(Color.LIGHT_GRAY);
+                g.drawString(Long.toString(snapshots.get(i).time()) + " ms", 35, y);
+            }
+        }
+
+    }
+
+    public synchronized void spotlightPaint(Graphics g) {
         g.setColor(Color.BLACK);
-        g.drawString("Region index: " + regionNumber, 20, 30);
-        g.drawString("Used Level: " + usedLvl + " %", 20, 50);
-        g.drawString("Live Level: " + liveLvl + " %", 20, 70);
-        g.drawString("TLAB Level: " + tlabLvl + " %", 20, 90);
-        g.drawString("GCLAB Level: " + gclabLvl + " %", 20, 110);
-        g.drawString("PLAB Level: " + plabLvl + " %", 20, 130);
-        g.drawString("Shared Level: " + sharedLvl + " %", 20, 150);
-        g.drawString("State: " + state, 20, 170);
-        g.drawString("Age: " + age, 20, 190);
-        g.drawString("Affiliation: " + affiliation, 20, 210);
-
+        g.drawString("Spotlight Region Data", 20, 30);
+        g.drawString("Region index: " + regionNumber, 20, 50);
+        g.drawString("Used Level: " + spotlightUsedLvl + " %", 20, 70);
+        g.drawString("Live Level: " + spotlightLiveLvl + " %", 20, 90);
+        g.drawString("TLAB Level: " + spotlightTlabLvl + " %", 20, 110);
+        g.drawString("GCLAB Level: " + spotlightGclabLvl + " %", 20, 130);
+        g.drawString("PLAB Level: " + spotlightPlabLvl + " %", 20, 150);
+        g.drawString("Shared Level: " + spotlightSharedLvl + " %", 20, 170);
+        g.drawString("State: " + spotlightState, 20, 190);
+        g.drawString("Age: " + spotlightAge, 20, 210);
+        g.drawString("Affiliation: " + spotlightAffiliation, 20, 230);
     }
-
-    public final void setSnapshot(Snapshot snapshot) {
-        this.snapshot = snapshot;
-        RegionStat regionData = snapshot.get(regionNumber);
-        usedLvl = regionData.used() * 100f;
-        liveLvl = regionData.live() * 100f;
-        tlabLvl = regionData.tlabAllocs() * 100f;
-        gclabLvl = regionData.gclabAllocs() * 100f;
-        plabLvl = regionData.plabAllocs() * 100f;
-        sharedLvl = regionData.sharedAllocs() * 100f;
-        state = regionData.state();
-        age = regionData.age();
-        affiliation = regionData.affiliation();
-
+    public final void setSnapshots(LinkedList<Snapshot> snapshots) {
+        this.snapshots = snapshots;
+    }
+    public final void setSpotlightRegionStat(RegionStat r) {
+        this.spotlightRegionData = r;
+        spotlightUsedLvl = spotlightRegionData.used() * 100f;
+        spotlightLiveLvl = spotlightRegionData.live() * 100f;
+        spotlightTlabLvl = spotlightRegionData.tlabAllocs() * 100f;
+        spotlightGclabLvl = spotlightRegionData.gclabAllocs() * 100f;
+        spotlightPlabLvl = spotlightRegionData.plabAllocs() * 100f;
+        spotlightSharedLvl = spotlightRegionData.sharedAllocs() * 100f;
+        spotlightState = spotlightRegionData.state();
+        spotlightAge = spotlightRegionData.age();
+        spotlightAffiliation = spotlightRegionData.affiliation();
     }
 }
 
