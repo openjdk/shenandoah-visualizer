@@ -188,10 +188,8 @@ class ShenandoahVisualizer {
         ActionListener playPauseButtonListener = new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 if (renderRunner.playback.isPaused) {
-                    renderRunner.playback.data.controlStopwatch("START");
                     toolbarPanel.setLastActionField("Play button pressed.");
                 } else {
-                    renderRunner.playback.data.controlStopwatch("STOP");
                     toolbarPanel.setLastActionField("Pause button pressed.");
                 }
                 renderRunner.playback.isPaused = !renderRunner.playback.isPaused;
@@ -778,6 +776,9 @@ class ShenandoahVisualizer {
 
         public synchronized void run() {
             if (!isPaused) {
+                if (!data.stopwatch.isStarted()) {
+                    data.controlStopwatch("START");
+                }
                 if (endSnapshotIndex < lastSnapshots.size()) {
                     int i = Math.max(endSnapshotIndex - 1, 0);
                     long time = lastSnapshots.get(i).time();
@@ -804,6 +805,10 @@ class ShenandoahVisualizer {
                     System.out.println("Should only enter here at end of snapshots.");
                     data.controlStopwatch("STOP");
                     isPaused = true;
+                }
+            } else {
+                if (data.stopwatch.isStarted()) {
+                    data.controlStopwatch("STOP");
                 }
             }
         }
