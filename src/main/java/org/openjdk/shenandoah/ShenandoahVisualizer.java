@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright (c) 2021, Amazon.com, Inc. All rights reserved.
  * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
  *
@@ -47,6 +47,8 @@ class ShenandoahVisualizer {
     private static final int KILO = 1024;
     private static final String PLAYBACK = "Playback";
     private static final String REALTIME = "Realtime";
+
+    static int value = 0;
 
     private static ScheduledFuture<?> changeScheduleInterval(int n, ScheduledExecutorService service, ScheduledFuture<?> f, Runnable task) {
         if (service == null || f == null) return null;
@@ -101,16 +103,20 @@ class ShenandoahVisualizer {
 
         final RenderRunner renderRunner;
         ToolbarPanel toolbarPanel = new ToolbarPanel(isReplay);
+        int totalSnapshotSize = 0;
 
         if (isReplay) {
             DataLogProvider data = new DataLogProvider(filePath[0]);
-            renderRunner = new RenderRunner(data, frame);
+            totalSnapshotSize = data.getSnapshotsSize();
+            toolbarPanel.setSize(totalSnapshotSize);
+            toolbarPanel.setSnapshots(data.getSnapshots());
+            renderRunner = new RenderRunner(data, frame, toolbarPanel);
             toolbarPanel.setModeField(PLAYBACK);
             toolbarPanel.setEnabledRealtimeModeButton(true);
             toolbarPanel.setFileNameField(filePath[0]);
         } else {
             DataProvider data = new DataProvider(vmIdentifier);
-            renderRunner = new RenderRunner(data, frame);
+            renderRunner = new RenderRunner(data, frame, toolbarPanel);
             toolbarPanel.setModeField(REALTIME);
             toolbarPanel.setEnabledRealtimeModeButton(false);
         }
@@ -163,11 +169,15 @@ class ShenandoahVisualizer {
             public void actionPerformed(ActionEvent ae) {
                 JFileChooser fc = new JFileChooser();
                 int returnValue = fc.showOpenDialog(null);
+                int totalSnapshotSize = 0;
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     filePath[0] = fc.getSelectedFile().getAbsolutePath();
                     try {
                         DataLogProvider data = new DataLogProvider(filePath[0]);
                         renderRunner.loadPlayback(data);
+                        totalSnapshotSize = data.getSnapshotsSize();
+                        toolbarPanel.setSize(totalSnapshotSize);
+                        toolbarPanel.setSnapshots(data.getSnapshots());
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -181,6 +191,9 @@ class ShenandoahVisualizer {
 
                     f[0] = changeScheduleInterval(1, service, f[0], renderRunner);
                 }
+
+                int lastSnapshotIndex = totalSnapshotSize - 1;
+                toolbarPanel.setEndSnapshotButtonListener((e) -> {if (lastSnapshotIndex > 0) renderRunner.playback.stepForwardSnapshots(lastSnapshotIndex);});
             }
         };
         toolbarPanel.setFileButtonListener(fileButtonListener);
@@ -205,6 +218,25 @@ class ShenandoahVisualizer {
         toolbarPanel.setForwardButton_1_Listener((ae) -> renderRunner.playback.stepForwardSnapshots(1));
 
         toolbarPanel.setForwardButton_5_Listener((ae) -> renderRunner.playback.stepForwardSnapshots(5));
+
+        int lastSnapshotIndex = totalSnapshotSize - 1;
+
+        toolbarPanel.setEndSnapshotButtonListener(e -> {if (lastSnapshotIndex > 0) renderRunner.playback.stepForwardSnapshots(lastSnapshotIndex);});
+
+        ChangeListener sliderListener = new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                int difference = toolbarPanel.currentSliderValue() - renderRunner.playback.getPopupSnapshotsSize();
+                if (difference > 0) {
+                    renderRunner.playback.stepForwardSnapshots(difference);
+                }
+                if (difference < 0) {
+                    renderRunner.playback.stepBackSnapshots(Math.abs(difference));
+                }
+
+            }
+        };
+        toolbarPanel.setSliderListener(sliderListener);
 
         // Speed button listeners
         ChangeListener speedSpinnerListener = new ChangeListener() {
@@ -356,7 +388,7 @@ class ShenandoahVisualizer {
             c.gridx = 1;
             c.gridy = 0;
             c.weightx = 1;
-            c.weighty = 2;
+            c.weighty = 3.5;
             c.insets = pad;
             frame.add(statusPanel, c);
         }
@@ -764,14 +796,18 @@ class ShenandoahVisualizer {
         volatile int frontSnapshotIndex = 0;
         volatile int endSnapshotIndex = 0;
 
-        public RenderPlayback(JFrame frame) {
+        ToolbarPanel toolbarPanel;
+
+        public RenderPlayback(JFrame frame, ToolbarPanel toolbarPanel) {
             super(frame);
+            this.toolbarPanel = toolbarPanel;
             this.snapshot = null;
             this.isPaused = true;
         }
 
-        public RenderPlayback(DataLogProvider data, JFrame frame) {
+        public RenderPlayback(DataLogProvider data, JFrame frame, ToolbarPanel toolbarPanel) {
             super(frame);
+            this.toolbarPanel = toolbarPanel;
             this.data = data;
             this.snapshot = data.snapshot();
             this.isPaused = false;
@@ -783,11 +819,12 @@ class ShenandoahVisualizer {
                     data.controlStopwatch("START");
                 }
                 if (endSnapshotIndex < lastSnapshots.size()) {
-                    int i = Math.max(endSnapshotIndex - 1, 0);
+                    int i = Math.max(endSnapshotIndex, 0);
                     long time = lastSnapshots.get(i).time();
                     snapshot = data.getSnapshotAtTime(time);
                     if (data.snapshotTimeHasOccurred(snapshot)) {
                         popupSnapshots.add(snapshot);
+                        toolbarPanel.setValue(popupSnapshots.size());
                         endSnapshotIndex++;
                         frame.repaint();
                         repaintPopups();
@@ -805,12 +842,13 @@ class ShenandoahVisualizer {
                         if (lastSnapshots.size() - frontSnapshotIndex > graphWidth / STEP_X) {
                             frontSnapshotIndex++;
                         }
+                        toolbarPanel.setValue(popupSnapshots.size());
                         frame.repaint();
                         repaintPopups();
                     }
                 }
                 if (data.isEndOfSnapshots() && endSnapshotIndex >= lastSnapshots.size()) {
-                    popupSnapshots.add(snapshot);
+                    toolbarPanel.setValue(popupSnapshots.size());
                     System.out.println("Should only enter here at end of snapshots.");
                     data.controlStopwatch("STOP");
                     isPaused = true;
@@ -840,6 +878,7 @@ class ShenandoahVisualizer {
                     popupSnapshots.remove(popupSnapshots.size() - 1);
                 }
             }
+            toolbarPanel.setValue(popupSnapshots.size());
 
             frame.repaint();
             repaintPopups();
@@ -850,10 +889,11 @@ class ShenandoahVisualizer {
 
             for (int i = 0; i < n; i++) {
                 if (endSnapshotIndex < lastSnapshots.size()) {
-                    int index = Math.max(endSnapshotIndex - 1, 0);
+                    int index = Math.max(endSnapshotIndex, 0);
                     long time = lastSnapshots.get(index).time();
                     snapshot = data.getSnapshotAtTime(time);
                     popupSnapshots.add(snapshot);
+                    toolbarPanel.setValue(popupSnapshots.size());
                 } else {
                     // keep processing snapshots from logData until it reaches a diff snapshot from this.snapshot
                     Snapshot cur = data.getNextSnapshot();
@@ -865,6 +905,7 @@ class ShenandoahVisualizer {
                     snapshot = cur;
                     lastSnapshots.add(new SnapshotView(cur));
                     popupSnapshots.add(cur);
+                    toolbarPanel.setValue(popupSnapshots.size());
                 }
                 data.setStopwatchTime(TimeUnit.MILLISECONDS.toNanos(snapshot.time()));
                 endSnapshotIndex++;
@@ -1003,6 +1044,10 @@ class ShenandoahVisualizer {
             renderTimeLineLegendItem(g, LINE, Colors.FULL, ++line, "Full");
         }
 
+        public int getPopupSnapshotsSize() {
+            return popupSnapshots.size();
+        }
+
     }
 
     public static class RenderRunner implements Runnable {
@@ -1012,18 +1057,18 @@ class ShenandoahVisualizer {
         final JFrame frame;
         private boolean isLive;
 
-        public RenderRunner(DataProvider data, JFrame frame) {
+        public RenderRunner(DataProvider data, JFrame frame, ToolbarPanel toolbarPanel) {
             this.frame = frame;
             live = new RenderLive(data, frame);
-            playback = new RenderPlayback(frame);
+            playback = new RenderPlayback(frame, toolbarPanel);
             isLive = true;
         }
 
-        public RenderRunner(DataLogProvider data, JFrame frame) {
+        public RenderRunner(DataLogProvider data, JFrame frame, ToolbarPanel toolbarPanel) {
             this.frame = frame;
             live = new RenderLive(frame);
             live.closeDataProvider();
-            playback = new RenderPlayback(data, frame);
+            playback = new RenderPlayback(data, frame, toolbarPanel);
             isLive = false;
         }
 
