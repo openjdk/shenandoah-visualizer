@@ -53,6 +53,8 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
+import java.awt.event.*;
+import java.security.Key;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.Timestamp;
@@ -104,11 +106,13 @@ public class ToolbarPanel extends JPanel
         realtimeModeButton = new JButton("Switch to Realtime");
         realtimeModeButton.setActionCommand(REALTIME);
         realtimeModeButton.addActionListener(this);
+        realtimeModeButton.setFocusable(false);
         fileToolbar.add(realtimeModeButton);
 
         fileButton = new JButton("Load file");
         fileButton.setActionCommand(CHOOSE_FILE);
         fileButton.addActionListener(this);
+        fileButton.setFocusable(false);
         fileToolbar.add(this.fileButton);
 
         slider.setMinimum(0);
@@ -247,26 +251,31 @@ public class ToolbarPanel extends JPanel
         this.backButton_5 = new JButton("-5");
         backButton_5.setActionCommand(BACK_5);
         backButton_5.addActionListener(this);
+        backButton_5.setFocusable(false);
         replayToolbar.add(this.backButton_5);
 
         this.backButton_1 = new JButton("-1");
         backButton_1.setActionCommand(BACK_1);
         backButton_1.addActionListener(this);
+        backButton_1.setFocusable(false);
         replayToolbar.add(this.backButton_1);
 
         this.playPauseButton = new JButton("Play/Pause");
         playPauseButton.setActionCommand(PLAY_PAUSE);
         playPauseButton.addActionListener(this);
+        playPauseButton.setFocusable(false);
         replayToolbar.add(this.playPauseButton);
 
         this.forwardButton_1 = new JButton("+1");
         forwardButton_1.setActionCommand(FORWARD_1);
         forwardButton_1.addActionListener(this);
+        forwardButton_1.setFocusable(false);
         replayToolbar.add(this.forwardButton_1);
 
         this.forwardButton_5 = new JButton("+5");
         forwardButton_5.setActionCommand(FORWARD_5);
         forwardButton_5.addActionListener(this);
+        forwardButton_5.setFocusable(false);
         replayToolbar.add(this.forwardButton_5);
 
         this.endSnapshotButton = new JButton("End Snapshot");
@@ -362,9 +371,11 @@ public class ToolbarPanel extends JPanel
     public void setForwardButton_5_Listener(ActionListener a) {
         forwardButton_5.addActionListener(a);
     }
+
     public void setEndSnapshotButtonListener(ActionListener a) {
         endSnapshotButton.addActionListener(a);
     }
+
     public void setSliderListener(ChangeListener c) {
         slider.addChangeListener(c);
     }

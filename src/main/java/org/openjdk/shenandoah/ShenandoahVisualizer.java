@@ -122,10 +122,9 @@ class ShenandoahVisualizer {
         }
 
         // Executors
-        ScheduledExecutorService service = Executors.newScheduledThreadPool(1);;
+        ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
         final ScheduledFuture<?>[] f = {service.scheduleAtFixedRate(renderRunner,
                 0, renderRunner.isLive ? 100 : 1, TimeUnit.MILLISECONDS)};
-        ;
 
 
         JPanel regionsPanel = new JPanel() {
@@ -208,8 +207,38 @@ class ShenandoahVisualizer {
                 renderRunner.playback.isPaused = !renderRunner.playback.isPaused;
             }
         };
-        toolbarPanel.setPlayPauseButtonListener(playPauseButtonListener);
 
+        int lastSnapshotIndex = totalSnapshotSize - 1;
+        KeyAdapter keyShortcutAdapter = new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                super.keyPressed(e);
+                if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                    renderRunner.playback.stepBackSnapshots(1);
+                }
+                if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+                    renderRunner.playback.stepBackSnapshots(5);
+                }
+                if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+                    if (renderRunner.playback.isPaused) {
+                        toolbarPanel.setLastActionField("Play button pressed.");
+                    } else {
+                        toolbarPanel.setLastActionField("Pause button pressed.");
+                    }
+                    renderRunner.playback.isPaused = !renderRunner.playback.isPaused;
+                }
+                if (e.getKeyCode() == KeyEvent.VK_UP) {
+                    renderRunner.playback.stepForwardSnapshots(5);
+                }
+                if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                    renderRunner.playback.stepForwardSnapshots(1);
+                }
+                if (e.getKeyCode() == KeyEvent.VK_ENTER && lastSnapshotIndex > 0) {
+                    renderRunner.playback.stepForwardSnapshots(lastSnapshotIndex);
+                }
+            }
+        };
+        toolbarPanel.setPlayPauseButtonListener(playPauseButtonListener);
         // Step back/forward button listeners
         toolbarPanel.setBackButton_1_Listener((ae) -> renderRunner.playback.stepBackSnapshots(1));
 
@@ -218,8 +247,6 @@ class ShenandoahVisualizer {
         toolbarPanel.setForwardButton_1_Listener((ae) -> renderRunner.playback.stepForwardSnapshots(1));
 
         toolbarPanel.setForwardButton_5_Listener((ae) -> renderRunner.playback.stepForwardSnapshots(5));
-
-        int lastSnapshotIndex = totalSnapshotSize - 1;
 
         toolbarPanel.setEndSnapshotButtonListener(e -> {if (lastSnapshotIndex > 0) renderRunner.playback.stepForwardSnapshots(lastSnapshotIndex);});
 
@@ -324,6 +351,7 @@ class ShenandoahVisualizer {
                     popup.setSize(450, 450);
                     popup.setLocation(e.getX(), e.getY());
                     popup.setVisible(true);
+                    popup.addKeyListener(keyShortcutAdapter);
                     popup.addWindowListener(new WindowAdapter() {
                         @Override
                         public void windowClosing(WindowEvent e) {
@@ -405,6 +433,10 @@ class ShenandoahVisualizer {
             frame.add(legendPanel, c);
         }
 
+        toolbarPanel.addKeyListener(keyShortcutAdapter);
+        toolbarPanel.setFocusable(true);
+        toolbarPanel.requestFocusInWindow();
+
         frame.setVisible(true);
 
         frame.addWindowListener(new WindowAdapter() {
@@ -415,6 +447,7 @@ class ShenandoahVisualizer {
             }
         });
         f[0].get();
+
     }
 
     public abstract static class Render {
