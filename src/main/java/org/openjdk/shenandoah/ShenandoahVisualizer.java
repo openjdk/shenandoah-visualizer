@@ -792,6 +792,9 @@ class ShenandoahVisualizer {
                         frame.repaint();
                         repaintPopups();
                     }
+                    if (endSnapshotIndex - frontSnapshotIndex > graphWidth / STEP_X) {
+                        frontSnapshotIndex++;
+                    }
                 } else {
                     Snapshot cur = data.snapshot();
                     if (!cur.equals(snapshot)) {
