@@ -292,26 +292,32 @@ public class ToolbarPanel extends JPanel
         this.speedSpinner = new JSpinner(new SpinnerNumberModel(1.0,0.1,10.0,0.1));
         this.speedEditor = new JSpinner.NumberEditor(speedSpinner,"#.#");
         speedSpinner.setEditor(speedEditor);
+        speedSpinner.setFocusable(false);
+        speedEditor.setFocusable(false);
         statusToolbar.add(speedSpinner);
 
         speedMultiplierButton_0_5 = new JButton("0.5x");
         speedMultiplierButton_0_5.setActionCommand(SPEED_0_5);
         speedMultiplierButton_0_5.addActionListener(this);
+        speedMultiplierButton_0_5.setFocusable(false);
         speedToolbar.add(speedMultiplierButton_0_5);
 
         speedMultiplierButton_2 = new JButton("2x");
         speedMultiplierButton_2.setActionCommand(SPEED_2);
         speedMultiplierButton_2.addActionListener(this);
+        speedMultiplierButton_2.setFocusable(false);
         speedToolbar.add(speedMultiplierButton_2);
 
         resetSpeedMultiplierButton = new JButton("RESET");
         resetSpeedMultiplierButton.setActionCommand(SPEED_RESET);
         resetSpeedMultiplierButton.addActionListener(this);
+        resetSpeedMultiplierButton.setFocusable(false);
         speedToolbar.add(resetSpeedMultiplierButton);
     }
 
     public double getSpeedValue() {
         JFormattedTextField speedField = getTextField(speedSpinner);
+        requestFocusInWindow();
         double speedValue = (double) speedField.getValue();
         try {
             speedEditor.commitEdit();
