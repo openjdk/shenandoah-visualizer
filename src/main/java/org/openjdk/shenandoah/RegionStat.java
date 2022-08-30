@@ -57,7 +57,7 @@ public class RegionStat {
     private final long age;
     private final RegionAffiliation affiliation;
     private final boolean showLivenessDetail;
-    
+
     private static final Stroke STROKE = new BasicStroke(2);
 
     // This constructor is for the legend.
