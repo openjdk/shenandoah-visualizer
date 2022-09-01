@@ -31,7 +31,7 @@ public class Colors {
     static final Color OLD_TIMELINE_MARK = new Color(120, 171, 210);
 
     static final Color[] YOUNG = createColorFamily(Color.GREEN);
-    static final Color[] OLD = createColorFamily(new Color(185, 0, 250));
+    static final Color[] OLD = createColorFamily(new Color(120 , 146, 210));
     static final Color[] GLOBAL = createColorFamily(Color.RED);
 
     private static Color[] createColorFamily(Color base) {

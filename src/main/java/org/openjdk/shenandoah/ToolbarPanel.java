@@ -122,6 +122,7 @@ public class ToolbarPanel extends JPanel
 
         fileNameField = new JTextField();
         fileNameField.setEditable(false);
+        fileNameField.setFocusable(false);
         fileToolbar.add(fileNameField);
 
         {
@@ -151,6 +152,7 @@ public class ToolbarPanel extends JPanel
 
         lastActionField = new JTextField();
         lastActionField.setEditable(false);
+        lastActionField.setFocusable(false);
         statusToolbar.add(lastActionField);
 
         modeLabel = new JLabel("Mode:");
@@ -158,6 +160,7 @@ public class ToolbarPanel extends JPanel
 
         modeField = new JTextField();
         modeField.setEditable(false);
+        modeField.setFocusable(false);
         statusToolbar.add(modeField);
 
         timestampLabel = new JLabel("Timestamp: ");
@@ -165,6 +168,7 @@ public class ToolbarPanel extends JPanel
 
         timestampField = new JTextField();
         timestampField.setEditable(false);
+        timestampField.setFocusable(false);
         timestampToolBar.add(timestampField);
 
         addPlaybackButtons();
@@ -445,7 +449,16 @@ public class ToolbarPanel extends JPanel
         slider.setMaximum(size);
     }
     public final void setValue(int value) {
-        slider.setValue(value);
+        if (SwingUtilities.isEventDispatchThread()){
+            slider.setValue(value);
+        } else {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    slider.setValue(value);
+                }
+            });
+        }
     }
     public int currentSliderValue() {
         if ((slider.getValue() - 1) >= 0) {
