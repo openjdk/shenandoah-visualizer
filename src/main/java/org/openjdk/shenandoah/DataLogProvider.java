@@ -92,6 +92,7 @@ public class DataLogProvider {
             String metaDataLine = br.readLine(); // timestamp status numRegions regionSize
 
             while (metaDataLine != null && metaDataLine.trim().length() > 0) {
+                metaDataLine = processLoggingTag(metaDataLine);
                 long[] metaData = processLongData(metaDataLine);
                 if (metaData.length != 5 && metaData.length != 4) {
                     throw new IllegalArgumentException(String.format("Metadata line has %d values. Expected 5 values.", metaData.length));
@@ -103,6 +104,7 @@ public class DataLogProvider {
                 if (regionDataLine == null) {
                     throw new NullPointerException("Invalid file format: Missing region data.");
                 }
+                regionDataLine = processLoggingTag(regionDataLine);
                 String[] regionData = regionDataLine.trim().split(" ");
 
                 long tsMilli = TimeUnit.NANOSECONDS.toMillis(metaData[0]);
@@ -152,6 +154,16 @@ public class DataLogProvider {
 
     private boolean isValidPath(String name) {
         return name != null && Files.isReadable(Paths.get(name));
+    }
+
+    String processLoggingTag(String data) {
+        if (data.lastIndexOf("]") != -1) {
+            int startIndex = data.lastIndexOf("]") + 2;
+            String newData = data.substring(startIndex);
+            return newData;
+        } else {
+            return data;
+        }
     }
 
     private long[] processLongData(String data) throws NumberFormatException {
