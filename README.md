@@ -31,10 +31,16 @@ Build as any Maven-driven Java project:
     $ java -jar visualizer.jar
 
 *Step 3b.* Optionally attach the Visualizer using the -vm flag:
+  If using JDK8:
 
     $ java -Xbootclasspath/p:<path-to-tools.jar> -jar visualizer.jar -vm local://<pid>
-
 `tools.jar` can usually be found at `$JAVA_HOME/lib`
+
+  If using JDK17+
+```bash
+  $ java --add-exports jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED -jar visualizer.jar
+```
+  Note that if you are using Intellij, you can also add these exports to the compiler (settings->javac) so that you can build and debug within the IDE.
 
 
 #### Saving JVM session
