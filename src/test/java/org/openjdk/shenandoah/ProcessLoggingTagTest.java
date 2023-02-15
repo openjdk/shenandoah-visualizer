@@ -38,7 +38,7 @@ public class ProcessLoggingTagTest {
 
     @Before
     public void setUp() throws IOException {
-        dataLogProvider = new DataLogProvider("src/test/resources/regions-6425.log");
+        dataLogProvider = new DataLogProvider("src/test/resources/regions-6425.log", new SnapshotHistory());
     }
 
     @Test

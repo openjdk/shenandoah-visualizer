@@ -61,7 +61,6 @@ import java.lang.System;
 import java.util.concurrent.TimeUnit;
 
 public class DataLogProvider {
-    //default Snapshot as version 2
     private static final long LATEST_VERSION = 2;
     private static final Snapshot DISCONNECTED = new Snapshot(0, 1024, LATEST_VERSION, Collections.emptyList(), 0, null);
 
@@ -77,8 +76,7 @@ public class DataLogProvider {
     private Snapshot currSnapshot = DISCONNECTED;
 
 
-    public DataLogProvider(String path) throws IOException, NumberFormatException {
-        String filePath = path;
+    public DataLogProvider(String filePath, SnapshotHistory history) throws IOException, NumberFormatException {
         if (!isValidPath(filePath)) {
             throw new FileNotFoundException("Invalid file path supplied. Please try again.");
         }
@@ -108,11 +106,11 @@ public class DataLogProvider {
                 String[] regionData = regionDataLine.trim().split(" ");
 
                 long tsMilli = TimeUnit.NANOSECONDS.toMillis(metaData[0]);
-                snapshots.add(new Snapshot(tsMilli,
-                        metaData[3], protocolVersion,
-                        processRegionStats(regionData),
-                        Math.toIntExact(metaData[1]),
-                        null));
+                long regionSize = metaData[3];
+                int status = Math.toIntExact(metaData[1]);
+                Snapshot snapshot = new Snapshot(tsMilli, regionSize, protocolVersion, processRegionStats(regionData), status, null);
+                snapshots.add(snapshot);
+                history.add(snapshot);
                 snapshotsIndexByTime.put(tsMilli, index++);
 
                 metaDataLine = br.readLine();

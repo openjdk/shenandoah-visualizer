@@ -44,7 +44,7 @@ class ShenandoahVisualizer {
 
     private static final int INITIAL_WIDTH = 2000;
     private static final int INITIAL_HEIGHT = 1600;
-    private static final int KILO = 1024;
+    static final int KILO = 1024;
     private static final String PLAYBACK = "Playback";
     private static final String REALTIME = "Realtime";
 
@@ -100,13 +100,13 @@ class ShenandoahVisualizer {
         frame.setLayout(new GridBagLayout());
         frame.setTitle("Shenandoah GC Visualizer");
         frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
-
+        SnapshotHistory history = new SnapshotHistory();
         final RenderRunner renderRunner;
         ToolbarPanel toolbarPanel = new ToolbarPanel(isReplay);
         int totalSnapshotSize = 0;
 
         if (isReplay) {
-            DataLogProvider data = new DataLogProvider(filePath[0]);
+            DataLogProvider data = new DataLogProvider(filePath[0], history);
             totalSnapshotSize = data.getSnapshotsSize();
             toolbarPanel.setSize(totalSnapshotSize);
             toolbarPanel.setSnapshots(data.getSnapshots());
@@ -115,7 +115,7 @@ class ShenandoahVisualizer {
             toolbarPanel.setEnabledRealtimeModeButton(true);
             toolbarPanel.setFileNameField(filePath[0]);
         } else {
-            DataProvider data = new DataProvider(vmIdentifier);
+            DataProvider data = new DataProvider(vmIdentifier, history);
             renderRunner = new RenderRunner(data, frame, toolbarPanel);
             toolbarPanel.setModeField(REALTIME);
             toolbarPanel.setEnabledRealtimeModeButton(false);
@@ -140,12 +140,7 @@ class ShenandoahVisualizer {
             }
         };
 
-        JPanel statusPanel = new JPanel() {
-            @Override
-            public void paint(Graphics g) {
-                renderRunner.renderStats(g);
-            }
-        };
+        JPanel statusPanel = new StatusPanel(history);
 
         JPanel graphPanel = new JPanel() {
             @Override
@@ -156,7 +151,7 @@ class ShenandoahVisualizer {
 
         ActionListener realtimeModeButtonListener = new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
-                DataProvider data = new DataProvider(null);
+                DataProvider data = new DataProvider(null, history);
                 renderRunner.loadLive(data);
                 toolbarPanel.setFileNameField("");
                 f[0] = changeScheduleInterval(100, service, f[0], renderRunner);
@@ -172,7 +167,7 @@ class ShenandoahVisualizer {
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     filePath[0] = fc.getSelectedFile().getAbsolutePath();
                     try {
-                        DataLogProvider data = new DataLogProvider(filePath[0]);
+                        DataLogProvider data = new DataLogProvider(filePath[0], null);
                         renderRunner.loadPlayback(data);
                         totalSnapshotSize = data.getSnapshotsSize();
                         toolbarPanel.setSize(totalSnapshotSize);
@@ -606,16 +601,6 @@ class ShenandoahVisualizer {
             }
         }
 
-        protected String collectionMode() {
-            if (snapshot.isFullActive()) {
-                return "Full";
-            }
-            if (snapshot.isDegenActive()) {
-                return snapshot.isYoungActive() ? "Degenerate Young" : "Degenerate Global";
-            }
-            return snapshot.isYoungActive() ? "Young" : "Global";
-        }
-
         protected String liveStatusLine() {
             return "Live (Green): MB: T:" +
                     snapshot.live() / ShenandoahVisualizer.KILO + " Y:" +
@@ -672,7 +657,7 @@ class ShenandoahVisualizer {
 
         public RenderLive(JFrame frame) {
             super(frame);
-            this.data = new DataProvider(null);
+            this.data = new DataProvider(null, null);
             this.snapshot = data.snapshot();
         }
 
@@ -834,7 +819,7 @@ class ShenandoahVisualizer {
         }
 
         public synchronized void renderStats(Graphics g) {
-            String mode = collectionMode();
+            String mode = snapshot.collectionMode();
             String status = "";
             switch (snapshot.phase()) {
                 case IDLE:
@@ -1150,7 +1135,7 @@ class ShenandoahVisualizer {
         }
 
         public synchronized void renderStats(Graphics g) {
-            String mode = collectionMode();
+            String mode = snapshot.collectionMode();
             String status = "";
             switch (snapshot.phase()) {
                 case IDLE:

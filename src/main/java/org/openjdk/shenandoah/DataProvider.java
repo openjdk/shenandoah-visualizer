@@ -40,6 +40,8 @@ public class DataProvider {
     private static final Snapshot DISCONNECTED = new Snapshot(0, 1024, LATEST_VERSION, Collections.emptyList(), 0, new Histogram(2));
     private final DataConnector connector;
 
+    private final SnapshotHistory history;
+
     private int maxRegions;
     private long protocolVersion;
     private long maxSize;
@@ -48,9 +50,12 @@ public class DataProvider {
 
 
 
-    public DataProvider(String id) {
+    public DataProvider(String id, SnapshotHistory history) {
         connector = new DataConnector(this::setMonitoredVm);
         connector.start();
+
+        // TODO: Run a scheduled task to poll for new snapshots and add them to history.
+        this.history = history;
     }
 
     private void setMonitoredVm(MonitoredVm vm) {

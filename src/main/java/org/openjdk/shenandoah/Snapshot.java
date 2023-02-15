@@ -30,6 +30,22 @@ import java.util.List;
 import java.util.function.Function;
 
 public class Snapshot {
+    protected String collectionMode() {
+        if (phase() == Phase.IDLE) {
+            return "";
+        }
+
+        if (isFullActive()) {
+            return "Full";
+        }
+
+        if (isDegenActive()) {
+            return isYoungActive() ? "Degenerate Young" : "Degenerate Global";
+        }
+
+        return isYoungActive() ? "Young" : "Global";
+    }
+
     public enum Generation {
         YOUNG(4), OLD(2), GLOBAL(0);
 
