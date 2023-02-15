@@ -117,13 +117,6 @@ import java.util.concurrent.*;
         final ScheduledFuture<?>[] f = {service.scheduleAtFixedRate(renderRunner,
                 0, renderRunner.isLive ? 100 : 1, TimeUnit.MILLISECONDS)};
 
-
-        JPanel regionsPanel = new JPanel() {
-            public void paint(Graphics g) {
-                renderRunner.renderRegions(g);
-            }
-        };
-
         JPanel legendPanel = new JPanel() {
             @Override
             public void paint(Graphics g) {
@@ -224,6 +217,9 @@ import java.util.concurrent.*;
                 }
             }
         };
+
+        JPanel regionsPanel = new RegionPanel(renderRunner, keyShortcutAdapter);
+
         toolbarPanel.setPlayPauseButtonListener(playPauseButtonListener);
         // Step back/forward button listeners
         toolbarPanel.setBackButton_1_Listener((ae) -> renderRunner.playback.stepBackSnapshots(1));
@@ -309,50 +305,6 @@ import java.util.concurrent.*;
             }
         };
         toolbarPanel.setResetSpeedListener(resetSpeedListener);
-        final int[] regionWidth = new int[1];
-        final int[] regionHeight = new int[1];
-        regionsPanel.addComponentListener(new ComponentAdapter() {
-            public void componentResized(ComponentEvent ev) {
-                regionWidth[0] = ev.getComponent().getWidth();
-                regionHeight[0] = ev.getComponent().getHeight();
-                renderRunner.notifyRegionResized(ev.getComponent().getWidth(), ev.getComponent().getHeight());
-            }
-        });
-        final boolean isReplayFinal = isReplay;
-        regionsPanel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                Snapshot snapshot;
-                if (isReplayFinal) {
-                    snapshot = renderRunner.playback.snapshot;
-                } else {
-                    snapshot = renderRunner.live.snapshot;
-                }
-                int area = regionWidth[0] * regionHeight[0];
-                int sqSize = Math.max(1, (int) Math.sqrt(1D * area / snapshot.regionCount()));
-                int cols = regionWidth[0] / sqSize;
-                int regionNumber = (e.getX() / sqSize) + ((e.getY() / sqSize) * cols) ;
-                if (regionNumber >= 0 && regionNumber < snapshot.statsSize()) {
-                    RegionPopUp popup = new RegionPopUp(regionNumber);
-                    popup.setSize(450, 450);
-                    popup.setLocation(e.getX(), e.getY());
-                    popup.setVisible(true);
-                    popup.addKeyListener(keyShortcutAdapter);
-                    popup.addWindowListener(new WindowAdapter() {
-                        @Override
-                        public void windowClosing(WindowEvent e) {
-                            super.windowClosing(e);
-                            popup.setVisible(false);
-                            popup.dispose();
-                            renderRunner.deletePopup(popup);
-                        }
-                    });
-                    renderRunner.addPopup(popup);
-                }
-
-            }
-
-        });
 
         graphPanel.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent ev) {

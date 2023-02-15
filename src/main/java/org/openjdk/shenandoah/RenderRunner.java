@@ -60,25 +60,12 @@ public class RenderRunner implements Runnable {
         }
     }
 
-    public synchronized void renderRegions(Graphics g) {
-        if (isLive) {
-            live.renderRegions(g);
-        } else {
-            playback.renderRegions(g);
-        }
-    }
-
     public synchronized void renderLegend(Graphics g) {
         if (isLive) {
             live.renderLegend(g);
         } else {
             playback.renderLegend(g);
         }
-    }
-
-    public synchronized void notifyRegionResized(int width, int height) {
-        live.notifyRegionResized(width, height);
-        playback.notifyRegionResized(width, height);
     }
 
     public synchronized void notifyGraphResized(int width, int height) {

@@ -14,7 +14,6 @@ public abstract class Render {
 
     List<RegionPopUp> popups = new ArrayList<RegionPopUp>();
 
-    int regionWidth, regionHeight;
     int graphWidth, graphHeight;
     final int STEP_X = 4;
     final int phaseLabelWidth = 50;
@@ -147,46 +146,6 @@ public abstract class Render {
             g.drawString(key + " total: " + summaryNumbers.get(key).toString(), (int) (sqSize * 1.5), y + sqSize);
             i++;
         }
-    }
-
-    public synchronized void renderRegions(Graphics g) {
-        int area = regionWidth * regionHeight;
-        int sqSize = Math.max(1, (int) Math.sqrt(1D * area / snapshot.regionCount()));
-        int cols = regionWidth / sqSize;
-        int cellSize = sqSize - 2;
-        for (int i = 0; i < snapshot.regionCount(); i++) {
-            int rectx = (i % cols) * sqSize;
-            int recty = (i / cols) * sqSize;
-            RegionStat s = snapshot.get(i);
-            s.render(g, rectx, recty, cellSize, cellSize);
-        }
-    }
-
-    protected String liveStatusLine() {
-        return "Live (Green): MB: T:" +
-                snapshot.live() / ShenandoahVisualizer.KILO + " Y:" +
-                snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::live) / ShenandoahVisualizer.KILO + " O:" +
-                snapshot.generationStat(RegionAffiliation.OLD, RegionStat::live) / ShenandoahVisualizer.KILO;
-    }
-
-    protected String usageStatusLine() {
-        return "Used (White): MB: T:" +
-                snapshot.used() / ShenandoahVisualizer.KILO + " Y:" +
-                snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::used) / ShenandoahVisualizer.KILO + " O:" +
-                snapshot.generationStat(RegionAffiliation.OLD, RegionStat::used) / ShenandoahVisualizer.KILO;
-    }
-
-    protected void renderTimeLineLegendItem(Graphics g, int sqSize, Color color, int lineNumber, String label) {
-        g.setColor(color);
-        int y = (int) (lineNumber * LINE * 1.5);
-        g.fillRect(0, y, sqSize, sqSize);
-        g.setColor(Color.BLACK);
-        g.drawString(label, (int) (sqSize * 1.5), y + sqSize);
-    }
-
-    public synchronized void notifyRegionResized(int width, int height) {
-        this.regionWidth = width;
-        this.regionHeight = height;
     }
 
     public synchronized void notifyGraphResized(int width, int height) {
