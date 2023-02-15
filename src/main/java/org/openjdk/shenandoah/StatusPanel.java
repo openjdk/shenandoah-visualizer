@@ -7,15 +7,15 @@ import static org.openjdk.shenandoah.LayoutConstants.LINE;
 import static org.openjdk.shenandoah.LayoutConstants.renderTimeLineLegendItem;
 
 public class StatusPanel extends JPanel {
-    private final SnapshotHistory history;
+    private final RenderRunner renderRunner;
 
-    public StatusPanel(SnapshotHistory history) {
-        this.history = history;
+    public StatusPanel(RenderRunner renderRunner) {
+        this.renderRunner = renderRunner;
     }
 
     @Override
     public void paint(Graphics g) {
-        Snapshot snapshot = history.latest();
+        Snapshot snapshot = renderRunner.snapshot();
         String mode = snapshot.collectionMode();
         String status = getStatus(snapshot);
 
