@@ -91,13 +91,12 @@ import java.util.concurrent.*;
         frame.setLayout(new GridBagLayout());
         frame.setTitle("Shenandoah GC Visualizer");
         frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
-        SnapshotHistory history = new SnapshotHistory();
         final RenderRunner renderRunner;
         ToolbarPanel toolbarPanel = new ToolbarPanel(isReplay);
         int totalSnapshotSize = 0;
 
         if (isReplay) {
-            DataLogProvider data = new DataLogProvider(filePath[0], history);
+            DataLogProvider data = new DataLogProvider(filePath[0]);
             totalSnapshotSize = data.getSnapshotsSize();
             toolbarPanel.setSize(totalSnapshotSize);
             toolbarPanel.setSnapshots(data.getSnapshots());
@@ -106,7 +105,7 @@ import java.util.concurrent.*;
             toolbarPanel.setEnabledRealtimeModeButton(true);
             toolbarPanel.setFileNameField(filePath[0]);
         } else {
-            DataProvider data = new DataProvider(vmIdentifier, history);
+            DataProvider data = new DataProvider(vmIdentifier);
             renderRunner = new RenderRunner(data, frame, toolbarPanel);
             toolbarPanel.setModeField(REALTIME);
             toolbarPanel.setEnabledRealtimeModeButton(false);
@@ -130,7 +129,7 @@ import java.util.concurrent.*;
 
         ActionListener realtimeModeButtonListener = new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
-                DataProvider data = new DataProvider(null, history);
+                DataProvider data = new DataProvider(null);
                 renderRunner.loadLive(data);
                 toolbarPanel.setFileNameField("");
                 f[0] = changeScheduleInterval(100, service, f[0], renderRunner);
@@ -146,7 +145,7 @@ import java.util.concurrent.*;
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     filePath[0] = fc.getSelectedFile().getAbsolutePath();
                     try {
-                        DataLogProvider data = new DataLogProvider(filePath[0], null);
+                        DataLogProvider data = new DataLogProvider(filePath[0]);
                         renderRunner.loadPlayback(data);
                         totalSnapshotSize = data.getSnapshotsSize();
                         toolbarPanel.setSize(totalSnapshotSize);

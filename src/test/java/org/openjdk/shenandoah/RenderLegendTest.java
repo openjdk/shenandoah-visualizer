@@ -39,8 +39,7 @@ public class RenderLegendTest {
         Graphics2D g = img.createGraphics();
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, 300, 700);
-        new RenderPlayback(new DataLogProvider("src/test/resources/regions-6425.log", new SnapshotHistory()), null, new ToolbarPanel(true)).renderLegend(g);
+        new RenderPlayback(new DataLogProvider("src/test/resources/regions-6425.log"), null, new ToolbarPanel(true));
         ImageIO.write(img, "png", new File("legend.png"));
     }
-
 }

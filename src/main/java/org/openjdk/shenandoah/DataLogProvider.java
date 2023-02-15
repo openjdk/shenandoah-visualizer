@@ -76,7 +76,7 @@ public class DataLogProvider {
     private Snapshot currSnapshot = DISCONNECTED;
 
 
-    public DataLogProvider(String filePath, SnapshotHistory history) throws IOException, NumberFormatException {
+    public DataLogProvider(String filePath) throws IOException, NumberFormatException {
         if (!isValidPath(filePath)) {
             throw new FileNotFoundException("Invalid file path supplied. Please try again.");
         }
@@ -110,7 +110,6 @@ public class DataLogProvider {
                 int status = Math.toIntExact(metaData[1]);
                 Snapshot snapshot = new Snapshot(tsMilli, regionSize, protocolVersion, processRegionStats(regionData), status, null);
                 snapshots.add(snapshot);
-                history.add(snapshot);
                 snapshotsIndexByTime.put(tsMilli, index++);
 
                 metaDataLine = br.readLine();
