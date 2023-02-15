@@ -117,12 +117,7 @@ import java.util.concurrent.*;
         final ScheduledFuture<?>[] f = {service.scheduleAtFixedRate(renderRunner,
                 0, renderRunner.isLive ? 100 : 1, TimeUnit.MILLISECONDS)};
 
-        JPanel legendPanel = new JPanel() {
-            @Override
-            public void paint(Graphics g) {
-                renderRunner.renderLegend(g);
-            }
-        };
+        JPanel legendPanel = new LegendPanel(renderRunner);
 
         JPanel statusPanel = new StatusPanel(renderRunner);
 
