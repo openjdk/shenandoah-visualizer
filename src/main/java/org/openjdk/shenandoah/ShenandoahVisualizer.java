@@ -85,7 +85,6 @@ import java.util.concurrent.*;
                 return;
             }
         }
-        //
 
         JFrame frame = new JFrame();
         frame.setLayout(new GridBagLayout());

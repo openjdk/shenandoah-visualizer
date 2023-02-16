@@ -13,7 +13,7 @@ public class RenderLive extends Render {
 
     public RenderLive(JFrame frame) {
         super(frame);
-        this.data = new DataProvider(null, null);
+        this.data = new DataProvider(null);
         this.snapshot = data.snapshot();
     }
 
