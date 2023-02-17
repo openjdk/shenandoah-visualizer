@@ -23,13 +23,15 @@
  */
 package org.openjdk.shenandoah;
 
-import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.IOException;
-import java.util.concurrent.*;
+ import javax.swing.*;
+ import java.awt.*;
+ import java.awt.event.KeyAdapter;
+ import java.awt.event.KeyEvent;
+ import java.awt.event.WindowAdapter;
+ import java.awt.event.WindowEvent;
+ import java.util.concurrent.Executors;
+ import java.util.concurrent.ScheduledExecutorService;
+ import java.util.concurrent.TimeUnit;
 
  class ShenandoahVisualizer {
 
@@ -77,7 +79,7 @@ import java.util.concurrent.*;
         frame.setTitle("Shenandoah GC Visualizer");
         frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
         final RenderRunner renderRunner;
-        ToolbarPanel toolbarPanel = new ToolbarPanel(isReplay);
+
         int totalSnapshotSize = 0;
         EventLog<Snapshot> events = new EventLog<>(TimeUnit.MILLISECONDS);
 
@@ -85,18 +87,15 @@ import java.util.concurrent.*;
             DataLogProvider data = new DataLogProvider(filePath[0], events);
             events.step(1);
             totalSnapshotSize = data.getSnapshotsSize();
-            toolbarPanel.setSize(totalSnapshotSize);
-            toolbarPanel.setSnapshots(data.getSnapshots());
-            renderRunner = new RenderRunner(data, frame, toolbarPanel, events);
-            toolbarPanel.setModeField(PLAYBACK);
-            toolbarPanel.setEnabledRealtimeModeButton(true);
-            toolbarPanel.setFileNameField(filePath[0]);
+            renderRunner = new RenderRunner(data, frame, events);
         } else {
             DataProvider data = new DataProvider(vmIdentifier);
-            renderRunner = new RenderRunner(data, frame, toolbarPanel, events);
-            toolbarPanel.setModeField(REALTIME);
-            toolbarPanel.setEnabledRealtimeModeButton(false);
+            renderRunner = new RenderRunner(data, frame, events);
         }
+
+
+        KeyAdapter keyShortcutAdapter = new KeyboardShortcuts(renderRunner);
+        ToolbarPanel toolbarPanel = new ToolbarPanel(renderRunner);
 
         // Executors
         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
@@ -108,176 +107,7 @@ import java.util.concurrent.*;
 
         JPanel graphPanel = new GraphPanel(renderRunner);
 
-        ActionListener realtimeModeButtonListener = new ActionListener() {
-            public void actionPerformed(ActionEvent ae) {
-                DataProvider data = new DataProvider(null);
-                renderRunner.loadLive(data);
-                toolbarPanel.setFileNameField("");
-            }
-        };
-        toolbarPanel.setRealtimeModeButtonListener(realtimeModeButtonListener);
-
-        ActionListener fileButtonListener = new ActionListener() {
-            public void actionPerformed(ActionEvent ae) {
-                JFileChooser fc = new JFileChooser();
-                int returnValue = fc.showOpenDialog(null);
-                int totalSnapshotSize = 0;
-                if (returnValue == JFileChooser.APPROVE_OPTION) {
-                    filePath[0] = fc.getSelectedFile().getAbsolutePath();
-                    try {
-                        DataLogProvider data = new DataLogProvider(filePath[0], events);
-                        renderRunner.loadPlayback(data);
-                        totalSnapshotSize = data.getSnapshotsSize();
-                        toolbarPanel.setSize(totalSnapshotSize);
-                        toolbarPanel.setSnapshots(data.getSnapshots());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    renderRunner.playback.speed = 1.0;
-                    toolbarPanel.setSpeedValue(1.0);
-                    toolbarPanel.setFileNameField(filePath[0]);
-                    toolbarPanel.setLastActionField("File selected: " + filePath[0]);
-
-                    System.out.println("Selected file: " + filePath[0]);
-                    renderRunner.frame.repaint();
-
-                }
-
-                int lastSnapshotIndex = totalSnapshotSize - 1;
-                toolbarPanel.setEndSnapshotButtonListener((e) -> {if (lastSnapshotIndex > 0) renderRunner.playback.stepForwardSnapshots(lastSnapshotIndex);});
-            }
-        };
-        toolbarPanel.setFileButtonListener(fileButtonListener);
-
-        ActionListener playPauseButtonListener = new ActionListener() {
-            public void actionPerformed(ActionEvent ae) {
-                if (renderRunner.playback.isPaused) {
-                    toolbarPanel.setLastActionField("Play button pressed.");
-                } else {
-                    toolbarPanel.setLastActionField("Pause button pressed.");
-                }
-                renderRunner.playback.isPaused = !renderRunner.playback.isPaused;
-            }
-        };
-
-        int lastSnapshotIndex = totalSnapshotSize - 1;
-        KeyAdapter keyShortcutAdapter = new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                super.keyPressed(e);
-                if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                    renderRunner.playback.stepBackSnapshots(1);
-                }
-                if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-                    renderRunner.playback.stepBackSnapshots(5);
-                }
-                if (e.getKeyCode() == KeyEvent.VK_SPACE) {
-                    if (renderRunner.playback.isPaused) {
-                        toolbarPanel.setLastActionField("Play button pressed.");
-                    } else {
-                        toolbarPanel.setLastActionField("Pause button pressed.");
-                    }
-                    renderRunner.playback.isPaused = !renderRunner.playback.isPaused;
-                }
-                if (e.getKeyCode() == KeyEvent.VK_UP) {
-                    renderRunner.playback.stepForwardSnapshots(5);
-                }
-                if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                    renderRunner.playback.stepForwardSnapshots(1);
-                }
-                if (e.getKeyCode() == KeyEvent.VK_ENTER && lastSnapshotIndex > 0) {
-                    renderRunner.playback.stepForwardSnapshots(lastSnapshotIndex);
-                }
-            }
-        };
-
         JPanel regionsPanel = new RegionPanel(renderRunner, keyShortcutAdapter);
-
-        toolbarPanel.setPlayPauseButtonListener(playPauseButtonListener);
-        // Step back/forward button listeners
-        toolbarPanel.setBackButton_1_Listener((ae) -> renderRunner.playback.stepBackSnapshots(1));
-
-        toolbarPanel.setBackButton_5_Listener((ae) -> renderRunner.playback.stepBackSnapshots(5));
-
-        toolbarPanel.setForwardButton_1_Listener((ae) -> renderRunner.playback.stepForwardSnapshots(1));
-
-        toolbarPanel.setForwardButton_5_Listener((ae) -> renderRunner.playback.stepForwardSnapshots(5));
-
-        toolbarPanel.setEndSnapshotButtonListener(e -> {if (lastSnapshotIndex > 0) renderRunner.playback.stepForwardSnapshots(lastSnapshotIndex);});
-
-        ChangeListener sliderListener = new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                int difference = toolbarPanel.currentSliderValue() - renderRunner.playback.getPopupSnapshotsSize();
-                if (difference > 0) {
-                    renderRunner.playback.stepForwardSnapshots(difference);
-                }
-                if (difference < 0) {
-                    renderRunner.playback.stepBackSnapshots(Math.abs(difference));
-                }
-
-            }
-        };
-        toolbarPanel.setSliderListener(sliderListener);
-
-        // Speed button listeners
-        ChangeListener speedSpinnerListener = new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                if (!toolbarPanel.speedButtonPressed) {
-                    double speed = toolbarPanel.getSpeedValue();
-                    if (speed != renderRunner.playback.speed) {
-                        toolbarPanel.setLastActionField("Changed playback speed to: " + speed);
-                        renderRunner.playback.data.setSpeed(speed);
-                        renderRunner.playback.speed = speed;
-                    }
-                }
-            }
-        };
-        toolbarPanel.setSpeedSpinnerListener(speedSpinnerListener);
-
-        ActionListener speed_0_5_Listener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                toolbarPanel.speedButtonPressed = true;
-                double speed = Math.max(0.1, renderRunner.playback.speed * 0.5);
-                renderRunner.playback.data.setSpeed(speed);
-                renderRunner.playback.speed = speed;
-                toolbarPanel.setSpeedValue(speed);
-                toolbarPanel.speedButtonPressed = false;
-                toolbarPanel.setLastActionField("Multiplied speed by 0.5x. Min speed = 0.1");
-            }
-        };
-        toolbarPanel.setSpeed_0_5_Listener(speed_0_5_Listener);
-
-        ActionListener speed_2_Listener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                toolbarPanel.speedButtonPressed = true;
-                double speed = Math.min(10.0, renderRunner.playback.speed * 2);
-                renderRunner.playback.data.setSpeed(speed);
-                renderRunner.playback.speed = speed;
-                toolbarPanel.setSpeedValue(speed);
-                toolbarPanel.speedButtonPressed = false;
-                toolbarPanel.setLastActionField("Multiplied speed by 2x. Max speed = 10.0");
-            }
-        };
-        toolbarPanel.setSpeed_2_Listener(speed_2_Listener);
-
-        ActionListener resetSpeedListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (renderRunner.playback.speed != 1) {
-                    toolbarPanel.speedButtonPressed = true;
-                    renderRunner.playback.data.setSpeed(1.0);
-                    renderRunner.playback.speed = 1.0;
-                    toolbarPanel.setSpeedValue(1.0);
-                    toolbarPanel.speedButtonPressed = false;
-                    toolbarPanel.setLastActionField("Speed reset to 1.0");
-                }
-            }
-        };
-        toolbarPanel.setResetSpeedListener(resetSpeedListener);
 
         Insets pad = new Insets(10, 10, 10, 10);
 
@@ -351,6 +181,37 @@ import java.util.concurrent.*;
             }
         });
     }
+
+     private static class KeyboardShortcuts extends KeyAdapter {
+         private final RenderRunner renderRunner;
+
+         public KeyboardShortcuts(RenderRunner renderRunner) {
+             this.renderRunner = renderRunner;
+         }
+
+         @Override
+         public void keyPressed(KeyEvent e) {
+             super.keyPressed(e);
+             if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                 renderRunner.step(-1);
+             }
+             if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+                 renderRunner.step(-5);
+             }
+             if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+                 renderRunner.togglePlayback();
+             }
+             if (e.getKeyCode() == KeyEvent.VK_UP) {
+                 renderRunner.step(5);
+             }
+             if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                 renderRunner.step(1);
+             }
+             if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                 renderRunner.stepToEnd();
+             }
+         }
+     }
  }
 
 
