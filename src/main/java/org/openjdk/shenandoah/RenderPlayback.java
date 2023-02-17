@@ -28,7 +28,6 @@ public class RenderPlayback extends Render {
         super(frame);
         this.toolbarPanel = toolbarPanel;
         this.data = data;
-        this.snapshot = data.snapshot();
         this.isPaused = false;
     }
 
@@ -52,126 +51,8 @@ public class RenderPlayback extends Render {
     }
 
     public synchronized void run() {
-        int endBandIndex = (graphWidth - phaseLabelWidth) / STEP_X;
-        if (!isPaused) {
-            if (!data.stopwatch.isStarted()) {
-                data.controlStopwatch("START");
-            }
-            if (endSnapshotIndex < lastSnapshots.size()) {
-                int i = Math.max(endSnapshotIndex, 0);
-                long time = lastSnapshots.get(i).time();
-                snapshot = data.getSnapshotAtTime(time);
-                if (data.snapshotTimeHasOccurred(snapshot)) {
-                    popupSnapshots.add(snapshot);
-                    toolbarPanel.setValue(popupSnapshots.size());
-                    endSnapshotIndex++;
-                    frame.repaint();
-                    repaintPopups();
-                }
-                if (endSnapshotIndex - frontSnapshotIndex > endBandIndex) {
-                    frontSnapshotIndex++;
-                }
-            } else {
-                Snapshot cur = data.snapshot();
-                if (!cur.equals(snapshot)) {
-                    snapshot = cur;
-                    lastSnapshots.add(new SnapshotView(cur));
-                    popupSnapshots.add(cur);
-                    endSnapshotIndex = lastSnapshots.size();
-                    if (lastSnapshots.size() - frontSnapshotIndex > endBandIndex) {
-                        frontSnapshotIndex++;
-                    }
-                    toolbarPanel.setValue(popupSnapshots.size());
-                    frame.repaint();
-                    repaintPopups();
-                }
-            }
-            updateTimestampLabelIndexes();
-            if (data.isEndOfSnapshots() && endSnapshotIndex >= lastSnapshots.size()) {
-                toolbarPanel.setValue(popupSnapshots.size());
-                System.out.println("Should only enter here at end of snapshots.");
-                data.controlStopwatch("STOP");
-                isPaused = true;
-            }
-        } else {
-            updateTimestampLabelIndexes();
-            repaintPopups();
-            if (data.stopwatch.isStarted()) {
-                data.controlStopwatch("STOP");
-            }
-        }
-    }
-
-    public synchronized void stepBackSnapshots(int n) {
-        if (lastSnapshots.size() == 0) return;
-
-        frontSnapshotIndex = Math.max(frontSnapshotIndex - n, 0);
-        endSnapshotIndex = Math.max(endSnapshotIndex - n, 0);
-
-        int i = Math.max(endSnapshotIndex - 1, 0);
-        long time = lastSnapshots.get(i).time();
-        data.setStopwatchTime(TimeUnit.MILLISECONDS.toNanos(time));
-
-        snapshot = data.getSnapshotAtTime(time);
-
-        for (int j = 0; j < n; j++) {
-            if (popupSnapshots.size() > 0) {
-                popupSnapshots.remove(popupSnapshots.size() - 1);
-            }
-        }
         updateTimestampLabelIndexes();
-        toolbarPanel.setValue(popupSnapshots.size());
-
-        frame.repaint();
         repaintPopups();
-    }
-
-    public synchronized void stepForwardSnapshots(int n) {
-        if (lastSnapshots.size() == 0) return;
-
-        int endBandIndex = (graphWidth - phaseLabelWidth) / STEP_X;
-        for (int i = 0; i < n; i++) {
-            if (endSnapshotIndex < lastSnapshots.size()) {
-                int index = Math.max(endSnapshotIndex, 0);
-                long time = lastSnapshots.get(index).time();
-                snapshot = data.getSnapshotAtTime(time);
-                popupSnapshots.add(snapshot);
-                toolbarPanel.setValue(popupSnapshots.size());
-            } else {
-                // keep processing snapshots from logData until it reaches a diff snapshot from this.snapshot
-                Snapshot cur = data.getNextSnapshot();
-                while (cur == snapshot && !data.isEndOfSnapshots()) {
-                    cur = data.getNextSnapshot();
-                }
-                if (data.isEndOfSnapshots()) break;
-
-                snapshot = cur;
-                lastSnapshots.add(new SnapshotView(cur));
-                popupSnapshots.add(cur);
-                toolbarPanel.setValue(popupSnapshots.size());
-            }
-            updateTimestampLabelIndexes();
-            data.setStopwatchTime(TimeUnit.MILLISECONDS.toNanos(snapshot.time()));
-            endSnapshotIndex++;
-        }
-
-        while (endSnapshotIndex - frontSnapshotIndex > endBandIndex) {
-            frontSnapshotIndex++;
-        }
-
-        frame.repaint();
-        repaintPopups();
-    }
-
-    synchronized void loadLogDataProvider(DataLogProvider data) {
-        this.data = data;
-        this.lastSnapshots.clear();
-        this.popupSnapshots.clear();
-        this.snapshot = data.snapshot();
-        this.isPaused = false;
-        this.speed = 1.0;
-        endSnapshotIndex = 0;
-        frontSnapshotIndex = 0;
     }
 
     public synchronized void renderGraph(Graphics g) {

@@ -45,8 +45,7 @@ package org.openjdk.shenandoah;
     public static void main(String[] args) throws Exception {
         // Command line argument parsing
         String vmIdentifier = null;
-        boolean isReplay = false;
-        final String[] filePath = {""};
+        String filePath = null;
 
         int i = 0;
         String arg;
@@ -61,8 +60,7 @@ package org.openjdk.shenandoah;
                 }
             } else if (arg.equals("-logFile")) {
                 if (i < args.length) {
-                    isReplay = true;
-                    filePath[0] = args[i++];
+                    filePath = args[i++];
                 } else {
                     System.out.println("-logFile requires a file path");
                     return;
@@ -80,17 +78,13 @@ package org.openjdk.shenandoah;
         frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
         final RenderRunner renderRunner;
 
-        int totalSnapshotSize = 0;
-        EventLog<Snapshot> events = new EventLog<>(TimeUnit.MILLISECONDS);
-
-        if (isReplay) {
-            DataLogProvider data = new DataLogProvider(filePath[0], events);
-            events.stepBy(1);
-            totalSnapshotSize = data.getSnapshotsSize();
-            renderRunner = new RenderRunner(data, frame, events);
+        if (filePath != null) {
+            renderRunner = new RenderRunner(frame, null);
+            renderRunner.loadPlayback(filePath);
         } else {
+            EventLog<Snapshot> events = new EventLog<>(TimeUnit.MILLISECONDS);
             DataProvider data = new DataProvider(vmIdentifier);
-            renderRunner = new RenderRunner(data, frame, events);
+            renderRunner = new RenderRunner(frame, events);
         }
 
 

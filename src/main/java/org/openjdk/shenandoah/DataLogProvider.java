@@ -49,41 +49,24 @@
  */
 package org.openjdk.shenandoah;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.io.*;
-import java.lang.IllegalArgumentException;
-import java.lang.System;
 import java.util.concurrent.TimeUnit;
 
 public class DataLogProvider {
     private static final long LATEST_VERSION = 2;
-    private static final Snapshot DISCONNECTED = new Snapshot(0, 1024, LATEST_VERSION, Collections.emptyList(), 0, null);
 
-    private static final String START = "START";
-    private static final String STOP = "STOP";
-    private static final String CLEAR = "CLEAR";
-
-
-    private List<Snapshot> snapshots;
-    private HashMap<Long, Integer> snapshotsIndexByTime;
-    public final Stopwatch stopwatch;
-    private int snapshotsIndex = -1;
-    private Snapshot currSnapshot = DISCONNECTED;
-
-
-    public DataLogProvider(String filePath, EventLog<Snapshot> events) throws IOException, NumberFormatException {
+    public static void loadSnapshots(String filePath, EventLog<Snapshot> events) throws IOException, NumberFormatException {
         if (!isValidPath(filePath)) {
             throw new FileNotFoundException("Invalid file path supplied. Please try again.");
         }
 
-        this.snapshots = new ArrayList<>();
-        this.snapshotsIndexByTime = new HashMap<>();
-        int index = 0;
         long protocolVersion = LATEST_VERSION;
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
@@ -108,63 +91,27 @@ public class DataLogProvider {
                 long tsMilli = TimeUnit.NANOSECONDS.toMillis(metaData[0]);
                 long regionSize = metaData[3];
                 int status = Math.toIntExact(metaData[1]);
-                Snapshot snapshot = new Snapshot(tsMilli, regionSize, protocolVersion, processRegionStats(regionData), status, null);
-                snapshots.add(snapshot);
-                events.add(snapshot);
-                snapshotsIndexByTime.put(tsMilli, index++);
+                events.add(new Snapshot(tsMilli, regionSize, protocolVersion, processRegionStats(regionData), status, null));
 
                 metaDataLine = br.readLine();
             }
         }
-
-        if (snapshots.size() > 0) {
-            snapshotsIndex = 0;
-        }
-
-        stopwatch = new Stopwatch();
     }
 
-    public void controlStopwatch(String command) {
-        if (STOP.equals(command)) {
-            stopwatch.stop();
-        } else if (START.equals(command)) {
-            stopwatch.start();
-        } else if (CLEAR.equals(command)) {
-            stopwatch.clear();
-        }
-    }
-
-    public void setStopwatchTime(long ns) {
-        stopwatch.setElapsedTime(ns);
-    }
-
-    public void setSpeed(double speed) {
-        stopwatch.setSpeedMultiplier(speed);
-    }
-
-    public boolean snapshotTimeHasOccurred(Snapshot s) {
-        return s.time() <= stopwatch.getElapsedMilli();
-    }
-
-    public Snapshot getSnapshotAtTime(long ms) {
-        return snapshots.get(snapshotsIndexByTime.get(ms));
-    }
-
-    private boolean isValidPath(String name) {
+    private static boolean isValidPath(String name) {
         return name != null && Files.isReadable(Paths.get(name));
     }
 
-    String processLoggingTag(String data) {
+    private static String processLoggingTag(String data) {
         if (data.lastIndexOf("]") != -1) {
             int startIndex = data.lastIndexOf("]") + 2;
-            String newData = data.substring(startIndex);
-            return newData;
+            return data.substring(startIndex);
         } else {
             return data;
         }
     }
 
-    private long[] processLongData(String data) throws NumberFormatException {
+    private static long[] processLongData(String data) throws NumberFormatException {
         String[] dataArray = data.trim().split(" ", 5000);
         long[] longArray = new long[dataArray.length];
 
@@ -175,52 +122,11 @@ public class DataLogProvider {
         return longArray;
     }
 
-    private List<RegionStat> processRegionStats(String[] regionData) throws NumberFormatException {
+    private static List<RegionStat> processRegionStats(String[] regionData) throws NumberFormatException {
         List<RegionStat> stats = new ArrayList<>(regionData.length);
         for (String d : regionData) {
             stats.add(new RegionStat(Long.parseLong(d)));
         }
         return stats;
     }
-
-    public boolean isEndOfSnapshots() {
-        return snapshotsIndex >= snapshots.size();
-    }
-
-    public Snapshot snapshot() {
-        if (!stopwatch.isStarted()) {
-            stopwatch.start();
-        }
-        if (snapshotsIndex == -1) {
-            System.out.println("No Shenandoah snapshots in file. Choose valid log file.");
-            return DISCONNECTED;
-        } else if (snapshotsIndex >= 0 && snapshotsIndex < snapshots.size()) {
-            Snapshot tempSnapshot = snapshots.get(snapshotsIndex);
-            if (snapshotTimeHasOccurred(tempSnapshot)) {
-                currSnapshot = tempSnapshot;
-                snapshotsIndex++;
-            }
-            return currSnapshot;
-        } else {
-            return currSnapshot;
-        }
-    }
-
-    public Snapshot getNextSnapshot() {
-        if (snapshotsIndex == -1) {
-            return DISCONNECTED;
-        } else if (snapshotsIndex >= 0 && snapshotsIndex < snapshots.size()) {
-            Snapshot tempSnapshot = snapshots.get(snapshotsIndex);
-            currSnapshot = tempSnapshot;
-            snapshotsIndex++;
-        }
-        return currSnapshot;
-    }
-    public int getSnapshotsSize() {
-        return snapshots.size();
-    }
-    public List<Snapshot> getSnapshots() {
-        return snapshots;
-    }
 }
-

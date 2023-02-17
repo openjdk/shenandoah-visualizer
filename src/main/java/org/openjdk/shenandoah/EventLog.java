@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 class EventLog<T extends Timed> {
     private final List<T> events;
     private final TimeUnit eventTimeUnit;
-    private int cursor = 0;
+    private int cursor;
     private long referenceTime;
 
     EventLog() {
@@ -21,6 +21,12 @@ class EventLog<T extends Timed> {
         // Linked list could also work, but the sublist construction would need to change.
         this.events = new ArrayList<>();
         this.eventTimeUnit = eventTimeUnit;
+    }
+
+    public synchronized void clear() {
+        events.clear();
+        cursor = 0;
+        referenceTime = 0;
     }
 
     public synchronized void add(T t) {

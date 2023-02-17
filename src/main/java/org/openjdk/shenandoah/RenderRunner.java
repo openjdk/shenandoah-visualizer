@@ -1,29 +1,33 @@
 package org.openjdk.shenandoah;
 
 import javax.swing.*;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class RenderRunner implements Runnable {
     final JFrame frame;
     private long lastUpdateNanos;
-    private final EventLog<Snapshot> events;
+    private EventLog<Snapshot> events;
     private boolean isPaused;
     private double playbackSpeed;
 
-    public RenderRunner(DataProvider data, JFrame frame, EventLog<Snapshot> events) {
+    public RenderRunner(JFrame frame, EventLog<Snapshot> events) {
         this.frame = frame;
         this.events = events;
         this.playbackSpeed = 1.0;
     }
 
-    public RenderRunner(DataLogProvider data, JFrame frame, EventLog<Snapshot> events) {
-        this.frame = frame;
-        this.events = events;
-        this.playbackSpeed = 1.0;
-    }
-
-    public synchronized void loadPlayback(DataLogProvider data) {
+    public synchronized void loadPlayback(String filePath) {
+        EventLog<Snapshot> new_events = new EventLog<>(TimeUnit.MILLISECONDS);
+        try {
+            DataLogProvider.loadSnapshots(filePath, new_events);
+            events = new_events;
+            events.stepBy(1);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public synchronized void loadLive(DataProvider data) {

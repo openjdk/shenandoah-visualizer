@@ -404,23 +404,14 @@ public class ToolbarPanel extends JPanel
     private void onFileButtonEvent(ActionEvent ae) {
         JFileChooser fc = new JFileChooser();
         int returnValue = fc.showOpenDialog(null);
-        int totalSnapshotSize = 0;
         if (returnValue == JFileChooser.APPROVE_OPTION) {
             String filePath = fc.getSelectedFile().getAbsolutePath();
-            try {
-                DataLogProvider data = new DataLogProvider(filePath, null);
-                renderRunner.loadPlayback(data);
-                totalSnapshotSize = data.getSnapshotsSize();
-                setSize(totalSnapshotSize);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            renderRunner.loadPlayback(filePath);
+            slider.setMaximum(renderRunner.snapshotCount());
             renderRunner.setPlaybackSpeed(1.0);
             setSpeedValue(1.0);
             setFileNameField(filePath);
             setLastActionField("File selected: " + filePath);
-
-            System.out.println("Selected file: " + filePath);
             renderRunner.frame.repaint();
         }
     }
@@ -461,26 +452,17 @@ public class ToolbarPanel extends JPanel
         }
     }
 
-    public final void setSize(int size) {
-        slider.setMaximum(size);
-    }
-
     public final void setValue(int value) {
         if (SwingUtilities.isEventDispatchThread()) {
             slider.setValue(value);
         } else {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    slider.setValue(value);
-                }
-            });
+            SwingUtilities.invokeLater(() -> slider.setValue(value));
         }
     }
 
     @Override
     public void paint(Graphics g) {
-        timestampField.setText(Long.toString(renderRunner.snapshot().time()) + " ms");
+        timestampField.setText(renderRunner.snapshot().time() + " ms");
         super.paint(g);
     }
 }
