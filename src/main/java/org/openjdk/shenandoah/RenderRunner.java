@@ -2,6 +2,7 @@ package org.openjdk.shenandoah;
 
 import javax.swing.*;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -13,13 +14,15 @@ public class RenderRunner implements Runnable {
     private boolean isPaused;
     private double playbackSpeed;
 
+    private final DataProvider liveData;
+
     private final Set<JFrame> frames;
 
-    public RenderRunner(JFrame frame, EventLog<Snapshot> events) {
+    public RenderRunner(JFrame frame) {
         this.frames = new HashSet<>();
         this.frames.add(frame);
-        this.events = events;
         this.playbackSpeed = 1.0;
+        this.liveData = new DataProvider(null);
     }
 
     public synchronized void loadPlayback(String filePath) {
@@ -33,10 +36,19 @@ public class RenderRunner implements Runnable {
         }
     }
 
-    public synchronized void loadLive(DataProvider data) {
+    public synchronized void loadLive() {
+        EventLog<Snapshot> new_events = new EventLog<>(TimeUnit.MILLISECONDS);
+        liveData.startConnector();
+        new_events.add(liveData.snapshot());
+        new_events.stepBy(1);
+        events = new_events;
     }
 
     public synchronized void run() {
+        if (liveData.isConnected()) {
+            events.add(liveData.snapshot());
+        }
+
         long now = System.nanoTime();
         if (lastUpdateNanos != 0) {
             if (!isPaused) {
@@ -61,7 +73,7 @@ public class RenderRunner implements Runnable {
     }
 
     public List<Snapshot> snapshots() {
-        return events.inRange();
+        return new ArrayList<>(events.inRange());
     }
 
     public void setPlaybackSpeed(double speed) {

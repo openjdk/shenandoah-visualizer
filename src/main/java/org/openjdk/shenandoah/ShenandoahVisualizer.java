@@ -79,12 +79,11 @@ package org.openjdk.shenandoah;
         final RenderRunner renderRunner;
 
         if (filePath != null) {
-            renderRunner = new RenderRunner(frame, null);
+            renderRunner = new RenderRunner(frame);
             renderRunner.loadPlayback(filePath);
         } else {
-            EventLog<Snapshot> events = new EventLog<>(TimeUnit.MILLISECONDS);
-            DataProvider data = new DataProvider(vmIdentifier);
-            renderRunner = new RenderRunner(frame, events);
+            renderRunner = new RenderRunner(frame);
+            renderRunner.loadLive();
         }
 
 

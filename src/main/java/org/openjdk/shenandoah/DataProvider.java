@@ -34,10 +34,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class DataProvider {
-    //default Snapshot as version 2
     private static final long ORIGINAL_VERSION = 1;
     private static final long LATEST_VERSION = 2;
-    private static final Snapshot DISCONNECTED = new Snapshot(0, 1024, LATEST_VERSION, Collections.emptyList(), 0, new Histogram(2));
+    private static final Snapshot DISCONNECTED = new Snapshot(System.currentTimeMillis(), 1024, LATEST_VERSION, Collections.emptyList(), 0, new Histogram(2));
     private final DataConnector connector;
 
     private int maxRegions;
@@ -47,12 +46,8 @@ public class DataProvider {
     private LongMonitor status;
 
 
-
     public DataProvider(String id) {
         connector = new DataConnector(this::setMonitoredVm);
-        connector.start();
-
-        // TODO: Run a scheduled task to poll for new snapshots and add them to history.
     }
 
     private void setMonitoredVm(MonitoredVm vm) {
@@ -91,6 +86,10 @@ public class DataProvider {
         }
     }
 
+    public boolean isConnected() {
+        return connector.isConnected();
+    }
+
     public Snapshot snapshot() {
         if (!connector.isConnected()) {
             return DISCONNECTED;
@@ -108,13 +107,14 @@ public class DataProvider {
         // These histograms are not thread safe so we pass a copy here. Also, if
         // we ever add a feature to 'replay' sessions, we'll not want these snapshots
         // sharing a histogram.
-        //adding version to the Snapshot
         return new Snapshot(time, maxSize, protocolVersion, stats, (int) status.longValue(), connector.getPauseHistogram());
     }
 
-    protected void stopConnector() {
+    public void stopConnector() {
         connector.stop();
     }
+
+    public void startConnector() { connector.start(); }
 
     public String status() {
         return connector.status();

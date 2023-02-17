@@ -54,7 +54,6 @@ import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.text.ParseException;
 
 public class ToolbarPanel extends JPanel
@@ -226,8 +225,7 @@ public class ToolbarPanel extends JPanel
         }
 
         realtimeModeButton.addActionListener(event -> {
-            DataProvider data = new DataProvider(null);
-            renderRunner.loadLive(data);
+            renderRunner.loadLive();
             setFileNameField("");
         });
         fileButton.addActionListener(this::onFileButtonEvent);
@@ -423,39 +421,18 @@ public class ToolbarPanel extends JPanel
         lastActionField.setText(s);
     }
 
-    public void setEnabledRealtimeModeButton(boolean b) {
-        realtimeModeButton.setEnabled(b);
-    }
-
-    public void setModeField(String s) {
-        if (REALTIME.equals(s)) {
-            modeField.setText(REALTIME);
-        } else if (PLAYBACK.equals(s)) {
-            modeField.setText(PLAYBACK);
-        }
-    }
-
     public void actionPerformed(ActionEvent a) {
         String cmd = a.getActionCommand();
         if (CHOOSE_FILE.equals(cmd)) {
-            setEnabledPlaybackToolbars(true);
-            setModeField(PLAYBACK);
-            setEnabledRealtimeModeButton(true);
+            modeField.setText(PLAYBACK);
+            realtimeModeButton.setEnabled(true);
+            setLastActionField("Switched to recorded playback mode.");
         } else if (REALTIME.equals(cmd)) {
-            lastActionField.setText("Switched to realtime mode.");
-            setEnabledPlaybackToolbars(false);
-            setModeField(REALTIME);
-            setEnabledRealtimeModeButton(false);
+            setLastActionField("Switched to live playback mode.");
+            modeField.setText(REALTIME);
+            realtimeModeButton.setEnabled(false);
         } else if (!(PLAY_PAUSE.equals(cmd) || SPEED_0_5.equals(cmd) || SPEED_2.equals(cmd) || SPEED_RESET.equals(cmd))) {
-            lastActionField.setText(cmd + " button pressed.");
-        }
-    }
-
-    public final void setValue(int value) {
-        if (SwingUtilities.isEventDispatchThread()) {
-            slider.setValue(value);
-        } else {
-            SwingUtilities.invokeLater(() -> slider.setValue(value));
+            setLastActionField(cmd + " button pressed.");
         }
     }
 

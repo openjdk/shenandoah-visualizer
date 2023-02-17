@@ -131,6 +131,7 @@ public class DataConnector implements Runnable {
             MonitoredVm vm = host.getMonitoredVm(new VmIdentifier(String.valueOf(vmId)));
             String jvmArgs = MonitoredVmUtil.jvmArgs(vm);
             if (jvmArgs.contains("ShenandoahRegionSampling")) {
+                System.out.println("Found vm running shenandoah region sampling: " + vm);
                 return vm;
             }
         }
