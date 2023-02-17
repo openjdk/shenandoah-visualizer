@@ -7,14 +7,20 @@ import java.util.concurrent.TimeUnit;
 
 class EventLog<T extends Timed> {
     private final List<T> events;
+    private final TimeUnit eventTimeUnit;
     private int cursor = 0;
     private long referenceTime;
 
     EventLog() {
+        this(TimeUnit.NANOSECONDS);
+    }
+
+    EventLog(TimeUnit eventTimeUnit) {
         // TODO: Use a circular buffer to prevent live sessions from growing without bound.
         // (And to avoid having to shift all the remaining elements if we remove the oldest).
         // Linked list could also work, but the sublist construction would need to change.
-        events = new ArrayList<>();
+        this.events = new ArrayList<>();
+        this.eventTimeUnit = eventTimeUnit;
     }
 
     public synchronized void add(T t) {
@@ -46,20 +52,25 @@ class EventLog<T extends Timed> {
     }
 
     public synchronized  void advanceTo(long pointInTime, TimeUnit timeUnit) {
-        long nanos = timeUnit.toNanos(pointInTime);
+        long eventTime = eventTimeUnit.convert(pointInTime, timeUnit);
+        advanceTo(eventTime);
+    }
+
+    public void advanceBy(long duration, TimeUnit timeUnit) {
+        long eventTime = eventTimeUnit.convert(duration, timeUnit);
+        long pointInTime = referenceTime + eventTime;
+        advanceTo(pointInTime);
+    }
+
+    private void advanceTo(long pointInTime) {
         for (var iter = events.listIterator(cursor); iter.hasNext(); ) {
             var event = iter.next();
-            if (nanos < event.time()) {
+            if (pointInTime < event.time()) {
                 break;
             }
             cursor++;
         }
         referenceTime = pointInTime;
-    }
-
-    public void advanceBy(int duration, TimeUnit timeUnit) {
-        long nanos = timeUnit.toNanos(duration);
-        advanceTo(referenceTime + nanos, timeUnit);
     }
 
     public synchronized T latest() {

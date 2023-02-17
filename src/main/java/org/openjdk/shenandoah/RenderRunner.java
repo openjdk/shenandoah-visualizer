@@ -2,6 +2,7 @@ package org.openjdk.shenandoah;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.concurrent.TimeUnit;
 
 public class RenderRunner implements Runnable {
     final RenderLive live;
@@ -10,16 +11,21 @@ public class RenderRunner implements Runnable {
     final JFrame frame;
     boolean isLive;
 
-    public RenderRunner(DataProvider data, JFrame frame, ToolbarPanel toolbarPanel) {
+    private long lastUpdateNanos;
+    private final EventLog<Snapshot> events;
+
+    public RenderRunner(DataProvider data, JFrame frame, ToolbarPanel toolbarPanel, EventLog<Snapshot> events) {
         this.frame = frame;
         live = new RenderLive(data, frame);
         playback = new RenderPlayback(frame, toolbarPanel);
         isLive = true;
+        this.events = events;
     }
 
-    public RenderRunner(DataLogProvider data, JFrame frame, ToolbarPanel toolbarPanel) {
+    public RenderRunner(DataLogProvider data, JFrame frame, ToolbarPanel toolbarPanel, EventLog<Snapshot> events) {
         this.frame = frame;
         live = new RenderLive(frame);
+        this.events = events;
         live.closeDataProvider();
         playback = new RenderPlayback(data, frame, toolbarPanel);
         isLive = false;
@@ -41,6 +47,13 @@ public class RenderRunner implements Runnable {
     }
 
     public synchronized void run() {
+        long now = System.nanoTime();
+        if (lastUpdateNanos != 0) {
+            long elapsed = now - lastUpdateNanos;
+            events.advanceBy(elapsed, TimeUnit.NANOSECONDS);
+        }
+        lastUpdateNanos = now;
+
         if (isLive) {
             live.run();
         } else {
@@ -49,7 +62,7 @@ public class RenderRunner implements Runnable {
     }
 
     public synchronized Snapshot snapshot() {
-        return isLive ? live.snapshot : playback.snapshot;
+        return events.latest();
     }
 
     public synchronized void renderGraph(Graphics g) {

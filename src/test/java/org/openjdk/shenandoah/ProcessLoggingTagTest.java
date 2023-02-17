@@ -24,7 +24,6 @@
  */
 package org.openjdk.shenandoah;
 
-import org.HdrHistogram.Histogram;
 import org.junit.Assert;
 
 import org.junit.Before;
@@ -38,7 +37,7 @@ public class ProcessLoggingTagTest {
 
     @Before
     public void setUp() throws IOException {
-        dataLogProvider = new DataLogProvider("src/test/resources/regions-6425.log");
+        dataLogProvider = new DataLogProvider("src/test/resources/regions-6425.log", new EventLog<>());
     }
 
     @Test

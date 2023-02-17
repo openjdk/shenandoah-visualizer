@@ -39,20 +39,6 @@ import java.util.concurrent.*;
     private static final String PLAYBACK = "Playback";
     private static final String REALTIME = "Realtime";
 
-    static int value = 0;
-
-    private static ScheduledFuture<?> changeScheduleInterval(int n, ScheduledExecutorService service, ScheduledFuture<?> f, Runnable task) {
-        if (service == null || f == null) return null;
-        if (n > 0) {
-            boolean res = true;
-            if (f != null) {
-                res = f.cancel(true);
-            }
-            f = service.scheduleAtFixedRate(task, 0, n, TimeUnit.MILLISECONDS);
-            return f;
-        }
-        return null;
-    }
 
     public static void main(String[] args) throws Exception {
         // Command line argument parsing
@@ -93,27 +79,28 @@ import java.util.concurrent.*;
         final RenderRunner renderRunner;
         ToolbarPanel toolbarPanel = new ToolbarPanel(isReplay);
         int totalSnapshotSize = 0;
+        EventLog<Snapshot> events = new EventLog<>(TimeUnit.MILLISECONDS);
 
         if (isReplay) {
-            DataLogProvider data = new DataLogProvider(filePath[0]);
+            DataLogProvider data = new DataLogProvider(filePath[0], events);
+            events.step(1);
             totalSnapshotSize = data.getSnapshotsSize();
             toolbarPanel.setSize(totalSnapshotSize);
             toolbarPanel.setSnapshots(data.getSnapshots());
-            renderRunner = new RenderRunner(data, frame, toolbarPanel);
+            renderRunner = new RenderRunner(data, frame, toolbarPanel, events);
             toolbarPanel.setModeField(PLAYBACK);
             toolbarPanel.setEnabledRealtimeModeButton(true);
             toolbarPanel.setFileNameField(filePath[0]);
         } else {
             DataProvider data = new DataProvider(vmIdentifier);
-            renderRunner = new RenderRunner(data, frame, toolbarPanel);
+            renderRunner = new RenderRunner(data, frame, toolbarPanel, events);
             toolbarPanel.setModeField(REALTIME);
             toolbarPanel.setEnabledRealtimeModeButton(false);
         }
 
         // Executors
         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
-        final ScheduledFuture<?>[] f = {service.scheduleAtFixedRate(renderRunner,
-                0, renderRunner.isLive ? 100 : 1, TimeUnit.MILLISECONDS)};
+        service.scheduleAtFixedRate(renderRunner,0, 100, TimeUnit.MILLISECONDS);
 
         JPanel legendPanel = new LegendPanel(renderRunner);
 
@@ -131,7 +118,6 @@ import java.util.concurrent.*;
                 DataProvider data = new DataProvider(null);
                 renderRunner.loadLive(data);
                 toolbarPanel.setFileNameField("");
-                f[0] = changeScheduleInterval(100, service, f[0], renderRunner);
             }
         };
         toolbarPanel.setRealtimeModeButtonListener(realtimeModeButtonListener);
@@ -144,7 +130,7 @@ import java.util.concurrent.*;
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     filePath[0] = fc.getSelectedFile().getAbsolutePath();
                     try {
-                        DataLogProvider data = new DataLogProvider(filePath[0]);
+                        DataLogProvider data = new DataLogProvider(filePath[0], events);
                         renderRunner.loadPlayback(data);
                         totalSnapshotSize = data.getSnapshotsSize();
                         toolbarPanel.setSize(totalSnapshotSize);
@@ -160,7 +146,6 @@ import java.util.concurrent.*;
                     System.out.println("Selected file: " + filePath[0]);
                     renderRunner.frame.repaint();
 
-                    f[0] = changeScheduleInterval(1, service, f[0], renderRunner);
                 }
 
                 int lastSnapshotIndex = totalSnapshotSize - 1;
@@ -372,12 +357,10 @@ import java.util.concurrent.*;
 
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
-                f[0].cancel(true);
                 service.shutdown();
                 frame.dispose();
             }
         });
-        f[0].get();
     }
  }
 

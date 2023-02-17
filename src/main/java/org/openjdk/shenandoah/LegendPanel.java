@@ -18,6 +18,7 @@ public class LegendPanel extends JPanel {
     @Override
     public void paint(Graphics g) {
         Snapshot snapshot = renderRunner.snapshot();
+        System.out.println("Legend snapshot: " + snapshot.time());
         final int sqSize = LINE;
 
         Map<String, RegionStat> items = new LinkedHashMap<>();
