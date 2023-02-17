@@ -29,7 +29,7 @@ import org.HdrHistogram.Histogram;
 import java.util.List;
 import java.util.function.Function;
 
-public class Snapshot {
+public class Snapshot implements Timed {
     protected String collectionMode() {
         if (phase() == Phase.IDLE) {
             return "";

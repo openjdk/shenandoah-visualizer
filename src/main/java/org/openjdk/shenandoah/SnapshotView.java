@@ -24,7 +24,7 @@
  */
 package org.openjdk.shenandoah;
 
-public class SnapshotView {
+public class SnapshotView implements Timed {
 
     private final long time;
     private final Phase globalPhase;
