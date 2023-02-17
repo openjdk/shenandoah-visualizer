@@ -51,13 +51,11 @@ package org.openjdk.shenandoah;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.List;
 
 public class ToolbarPanel extends JPanel
         implements ActionListener {
@@ -91,8 +89,6 @@ public class ToolbarPanel extends JPanel
 
     public boolean speedButtonPressed = false;
 
-    private List<Snapshot> snapshots;
-
 
     public ToolbarPanel(RenderRunner renderRunner) {
         super(new GridBagLayout());
@@ -116,6 +112,8 @@ public class ToolbarPanel extends JPanel
         fileButton.setFocusable(false);
         fileToolbar.add(this.fileButton);
 
+        // TODO: We'll want to update the event count in Live mode
+        slider.setMaximum(renderRunner.snapshotCount());
         slider.setMinimum(0);
         slider.setOrientation(SwingConstants.HORIZONTAL);
         slider.setValue(0);
@@ -234,12 +232,12 @@ public class ToolbarPanel extends JPanel
         });
         fileButton.addActionListener(this::onFileButtonEvent);
         playPauseButton.addActionListener(this::onPlayPauseEvent);
-        backOneButton.addActionListener(event -> renderRunner.step(-1));
-        backFiveButton.addActionListener(event -> renderRunner.step(-5));
-        forwardOneButton.addActionListener(event -> renderRunner.step(1));
-        forwardFiveButton.addActionListener(event -> renderRunner.step(5));
+        backOneButton.addActionListener(event -> renderRunner.stepBy(-1));
+        backFiveButton.addActionListener(event -> renderRunner.stepBy(-5));
+        forwardOneButton.addActionListener(event -> renderRunner.stepBy(1));
+        forwardFiveButton.addActionListener(event -> renderRunner.stepBy(5));
         endSnapshotButton.addActionListener(event -> renderRunner.stepToEnd());
-        slider.addChangeListener(this::onSliderChanged);
+        slider.addChangeListener(changeEvent -> renderRunner.stepTo(slider.getValue()));
         speedSpinner.addChangeListener(this::onSpeedSpinnerChanged);
         halfSpeedButton.addActionListener(event -> {
             double speed = Math.max(0.1, renderRunner.getPlaybackSpeed() * 0.5);
@@ -258,13 +256,6 @@ public class ToolbarPanel extends JPanel
         setSpeedValue(speed);
         speedButtonPressed = false;
         setLastActionField("Set speed to " + speed);
-    }
-
-    private void onSliderChanged(ChangeEvent changeEvent) {
-        int difference = currentSliderValue(); // - renderRunner.playback.getPopupSnapshotsSize();
-        if (difference != 0) {
-            renderRunner.step(difference);
-        }
     }
 
     private void onSpeedSpinnerChanged(ChangeEvent changeEvent) {
@@ -421,7 +412,6 @@ public class ToolbarPanel extends JPanel
                 renderRunner.loadPlayback(data);
                 totalSnapshotSize = data.getSnapshotsSize();
                 setSize(totalSnapshotSize);
-                setSnapshots(data.getSnapshots());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -471,10 +461,6 @@ public class ToolbarPanel extends JPanel
         }
     }
 
-    public final void setSnapshots(List<Snapshot> snapshots) {
-        this.snapshots = snapshots;
-    }
-
     public final void setSize(int size) {
         slider.setMaximum(size);
     }
@@ -492,10 +478,9 @@ public class ToolbarPanel extends JPanel
         }
     }
 
-    public int currentSliderValue() {
-        if ((slider.getValue() - 1) >= 0) {
-            timestampField.setText(Long.toString(snapshots.get(slider.getValue() - 1).time()) + " ms");
-        }
-        return slider.getValue();
+    @Override
+    public void paint(Graphics g) {
+        timestampField.setText(Long.toString(renderRunner.snapshot().time()) + " ms");
+        super.paint(g);
     }
 }

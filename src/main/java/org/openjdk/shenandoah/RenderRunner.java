@@ -9,15 +9,18 @@ public class RenderRunner implements Runnable {
     private long lastUpdateNanos;
     private final EventLog<Snapshot> events;
     private boolean isPaused;
+    private double playbackSpeed;
 
     public RenderRunner(DataProvider data, JFrame frame, EventLog<Snapshot> events) {
         this.frame = frame;
         this.events = events;
+        this.playbackSpeed = 1.0;
     }
 
     public RenderRunner(DataLogProvider data, JFrame frame, EventLog<Snapshot> events) {
         this.frame = frame;
         this.events = events;
+        this.playbackSpeed = 1.0;
     }
 
     public synchronized void loadPlayback(DataLogProvider data) {
@@ -29,8 +32,10 @@ public class RenderRunner implements Runnable {
     public synchronized void run() {
         long now = System.nanoTime();
         if (lastUpdateNanos != 0) {
-            long elapsed = now - lastUpdateNanos;
-            events.advanceBy(elapsed, TimeUnit.NANOSECONDS);
+            if (!isPaused) {
+                long elapsed = (long)((now - lastUpdateNanos) * playbackSpeed);
+                events.advanceBy(elapsed, TimeUnit.NANOSECONDS);
+            }
         }
         lastUpdateNanos = now;
         frame.repaint();
@@ -51,7 +56,7 @@ public class RenderRunner implements Runnable {
     }
 
     public void setPlaybackSpeed(double speed) {
-        // TODO: multiply playback speed.
+        playbackSpeed = speed;
     }
 
     public boolean isPaused() {
@@ -62,15 +67,23 @@ public class RenderRunner implements Runnable {
         isPaused = !isPaused;
     }
 
-    public void step(int value) {
-        events.step(value);
+    public void stepBy(int value) {
+        events.stepBy(value);
     }
 
     public void stepToEnd() {
-        events.step(Integer.MAX_VALUE);
+        events.stepToEnd();
     }
 
     public double getPlaybackSpeed() {
-        return 0;
+        return playbackSpeed;
+    }
+
+    public int snapshotCount() {
+        return events.size();
+    }
+
+    public void stepTo(int value) {
+        events.stepTo(value);
     }
 }

@@ -46,9 +46,17 @@ class EventLog<T extends Timed> {
         return events.subList(0, cursor);
     }
 
-    public synchronized void step(int amount) {
-        cursor = clamp(1, cursor + amount, events.size());
+    public synchronized void stepBy(int amount) {
+        stepTo(cursor + amount);
+    }
+
+    public void stepTo(int value) {
+        cursor = clamp(1, value, events.size());
         referenceTime = latest().time();
+    }
+
+    public synchronized void stepToEnd() {
+        stepTo(Integer.MAX_VALUE);
     }
 
     public synchronized  void advanceTo(long pointInTime, TimeUnit timeUnit) {
@@ -78,6 +86,10 @@ class EventLog<T extends Timed> {
             return null;
         }
         return events.get(cursor - 1);
+    }
+
+    public int size() {
+        return events.size();
     }
 
     private static int clamp(int min, int val, int max) {

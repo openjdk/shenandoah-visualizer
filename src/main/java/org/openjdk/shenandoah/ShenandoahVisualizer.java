@@ -85,7 +85,7 @@ package org.openjdk.shenandoah;
 
         if (isReplay) {
             DataLogProvider data = new DataLogProvider(filePath[0], events);
-            events.step(1);
+            events.stepBy(1);
             totalSnapshotSize = data.getSnapshotsSize();
             renderRunner = new RenderRunner(data, frame, events);
         } else {
@@ -193,19 +193,19 @@ package org.openjdk.shenandoah;
          public void keyPressed(KeyEvent e) {
              super.keyPressed(e);
              if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                 renderRunner.step(-1);
+                 renderRunner.stepBy(-1);
              }
              if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-                 renderRunner.step(-5);
+                 renderRunner.stepBy(-5);
              }
              if (e.getKeyCode() == KeyEvent.VK_SPACE) {
                  renderRunner.togglePlayback();
              }
              if (e.getKeyCode() == KeyEvent.VK_UP) {
-                 renderRunner.step(5);
+                 renderRunner.stepBy(5);
              }
              if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                 renderRunner.step(1);
+                 renderRunner.stepBy(1);
              }
              if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                  renderRunner.stepToEnd();

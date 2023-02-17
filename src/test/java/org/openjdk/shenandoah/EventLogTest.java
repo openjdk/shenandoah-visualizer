@@ -20,24 +20,24 @@ public class EventLogTest {
     @Test
     public void testFetchingLatest() {
         EventLog<Event> log = createEventLog(1, 2, 3);
-        log.step(1);
+        log.stepBy(1);
         Assert.assertEquals(new Event(1), log.latest());
     }
     @Test
     public void testThatSteppingForwardIncreasesRange() {
         EventLog<Event> log = createEventLog(1, 2, 3);
-        log.step(1);
+        log.stepBy(1);
         Assert.assertEquals(createEvents(1), log.inRange());
-        log.step(10);
+        log.stepBy(10);
         Assert.assertEquals(createEvents(1, 2, 3), log.inRange());
     }
 
     @Test
     public void testThatSteppingBackwardDecreasesRange() {
         EventLog<Event> log = createEventLog(1, 2, 3);
-        log.step(10);
+        log.stepBy(10);
         Assert.assertEquals(createEvents(1, 2, 3), log.inRange());
-        log.step(-1);
+        log.stepBy(-1);
         Assert.assertEquals(createEvents(1, 2), log.inRange());
     }
 
