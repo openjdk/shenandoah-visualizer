@@ -106,12 +106,7 @@ import java.util.concurrent.*;
 
         JPanel statusPanel = new StatusPanel(renderRunner);
 
-        JPanel graphPanel = new JPanel() {
-            @Override
-            public void paint(Graphics g) {
-                renderRunner.renderGraph(g);
-            }
-        };
+        JPanel graphPanel = new GraphPanel(renderRunner);
 
         ActionListener realtimeModeButtonListener = new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
@@ -283,12 +278,6 @@ import java.util.concurrent.*;
             }
         };
         toolbarPanel.setResetSpeedListener(resetSpeedListener);
-
-        graphPanel.addComponentListener(new ComponentAdapter() {
-            public void componentResized(ComponentEvent ev) {
-                renderRunner.notifyGraphResized(ev.getComponent().getWidth(), ev.getComponent().getHeight());
-            }
-        });
 
         Insets pad = new Insets(10, 10, 10, 10);
 

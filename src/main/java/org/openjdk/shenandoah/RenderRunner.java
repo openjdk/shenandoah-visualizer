@@ -3,6 +3,7 @@ package org.openjdk.shenandoah;
 import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 public class RenderRunner implements Runnable {
     final RenderLive live;
@@ -65,19 +66,6 @@ public class RenderRunner implements Runnable {
         return events.latest();
     }
 
-    public synchronized void renderGraph(Graphics g) {
-        if (isLive) {
-            live.renderGraph(g);
-        } else {
-            playback.renderGraph(g);
-        }
-    }
-
-    public synchronized void notifyGraphResized(int width, int height) {
-        live.notifyGraphResized(width, height);
-        playback.notifyGraphResized(width, height);
-    }
-
     public void addPopup(RegionPopUp popup) {
         if (isLive) {
             this.live.addPopup(popup);
@@ -92,5 +80,9 @@ public class RenderRunner implements Runnable {
         } else {
             this.playback.deletePopup(popup);
         }
+    }
+
+    public List<Snapshot> snapshots() {
+        return events.inRange();
     }
 }
