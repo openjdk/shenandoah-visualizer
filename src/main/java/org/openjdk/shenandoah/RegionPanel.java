@@ -28,7 +28,7 @@ public class RegionPanel extends JPanel {
                 int cols = regionWidth / sqSize;
                 int regionNumber = (e.getX() / sqSize) + ((e.getY() / sqSize) * cols) ;
                 if (regionNumber >= 0 && regionNumber < snapshot.statsSize()) {
-                    RegionPopUp popup = new RegionPopUp(regionNumber);
+                    RegionPopUp popup = new RegionPopUp(regionNumber, renderRunner);
                     popup.setSize(450, 450);
                     popup.setLocation(e.getX(), e.getY());
                     popup.setVisible(true);

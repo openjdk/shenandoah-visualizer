@@ -31,7 +31,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class RegionPopUp extends JFrame {
-    private int regionNumber;
+    private final int regionNumber;
+    private final RenderRunner renderRunner;
     private float spotlightUsedLvl;
     private float spotlightLiveLvl;
     private float spotlightTlabLvl;
@@ -41,16 +42,15 @@ public class RegionPopUp extends JFrame {
     private RegionState spotlightState;
     private long spotlightAge;
     private RegionAffiliation spotlightAffiliation;
-    private int squareSize = 15;
-    private int spotlightSquareSize = 28;
-    private int initialY = 1;
+    private final int squareSize = 15;
+    private final int spotlightSquareSize = 28;
+    private final int initialY = 1;
 
     RegionStat spotlightRegionData;
 
-    List<Snapshot> snapshots = new LinkedList<Snapshot>();
-
-    public RegionPopUp(int regionNumber) {
+    public RegionPopUp(int regionNumber, RenderRunner renderRunner) {
         this.regionNumber = regionNumber;
+        this.renderRunner = renderRunner;
 
         JPanel timelinePanel = new JPanel() {
             public void paint (Graphics g) {
@@ -89,17 +89,18 @@ public class RegionPopUp extends JFrame {
             c.gridheight = 2;
             this.add(timelinePanel, c);
         }
-
-
     }
+
     public synchronized void timelinePaint(Graphics g) {
         int y = initialY;
+        List<Snapshot> snapshots = renderRunner.snapshots();
         for (int i = snapshots.size() - 1; i >= 0; i--) {
-            RegionStat r = snapshots.get(i).get(regionNumber);
+            Snapshot snapshot = snapshots.get(i);
+            RegionStat r = snapshot.get(regionNumber);
             if (y == initialY) {
                 r.render(g, 1, y, spotlightSquareSize, spotlightSquareSize);
                 g.setColor(Color.LIGHT_GRAY);
-                g.drawString(Long.toString(snapshots.get(i).time()) + " ms", 35, y + spotlightSquareSize);
+                g.drawString(snapshot.time() + " ms", 35, y + spotlightSquareSize);
                 setSpotlightRegionStat(r);
                 y += spotlightSquareSize;
             } else {
@@ -108,10 +109,9 @@ public class RegionPopUp extends JFrame {
             }
             if (i % 10 == 0) {
                 g.setColor(Color.LIGHT_GRAY);
-                g.drawString(Long.toString(snapshots.get(i).time()) + " ms", 35, y);
+                g.drawString(snapshot.time() + " ms", 35, y);
             }
         }
-
     }
 
     public synchronized void spotlightPaint(Graphics g) {
@@ -129,8 +129,8 @@ public class RegionPopUp extends JFrame {
         g.drawString("Affiliation: " + spotlightAffiliation, 20, 230);
     }
     public final void setSnapshots(LinkedList<Snapshot> snapshots) {
-        this.snapshots = snapshots;
     }
+
     public final void setSpotlightRegionStat(RegionStat r) {
         this.spotlightRegionData = r;
         spotlightUsedLvl = spotlightRegionData.used() * 100f;

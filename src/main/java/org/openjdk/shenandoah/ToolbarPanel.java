@@ -412,7 +412,6 @@ public class ToolbarPanel extends JPanel
             setSpeedValue(1.0);
             setFileNameField(filePath);
             setLastActionField("File selected: " + filePath);
-            renderRunner.frame.repaint();
         }
     }
 

@@ -2,19 +2,22 @@ package org.openjdk.shenandoah;
 
 import javax.swing.*;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class RenderRunner implements Runnable {
-    final JFrame frame;
     private long lastUpdateNanos;
     private EventLog<Snapshot> events;
     private boolean isPaused;
     private double playbackSpeed;
 
+    private final Set<JFrame> frames;
+
     public RenderRunner(JFrame frame, EventLog<Snapshot> events) {
-        this.frame = frame;
+        this.frames = new HashSet<>();
+        this.frames.add(frame);
         this.events = events;
         this.playbackSpeed = 1.0;
     }
@@ -42,17 +45,19 @@ public class RenderRunner implements Runnable {
             }
         }
         lastUpdateNanos = now;
-        frame.repaint();
+        frames.forEach(JFrame::repaint);
     }
 
     public synchronized Snapshot snapshot() {
         return events.latest();
     }
 
-    public void addPopup(RegionPopUp popup) {
+    public void addPopup(JFrame popup) {
+        frames.add(popup);
     }
 
-    public void deletePopup(RegionPopUp popup) {
+    public void deletePopup(JFrame popup) {
+        frames.remove(popup);
     }
 
     public List<Snapshot> snapshots() {
