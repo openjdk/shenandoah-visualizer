@@ -41,7 +41,7 @@ public class PopupTimelineTest {
             Graphics2D g = img.createGraphics();
             g.setColor(Color.WHITE);
             g.fillRect(0, 0, 300, 700);
-            new RegionPopUp(0).timelinePaint(g);
+            new RegionPopUp(0, new RenderRunner(null)).timelinePaint(g);
             ImageIO.write(img, "png", new File("timeline.png"));
         }
     }

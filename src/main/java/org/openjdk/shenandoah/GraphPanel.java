@@ -100,16 +100,22 @@ public class GraphPanel extends JPanel {
             g2.drawLine(bandWidth / 2, bandHeight + 5, bandWidth / 2, bandHeight + pad - 5);
             g2.drawLine(bandWidth * 3 / 4, bandHeight + 5, bandWidth * 3 / 4, bandHeight + pad - 5);
 
-//            g.drawString("-" + Long.toString(popupSnapshots.get(popupSnapshots.size() - 1).time() - popupSnapshots.get(frontSnapshotIndex).time()) + " ms", 3, bandHeight + 20);
-//            if (x >= bandWidth / 4 && popupSnapshots.size() > oneFourthIndex) {
-//                g.drawString("-" + Long.toString(popupSnapshots.get(popupSnapshots.size() - 1).time() - popupSnapshots.get(oneFourthIndex).time()) + " ms", bandWidth / 4 + 3, bandHeight + 20);
-//            }
-//            if (x >= bandWidth / 2 && popupSnapshots.size() > oneHalfIndex) {
-//                g.drawString("-" + Long.toString(popupSnapshots.get(popupSnapshots.size() - 1).time() - popupSnapshots.get(oneHalfIndex).time()) + " ms", bandWidth / 2 + 3, bandHeight + 20);
-//            }
-//            if (x >= bandWidth * 3 / 4 && popupSnapshots.size() > threeFourthIndex) {
-//                g.drawString("-" + Long.toString(popupSnapshots.get(popupSnapshots.size() - 1).time() - popupSnapshots.get(threeFourthIndex).time()) + " ms", bandWidth * 3 / 4 + 3, bandHeight + 20);
-//            }
+            Snapshot last = snapshots.get(snapshots.size() - 1);
+
+            int oneFourthIndex = snapshots.size() / 4;
+            int oneHalfIndex = oneFourthIndex * 2;
+            int threeFourthIndex = oneFourthIndex * 3;
+
+            g.drawString("-" + (last.time() - snapshots.get(0).time()) + " ms", 3, bandHeight + 20);
+            if (x >= bandWidth / 4 && snapshots.size() > oneFourthIndex) {
+                g.drawString("-" + (last.time() - snapshots.get(oneFourthIndex).time()) + " ms", bandWidth / 4 + 3, bandHeight + 20);
+            }
+            if (x >= bandWidth / 2 && snapshots.size() > oneHalfIndex) {
+                g.drawString("-" + (last.time() - snapshots.get(oneHalfIndex).time()) + " ms", bandWidth / 2 + 3, bandHeight + 20);
+            }
+            if (x >= bandWidth * 3 / 4 && snapshots.size() > threeFourthIndex) {
+                g.drawString("-" + (last.time() - snapshots.get(threeFourthIndex).time()) + " ms", bandWidth * 3 / 4 + 3, bandHeight + 20);
+            }
         }
     }
 
