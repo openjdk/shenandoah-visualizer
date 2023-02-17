@@ -102,7 +102,7 @@ public class DataLogProvider {
         return name != null && Files.isReadable(Paths.get(name));
     }
 
-    private static String processLoggingTag(String data) {
+    static String processLoggingTag(String data) {
         if (data.lastIndexOf("]") != -1) {
             int startIndex = data.lastIndexOf("]") + 2;
             return data.substring(startIndex);

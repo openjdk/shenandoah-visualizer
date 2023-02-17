@@ -26,38 +26,27 @@ package org.openjdk.shenandoah;
 
 import org.junit.Assert;
 
-import org.junit.Before;
 import org.junit.Test;
 
-
-import java.io.IOException;
-
 public class ProcessLoggingTagTest {
-    DataLogProvider dataLogProvider;
-
-    @Before
-    public void setUp() throws IOException {
-        dataLogProvider = new DataLogProvider("src/test/resources/regions-6425.log", new EventLog<>());
-    }
-
     @Test
-    public void test_process_tagged_meta_data() {
+    public void testParseLogMetaDataWithTags() {
         String taggedMetaDataLine = "[1.666s][info][gc,region] 1665172926 0 3859 1024 2";
-        Assert.assertEquals("1665172926 0 3859 1024 2", dataLogProvider.processLoggingTag(taggedMetaDataLine));
+        Assert.assertEquals("1665172926 0 3859 1024 2", DataLogProvider.processLoggingTag(taggedMetaDataLine));
     }
     @Test
-    public void test_process_tagged_region_data() {
+    public void testParseRegionDataWithTags() {
         String taggedRegionDataLine = "[1.667s][info][gc,region] 648518346342989924 648518346342989924 648518346342989924";
-        Assert.assertEquals("648518346342989924 648518346342989924 648518346342989924", dataLogProvider.processLoggingTag(taggedRegionDataLine));
+        Assert.assertEquals("648518346342989924 648518346342989924 648518346342989924", DataLogProvider.processLoggingTag(taggedRegionDataLine));
     }
     @Test
-    public void test_process_not_tagged_meta_data() {
+    public void testParseMetaDataWithoutTags() {
         String notTaggedMetaDataLine = "1665172926 0 3859 1024 2";
-        Assert.assertEquals("1665172926 0 3859 1024 2", dataLogProvider.processLoggingTag(notTaggedMetaDataLine));
+        Assert.assertEquals("1665172926 0 3859 1024 2", DataLogProvider.processLoggingTag(notTaggedMetaDataLine));
     }
     @Test
-    public void test_process_not_tagged_region_data() {
+    public void testParseRegionDataWithoutTags() {
         String notTaggedRegionDataLine = "648518346342989924 648518346342989924 648518346342989924";
-        Assert.assertEquals("648518346342989924 648518346342989924 648518346342989924", dataLogProvider.processLoggingTag(notTaggedRegionDataLine));
+        Assert.assertEquals("648518346342989924 648518346342989924 648518346342989924", DataLogProvider.processLoggingTag(notTaggedRegionDataLine));
     }
 }
