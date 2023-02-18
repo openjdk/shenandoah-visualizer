@@ -107,4 +107,8 @@ public class RenderRunner implements Runnable {
     public void stepTo(int value) {
         events.stepTo(value);
     }
+
+    public int cursor() {
+        return events.cursor();
+    }
 }

@@ -439,6 +439,7 @@ public class ToolbarPanel extends JPanel
     @Override
     public void paint(Graphics g) {
         timestampField.setText(renderRunner.snapshot().time() + " ms");
+        slider.setValue(renderRunner.cursor());
         super.paint(g);
     }
 }

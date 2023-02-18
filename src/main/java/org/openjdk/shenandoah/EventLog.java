@@ -98,6 +98,10 @@ class EventLog<T extends Timed> {
         return events.size();
     }
 
+    public int cursor() {
+        return cursor;
+    }
+
     private static int clamp(int min, int val, int max) {
         return Math.min(Math.max(min, val), max);
     }
