@@ -34,18 +34,26 @@ public class GraphPanel extends JPanel {
 
         int startRaw = graphHeight - bandHeight - pad;
 
+        int snapshotWidth = 1;
+        int snapshotStartX = bandWidth;
+
+        int oneFourth = bandWidth / 4;
+        int oneHalf = oneFourth * 2;
+        int threeFourths = oneFourth * 3;
+
+        int timelineMarkStartY = bandHeight + 5;
+        int timelineMarkEndY = bandHeight + pad - 5;
+        int timelineMarkTextOffsetY = bandHeight + 20;
+
+        int phaseLabelOffsetX = bandWidth + 10;
+        int phaseLabelOffsetY = bandHeight + pad + 20;
+
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, bandWidth, graphHeight);
 
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, bandWidth, bandHeight);
         g.fillRect(0, bandHeight + pad, bandWidth, bandHeight);
-
-        int snapshotWidth = 1;
-        int snapshotStartX = bandWidth;
-        int oneFourth = bandWidth / 4;
-        int oneHalf = oneFourth * 2;
-        int threeFourths = oneFourth * 3;
 
         for (int i = snapshots.size() - 1; i >= 0 && snapshotStartX >=0; --i) {
             Snapshot snapshot = snapshots.get(i);
@@ -90,25 +98,26 @@ public class GraphPanel extends JPanel {
             g.drawRect(snapshotStartX, (int) Math.round(startRaw - snapshot.collectionSet() * stepY), 1, 1);
 
             g.setColor(Color.GRAY);
-            g.drawString("OM", bandWidth + 10, bandHeight + pad + 20);
-            g.drawString("M", bandWidth + 10, bandHeight + phaseHeight + pad + 20);
-            g.drawString("E", bandWidth + 10, bandHeight + 2 * phaseHeight + pad + 20);
-            g.drawString("UR", bandWidth + 10, bandHeight + 3 * phaseHeight + pad + 20);
-
+            g.drawString("OM", phaseLabelOffsetX, phaseLabelOffsetY);
+            g.drawString("M", phaseLabelOffsetX, phaseLabelOffsetY + phaseHeight);
+            g.drawString("E", phaseLabelOffsetX, phaseLabelOffsetY + 2 * phaseHeight );
+            g.drawString("UR", phaseLabelOffsetX, phaseLabelOffsetY + 3 * phaseHeight );
 
             Graphics2D g2 = (Graphics2D) g;
             g2.setStroke(new BasicStroke(2));
-            g2.drawLine(0, bandHeight + 5, 0, bandHeight + pad - 5);
-            g2.drawLine(bandWidth / 4, bandHeight + 5, bandWidth / 4, bandHeight + pad - 5);
-            g2.drawLine(bandWidth / 2, bandHeight + 5, bandWidth / 2, bandHeight + pad - 5);
-            g2.drawLine(bandWidth * 3 / 4, bandHeight + 5, bandWidth * 3 / 4, bandHeight + pad - 5);
 
-            if (oneFourth == snapshotStartX) {
-                g.drawString(snapshot.time() + " ms", oneFourth + 3, bandHeight + 20);
+            if (snapshotStartX == 0) {
+                g2.drawLine(0, timelineMarkStartY, 0, timelineMarkEndY);
+                g2.drawString(snapshot.time() + " ms", 0, timelineMarkTextOffsetY);
+            } else if (oneFourth == snapshotStartX) {
+                g2.drawLine(oneFourth, timelineMarkStartY, oneFourth, timelineMarkEndY);
+                g2.drawString(snapshot.time() + " ms", oneFourth + 3, timelineMarkTextOffsetY);
             } else if (oneHalf == snapshotStartX) {
-                g.drawString(snapshot.time() + " ms", oneHalf + 3, bandHeight + 20);
+                g2.drawLine(oneHalf, timelineMarkStartY, oneHalf, timelineMarkEndY);
+                g2.drawString(snapshot.time() + " ms", oneHalf + 3, timelineMarkTextOffsetY);
             } else if (threeFourths == snapshotStartX) {
-                g.drawString(snapshot.time() + " ms", threeFourths + 3, bandHeight + 20);
+                g2.drawLine(threeFourths, timelineMarkStartY, threeFourths, timelineMarkEndY);
+                g2.drawString(snapshot.time() + " ms", threeFourths + 3, timelineMarkTextOffsetY);
             }
         }
     }
