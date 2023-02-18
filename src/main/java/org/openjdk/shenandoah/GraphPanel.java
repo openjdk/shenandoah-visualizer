@@ -41,50 +41,53 @@ public class GraphPanel extends JPanel {
         g.fillRect(0, 0, bandWidth, bandHeight);
         g.fillRect(0, bandHeight + pad, bandWidth, bandHeight);
 
-        long firstTime = snapshots.get(0).time();
-        long lastTime = snapshots.get(snapshots.size() - 1).time();
-        double stepX = (double) LayoutConstants.STEP_X * Math.min(snapshots.size(), bandWidth) / (lastTime - firstTime);
+        int snapshotWidth = 1;
+        int snapshotStartX = bandWidth;
+        int oneFourth = bandWidth / 4;
+        int oneHalf = oneFourth * 2;
+        int threeFourths = oneFourth * 3;
 
-        for (var snapshot : snapshots) {
-            int x = (int) Math.round((snapshot.time() - firstTime) * stepX);
+        for (int i = snapshots.size() - 1; i >= 0 && snapshotStartX >=0; --i) {
+            Snapshot snapshot = snapshots.get(i);
+            snapshotStartX -= snapshotWidth;
 
             if (snapshot.getOldPhase() == Phase.MARKING && snapshot.getGlobalPhase() == Phase.IDLE) {
                 g.setColor(Colors.OLD[0]);
-                g.drawRect(x, bandHeight + pad, 1, phaseHeight);
+                g.drawRect(snapshotStartX, bandHeight + pad, snapshotWidth, phaseHeight);
             }
 
             if (snapshot.percentageOfOldRegionsInCollectionSet() > 0) {
                 int height = (int) (bandHeight * snapshot.percentageOfOldRegionsInCollectionSet());
                 g.setColor(Colors.OLD[0]);
-                g.drawRect(x, 2 * bandHeight + pad - height, 1, height);
+                g.drawRect(snapshotStartX, 2 * bandHeight + pad - height, snapshotWidth, height);
             }
 
             g.setColor(getColor(snapshot));
             if (getPhase(snapshot) == Phase.MARKING) {
-                g.drawRect(x, bandHeight + pad + phaseHeight, 1, phaseHeight);
+                g.drawRect(snapshotStartX, bandHeight + pad + phaseHeight, snapshotWidth, phaseHeight);
             }
             if (getPhase(snapshot) == Phase.EVACUATING) {
-                g.drawRect(x, bandHeight + pad + 2 * phaseHeight, 1, phaseHeight);
+                g.drawRect(snapshotStartX, bandHeight + pad + 2 * phaseHeight, snapshotWidth, phaseHeight);
             }
             if (getPhase(snapshot) == Phase.UPDATE_REFS) {
-                g.drawRect(x, bandHeight + pad + 3 * phaseHeight, 1, phaseHeight);
+                g.drawRect(snapshotStartX, bandHeight + pad + 3 * phaseHeight, snapshotWidth, phaseHeight);
             }
 
             if (snapshot.isFullActive()) {
                 g.setColor(Colors.FULL);
-                g.drawRect(x, bandHeight + pad, 1, 10);
+                g.drawRect(snapshotStartX, bandHeight + pad, snapshotWidth, 10);
             } else if (snapshot.isDegenActive()) {
                 g.setColor(Colors.DEGENERATE);
-                g.drawRect(x, bandHeight + pad, 1, 10);
+                g.drawRect(snapshotStartX, bandHeight + pad, snapshotWidth, 10);
             }
 
             // Draw these in the upper band.
             g.setColor(Colors.USED);
-            g.drawRect(x, (int) Math.round(startRaw - snapshot.used() * stepY), 1, 1);
+            g.drawRect(snapshotStartX, (int) Math.round(startRaw - snapshot.used() * stepY), 1, 1);
             g.setColor(Colors.LIVE_REGULAR);
-            g.drawRect(x, (int) Math.round(startRaw - snapshot.live() * stepY), 1, 1);
+            g.drawRect(snapshotStartX, (int) Math.round(startRaw - snapshot.live() * stepY), 1, 1);
             g.setColor(Colors.LIVE_CSET);
-            g.drawRect(x, (int) Math.round(startRaw - snapshot.collectionSet() * stepY), 1, 1);
+            g.drawRect(snapshotStartX, (int) Math.round(startRaw - snapshot.collectionSet() * stepY), 1, 1);
 
             g.setColor(Color.GRAY);
             g.drawString("OM", bandWidth + 10, bandHeight + pad + 20);
@@ -100,21 +103,12 @@ public class GraphPanel extends JPanel {
             g2.drawLine(bandWidth / 2, bandHeight + 5, bandWidth / 2, bandHeight + pad - 5);
             g2.drawLine(bandWidth * 3 / 4, bandHeight + 5, bandWidth * 3 / 4, bandHeight + pad - 5);
 
-            Snapshot last = snapshots.get(snapshots.size() - 1);
-
-            int oneFourthIndex = snapshots.size() / 4;
-            int oneHalfIndex = oneFourthIndex * 2;
-            int threeFourthIndex = oneFourthIndex * 3;
-
-            g.drawString("-" + (last.time() - snapshots.get(0).time()) + " ms", 3, bandHeight + 20);
-            if (x >= bandWidth / 4 && snapshots.size() > oneFourthIndex) {
-                g.drawString("-" + (last.time() - snapshots.get(oneFourthIndex).time()) + " ms", bandWidth / 4 + 3, bandHeight + 20);
-            }
-            if (x >= bandWidth / 2 && snapshots.size() > oneHalfIndex) {
-                g.drawString("-" + (last.time() - snapshots.get(oneHalfIndex).time()) + " ms", bandWidth / 2 + 3, bandHeight + 20);
-            }
-            if (x >= bandWidth * 3 / 4 && snapshots.size() > threeFourthIndex) {
-                g.drawString("-" + (last.time() - snapshots.get(threeFourthIndex).time()) + " ms", bandWidth * 3 / 4 + 3, bandHeight + 20);
+            if (oneFourth == snapshotStartX) {
+                g.drawString(snapshot.time() + " ms", oneFourth + 3, bandHeight + 20);
+            } else if (oneHalf == snapshotStartX) {
+                g.drawString(snapshot.time() + " ms", oneHalf + 3, bandHeight + 20);
+            } else if (threeFourths == snapshotStartX) {
+                g.drawString(snapshot.time() + " ms", threeFourths + 3, bandHeight + 20);
             }
         }
     }
