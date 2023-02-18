@@ -5,7 +5,6 @@ import java.awt.*;
 public class LayoutConstants {
     public static final int LINE = 15;
     public static final int PHASE_LABEL_WIDTH = 50;
-    public static final int STEP_X = 4;
 
     public static void renderTimeLineLegendItem(Graphics g, int sqSize, Color color, int lineNumber, String label) {
         g.setColor(color);
