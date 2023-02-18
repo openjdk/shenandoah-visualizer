@@ -38,9 +38,6 @@ package org.openjdk.shenandoah;
     private static final int INITIAL_WIDTH = 2000;
     private static final int INITIAL_HEIGHT = 1600;
     static final int KILO = 1024;
-    private static final String PLAYBACK = "Playback";
-    private static final String REALTIME = "Realtime";
-
 
     public static void main(String[] args) throws Exception {
         // Command line argument parsing
