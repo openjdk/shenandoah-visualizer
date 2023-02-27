@@ -152,20 +152,13 @@ public class Snapshot implements Timed {
         return oldPhase;
     }
 
+    // TODO: Restore pause time monitoring for 'real time' mode.
     public Histogram getSafepointTime() {
         return histogram;
     }
 
     public boolean isYoungActive() {
         return youngPhase != Phase.IDLE;
-    }
-
-    public boolean isOldActive() {
-        return oldPhase != Phase.IDLE;
-    }
-
-    public boolean isGlobalActive() {
-        return globalPhase != Phase.IDLE;
     }
 
     public boolean isDegenActive() {
@@ -234,37 +227,11 @@ public class Snapshot implements Timed {
         return used;
     }
 
-    public long committed() {
-        long r = 0L;
-        for (RegionStat rs : stats) {
-            r += (rs.state() == RegionState.EMPTY_UNCOMMITTED) ? 0 : regionSize * rs.used();
-        }
-        return r;
-    }
-
-    public long trash() {
-        long r = 0L;
-        for (RegionStat rs : stats) {
-            r += (rs.state() == RegionState.TRASH) ? rs.used() : 0;
-        }
-        return r;
-    }
-
     public long collectionSet() {
         long used = 0L;
         for (RegionStat rs : stats) {
             if (rs.state() == RegionState.CSET || rs.state() == RegionState.PINNED_CSET) {
                 used += regionSize * rs.live();
-            }
-        }
-        return used;
-    }
-
-    public long humongous() {
-        long used = 0L;
-        for (RegionStat rs : stats) {
-            if (rs.state() == RegionState.HUMONGOUS || rs.state() == RegionState.PINNED_HUMONGOUS) {
-                used += regionSize * rs.used();
             }
         }
         return used;
@@ -279,20 +246,16 @@ public class Snapshot implements Timed {
     }
 
     public double percentageOfOldRegionsInCollectionSet() {
-        long total_in_cset = 0, old_in_cset = 0, old = 0, total = 0;
+        long totalInCset = 0, oldInCset = 0;
         for (RegionStat rs : stats) {
             if (rs.state() == RegionState.CSET || rs.state() == RegionState.PINNED_CSET) {
                 if (rs.affiliation() == RegionAffiliation.OLD) {
-                    ++old_in_cset;
+                    ++oldInCset;
                 }
-                ++total_in_cset;
+                ++totalInCset;
             }
-            if (rs.affiliation() == RegionAffiliation.OLD) {
-                ++old;
-            }
-            ++total;
         }
-        return total_in_cset == 0 ? 0 : ((double) (old_in_cset)) / total_in_cset;
+        return totalInCset == 0 ? 0 : ((double) (oldInCset)) / totalInCset;
     }
 
     private void stateCounter() {

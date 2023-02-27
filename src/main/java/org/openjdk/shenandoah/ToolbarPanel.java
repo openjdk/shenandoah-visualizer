@@ -51,15 +51,14 @@ public class ToolbarPanel extends JPanel
     private static final String SPEED_2 = "Multiplied speed by 2";
     private static final String SPEED_RESET = "Reset speed to 1";
     private final RenderRunner renderRunner;
-    private JToolBar fileToolbar, replayToolbar, statusToolbar, speedToolbar, timestampToolBar;
-    private JButton fileButton, backOneButton, backFiveButton, playPauseButton;
-    private JButton forwardOneButton, forwardFiveButton, realtimeModeButton, endSnapshotButton;
+    private final JToolBar replayToolbar, statusToolbar, speedToolbar;
+    private JButton backOneButton, backFiveButton, playPauseButton, forwardOneButton, forwardFiveButton, endSnapshotButton;
+    private final JButton realtimeModeButton;
     private JButton halfSpeedButton, doubleSpeedButton, resetSpeedMultiplierButton;
     private JSpinner speedSpinner;
-    JSpinner.NumberEditor speedEditor;
-    private JTextField fileNameField, lastActionField, modeField, timestampField;
-    private JLabel modeLabel, lastActionLabel, speedLabel, timestampLabel;
-    private JSlider slider = new JSlider();
+    private JSpinner.NumberEditor speedEditor;
+    private final JTextField fileNameField, lastActionField, modeField, timestampField;
+    private final JSlider slider = new JSlider();
 
     public boolean speedButtonPressed = false;
 
@@ -71,7 +70,7 @@ public class ToolbarPanel extends JPanel
 
         setPreferredSize(new Dimension(INITIAL_WIDTH, INITIAL_HEIGHT));
 
-        fileToolbar = new JToolBar();
+        JToolBar fileToolbar = new JToolBar();
         fileToolbar.setFloatable(false);
 
         realtimeModeButton = new JButton("Switch to Realtime");
@@ -80,13 +79,12 @@ public class ToolbarPanel extends JPanel
         realtimeModeButton.setFocusable(false);
         fileToolbar.add(realtimeModeButton);
 
-        fileButton = new JButton("Load file");
+        JButton fileButton = new JButton("Load file");
         fileButton.setActionCommand(CHOOSE_FILE);
         fileButton.addActionListener(this);
         fileButton.setFocusable(false);
-        fileToolbar.add(this.fileButton);
+        fileToolbar.add(fileButton);
 
-        // TODO: We'll want to update the event count in Live mode
         slider.setMaximum(renderRunner.snapshotCount());
         slider.setMinimum(0);
         slider.setOrientation(SwingConstants.HORIZONTAL);
@@ -117,10 +115,10 @@ public class ToolbarPanel extends JPanel
         speedToolbar = new JToolBar();
         speedToolbar.setFloatable(false);
 
-        timestampToolBar = new JToolBar();
+        JToolBar timestampToolBar = new JToolBar();
         timestampToolBar.setFloatable(false);
 
-        lastActionLabel = new JLabel("Last action:");
+        JLabel lastActionLabel = new JLabel("Last action:");
         statusToolbar.add(lastActionLabel);
 
         lastActionField = new JTextField();
@@ -128,7 +126,7 @@ public class ToolbarPanel extends JPanel
         lastActionField.setFocusable(false);
         statusToolbar.add(lastActionField);
 
-        modeLabel = new JLabel("Mode:");
+        JLabel modeLabel = new JLabel("Mode:");
         statusToolbar.add(modeLabel);
 
         modeField = new JTextField();
@@ -136,7 +134,7 @@ public class ToolbarPanel extends JPanel
         modeField.setFocusable(false);
         statusToolbar.add(modeField);
 
-        timestampLabel = new JLabel("Timestamp: ");
+        JLabel timestampLabel = new JLabel("Timestamp: ");
         timestampToolBar.add(timestampLabel);
 
         timestampField = new JTextField();
@@ -147,7 +145,7 @@ public class ToolbarPanel extends JPanel
         addPlaybackButtons();
         addSpeedButtons();
 
-        setEnabledPlaybackToolbars(true);
+        setEnabledPlaybackToolbars();
 
         {
             GridBagConstraints c = new GridBagConstraints();
@@ -241,26 +239,26 @@ public class ToolbarPanel extends JPanel
         }
     }
 
-    private void setEnabledPlaybackToolbars(boolean b) {
-        setEnablePlaybackButtons(b);
-        setEnableSpeedButtons(b);
+    private void setEnabledPlaybackToolbars() {
+        setEnablePlaybackButtons();
+        setEnableSpeedButtons();
     }
 
-    private void setEnablePlaybackButtons(boolean b) {
-        backOneButton.setEnabled(b);
-        backFiveButton.setEnabled(b);
-        playPauseButton.setEnabled(b);
-        forwardOneButton.setEnabled(b);
-        forwardFiveButton.setEnabled(b);
-        endSnapshotButton.setEnabled(b);
-        slider.setEnabled(b);
+    private void setEnablePlaybackButtons() {
+        backOneButton.setEnabled(true);
+        backFiveButton.setEnabled(true);
+        playPauseButton.setEnabled(true);
+        forwardOneButton.setEnabled(true);
+        forwardFiveButton.setEnabled(true);
+        endSnapshotButton.setEnabled(true);
+        slider.setEnabled(true);
     }
 
-    private void setEnableSpeedButtons(boolean b) {
-        speedSpinner.setEnabled(b);
-        halfSpeedButton.setEnabled(b);
-        doubleSpeedButton.setEnabled(b);
-        resetSpeedMultiplierButton.setEnabled(b);
+    private void setEnableSpeedButtons() {
+        speedSpinner.setEnabled(true);
+        halfSpeedButton.setEnabled(true);
+        doubleSpeedButton.setEnabled(true);
+        resetSpeedMultiplierButton.setEnabled(true);
     }
 
     private void addPlaybackButtons() {
@@ -302,7 +300,7 @@ public class ToolbarPanel extends JPanel
     }
 
     private void addSpeedButtons() {
-        speedLabel = new JLabel("Playback Speed: ");
+        JLabel speedLabel = new JLabel("Playback Speed: ");
         statusToolbar.add(speedLabel);
 
         this.speedSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.1, 10.0, 0.1));
@@ -333,6 +331,10 @@ public class ToolbarPanel extends JPanel
 
     public double getSpeedValue() {
         JFormattedTextField speedField = getTextField(speedSpinner);
+        if (speedField == null) {
+            return 0.0;
+        }
+
         requestFocusInWindow();
         double speedValue = (double) speedField.getValue();
         try {
@@ -346,6 +348,10 @@ public class ToolbarPanel extends JPanel
 
     public void setSpeedValue(double speed) {
         JFormattedTextField speedField = getTextField(speedSpinner);
+        if (speedField == null) {
+            return;
+        }
+
         try {
             speedField.setValue(speed);
             speedEditor.commitEdit();

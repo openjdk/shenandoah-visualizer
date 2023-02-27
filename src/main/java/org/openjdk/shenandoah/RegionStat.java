@@ -188,32 +188,24 @@ public class RegionStat {
                     if (tlabWidth > 0) {
                         g.setColor(mixAlpha(TLAB_ALLOC, liveLvl));
                         fillShape(g, lx, y, tlabWidth, height);
-//                        g.setColor(TLAB_ALLOC_BORDER);
-//                        drawShape(g, lx, y, tlabWidth, height);
                         lx += tlabWidth;
                     }
 
                     if (gclabWidth > 0) {
                         g.setColor(mixAlpha(GCLAB_ALLOC, liveLvl));
                         fillShape(g, lx, y, gclabWidth, height);
-//                        g.setColor(GCLAB_ALLOC_BORDER);
-//                        drawShape(g, lx, y, gclabWidth, height);
                         lx += gclabWidth;
                     }
 
                     if (sharedWidth > 0) {
                         g.setColor(mixAlpha(SHARED_ALLOC, liveLvl));
                         fillShape(g, lx, y, sharedWidth, height);
-//                        g.setColor(SHARED_ALLOC_BORDER);
-//                        drawShape(g, lx, y, sharedWidth, height);
                         lx += sharedWidth;
                     }
 
                     if (plabWidth > 0) {
                         g.setColor(mixAlpha(PLAB_ALLOC, liveLvl));
                         fillShape(g, lx, y, plabWidth, height);
-//                        g.setColor(PLAB_ALLOC_BORDER);
-//                        drawShape(g, lx, y, plabWidth, height);
                     }
                 }
                 break;
@@ -307,10 +299,10 @@ public class RegionStat {
     @Override
     public int hashCode() {
         int result = state.hashCode();
-        result = 31 * result + (liveLvl != +0.0f ? Float.floatToIntBits(liveLvl) : 0);
-        result = 31 * result + (usedLvl != +0.0f ? Float.floatToIntBits(usedLvl) : 0);
-        result = 31 * result + (tlabLvl != +0.0f ? Float.floatToIntBits(tlabLvl) : 0);
-        result = 31 * result + (gclabLvl != +0.0f ? Float.floatToIntBits(gclabLvl) : 0);
+        result = 31 * result + (liveLvl != 0.0f ? Float.floatToIntBits(liveLvl) : 0);
+        result = 31 * result + (usedLvl != 0.0f ? Float.floatToIntBits(usedLvl) : 0);
+        result = 31 * result + (tlabLvl != 0.0f ? Float.floatToIntBits(tlabLvl) : 0);
+        result = 31 * result + (gclabLvl != 0.0f ? Float.floatToIntBits(gclabLvl) : 0);
         return result;
     }
 

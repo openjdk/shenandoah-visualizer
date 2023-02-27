@@ -28,8 +28,6 @@ import java.awt.*;
 
 public class Colors {
 
-    static final Color OLD_TIMELINE_MARK = new Color(120, 171, 210);
-
     static final Color[] YOUNG = createColorFamily(Color.GREEN);
     static final Color[] OLD = createColorFamily(new Color(120 , 146, 210));
     static final Color[] GLOBAL = createColorFamily(Color.RED);
@@ -50,17 +48,11 @@ public class Colors {
     static final Color FULL       = Color.RED;
 
     static final Color SHARED_ALLOC         = new Color(0, 150, 250);
-    static final Color SHARED_ALLOC_BORDER  = new Color(0, 191, 190);
     static final Color TLAB_ALLOC           = new Color(0, 200, 0);
-    static final Color TLAB_ALLOC_BORDER    = new Color(0, 100, 0);
     static final Color GCLAB_ALLOC          = new Color(185, 0, 250);
-    static final Color GCLAB_ALLOC_BORDER   = new Color(118, 0, 160);
     static final Color PLAB_ALLOC           = new Color(111, 78, 55);
-    static final Color PLAB_ALLOC_BORDER    = new Color(92, 64, 51);
 
     static final Color USED                 = new Color(220, 220, 220);
-
-    static final Color LIVE_COMMITTED       = new Color(150, 150, 150);
     static final Color LIVE_REGULAR         = new Color(0, 200, 0);
     static final Color LIVE_HUMONGOUS       = new Color(250, 100, 0);
     static final Color LIVE_PINNED_HUMONGOUS = new Color(255, 0, 0);
@@ -69,8 +61,6 @@ public class Colors {
     static final Color LIVE_PINNED          = new Color(252, 201, 156);
     static final Color LIVE_PINNED_CSET     = new Color(59, 88, 124);
     static final Color LIVE_EMPTY           = new Color(255, 255, 255);
-
-    static final Color LIVE_BORDER          = new Color(0, 100, 0);
     static final Color BORDER               = new Color(150, 150, 150);
 
     static final Color AGE_0 = Color.LIGHT_GRAY;

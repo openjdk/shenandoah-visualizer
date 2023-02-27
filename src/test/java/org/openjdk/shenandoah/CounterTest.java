@@ -71,92 +71,92 @@ public class CounterTest {
     }
 
     @Test
-    public void emptyUncommittedCounter_test() {
+    public void testEmptyUncommittedCounter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, emptyUncommittedAge0, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getEmptyUncommittedCount(), 10);
     }
     @Test
-    public void emptyCommittedCounter_test() {
+    public void testEmptyCommittedCounter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, emptyCommittedAge3, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getEmptyCommittedCount(), 10);
     }
     @Test
-    public void trashCounter_test() {
+    public void testTrashCounter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, trashAge6, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getTrashCount(), 10);
     }
     @Test
-    public void humongousCounter_test() {
+    public void testHumongousCounter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, humongousAge9, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getHumongousCount(), 10);
     }
     @Test
-    public void pinnedHumongousCounter_test() {
+    public void testPinnedHumongousCounter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, pinnedHumongousAge12, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getPinnedHumongousCount(), 10);
     }
     @Test
-    public void cSetCounter_test() {
+    public void testCSetCounter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, cSetAge15, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getCSetCount(), 10);
     }
     @Test
-    public void pinnedCounter_test() {
+    public void testPinnedCounter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, pinned, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getPinnedCount(), 10);
     }
     @Test
-    public void pinnedCSetCounter_test() {
+    public void testPinnedCSetCounter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, pinnedCSet, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getPinnedCSetCount(), 10);
     }
     @Test
-    public void age0Counter_test() {
+    public void testAge0Counter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, emptyUncommittedAge0, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getAge0Count(), 10);
     }
     @Test
-    public void age3Counter_test() {
+    public void testAge3Counter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, emptyCommittedAge3, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getAge3Count(), 10);
     }
     @Test
-    public void age6Counter_test() {
+    public void testAge6Counter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, trashAge6, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getAge6Count(), 10);
     }
     @Test
-    public void age9Counter_test() {
+    public void testAge9Counter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, humongousAge9, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getAge9Count(), 10);
     }
     @Test
-    public void age12Counter_test() {
+    public void testAge12Counter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, pinnedHumongousAge12, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getAge12Count(), 10);
     }
     @Test
-    public void age15Counter_test() {
+    public void testAge15Counter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, cSetAge15, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getAge15Count(), 10);
     }
     @Test
-    public void tlabCounter_test() {
+    public void testTlabCounter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, tLab, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getTlabCount(), 10);
     }
     @Test
-    public void gclabCounter_test() {
+    public void testGClabCounter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, gcLab, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getGclabCount(), 10);
     }
     @Test
-    public void plabCounter_test() {
+    public void testPlabCounter() {
         Snapshot snapshot = new Snapshot(0, 1024, 1, pLab, 0, new Histogram(2));
         Assert.assertEquals(snapshot.getPlabCount(), 10);
     }
     @Test
-    public void sharedCounter_test() {
+    public void testSharedCounter() {
         Snapshot snapshotYoung = new Snapshot(0, 1024, 1, sharedLabYoung, 0, new Histogram(2));
         Snapshot snapshotOld = new Snapshot(0, 1024, 1, sharedLabOld, 0, new Histogram(2));
         Assert.assertEquals(snapshotYoung.getSharedCount(), 10);

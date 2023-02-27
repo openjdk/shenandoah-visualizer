@@ -27,7 +27,6 @@ package org.openjdk.shenandoah;
 
 import org.HdrHistogram.Histogram;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -35,65 +34,48 @@ import java.util.Collections;
 
 
 public class DecoderTest {
-    Snapshot snapshotVersion1Idle;
-    Snapshot snapshotVersion1Marking;
-    Snapshot snapshotVersion1Evacuating;
-    Snapshot snapshotVersion1UpdateRefs;
 
-    Snapshot snapshotNewIdle;
-    Snapshot snapshotNewMarking;
-    Snapshot snapshotNewEvacuating;
-    Snapshot snapshotNewUpdateRefs;
-
-    //setting up different value for both old and new versions
-    @Before
-    public void setUp() {
-        snapshotVersion1Idle = new Snapshot(0, 1024, 1, Collections.emptyList(), 0, new Histogram(2));
-        snapshotVersion1Marking = new Snapshot(0, 1024, 1, Collections.emptyList(), 1, new Histogram(2));
-        snapshotVersion1Evacuating = new Snapshot(0, 1024, 1, Collections.emptyList(), 2, new Histogram(2));
-        snapshotVersion1UpdateRefs = new Snapshot(0, 1024, 1, Collections.emptyList(), 4, new Histogram(2));
-
-        snapshotNewIdle = new Snapshot(0, 1024, 2, Collections.emptyList(), 0, new Histogram(2));
-        snapshotNewMarking = new Snapshot(0, 1024, 2, Collections.emptyList(), 1, new Histogram(2));
-        snapshotNewEvacuating = new Snapshot(0, 1024, 2, Collections.emptyList(), 2, new Histogram(2));
-        snapshotNewUpdateRefs = new Snapshot(0, 1024, 2, Collections.emptyList(), 3, new Histogram(2));
-
-    }
-
-    //Testing different phase for old version
+    // Testing different phases for version 1 encoding
     @Test
-    public void test_version1_phase_idle() {
+    public void testVersion1PhaseIdle() {
+        var snapshotVersion1Idle = new Snapshot(0, 1024, 1, Collections.emptyList(), 0, new Histogram(2));
         Assert.assertEquals(Phase.IDLE, snapshotVersion1Idle.phase());
     }
     @Test
-    public void test_version1_phase_marking() {
+    public void testVersion1PhaseMarking() {
+        var snapshotVersion1Marking = new Snapshot(0, 1024, 1, Collections.emptyList(), 1, new Histogram(2));
         Assert.assertEquals(Phase.MARKING, snapshotVersion1Marking.phase());
     }
     @Test
-    public void test_version1_phase_evacuating() {
+    public void testVersion1PhaseEvacuating() {
+        var snapshotVersion1Evacuating = new Snapshot(0, 1024, 1, Collections.emptyList(), 2, new Histogram(2));
         Assert.assertEquals(Phase.EVACUATING, snapshotVersion1Evacuating.phase());
     }
     @Test
-    public void test_version1_phase_update_refs() {
+    public void testVersion1PhaseUpdateRefs() {
+        var snapshotVersion1UpdateRefs = new Snapshot(0, 1024, 1, Collections.emptyList(), 4, new Histogram(2));
         Assert.assertEquals(Phase.UPDATE_REFS, snapshotVersion1UpdateRefs.phase());
     }
 
-    //Testing different phase for new version
+    // Testing different phases for version 2 encoding
     @Test
-    public void test_new_phase_idle() {
+    public void testVersion2PhaseIdle() {
+        var snapshotNewIdle = new Snapshot(0, 1024, 2, Collections.emptyList(), 0, new Histogram(2));
         Assert.assertEquals(Phase.IDLE, snapshotNewIdle.phase());
     }
     @Test
-    public void test_new_phase_marking() {
+    public void testVersion2PhaseMarking() {
+        var snapshotNewMarking = new Snapshot(0, 1024, 2, Collections.emptyList(), 1, new Histogram(2));
         Assert.assertEquals(Phase.MARKING, snapshotNewMarking.phase());
     }
     @Test
-    public void test_new_phase_evacuating() {
+    public void testVersion2PhaseEvacuating() {
+        var snapshotNewEvacuating = new Snapshot(0, 1024, 2, Collections.emptyList(), 2, new Histogram(2));
         Assert.assertEquals(Phase.EVACUATING, snapshotNewEvacuating.phase());
     }
     @Test
-    public void test_new_phase_update_refs() {
+    public void testVersion2PhaseUpdateRefs() {
+        var snapshotNewUpdateRefs = new Snapshot(0, 1024, 2, Collections.emptyList(), 3, new Histogram(2));
         Assert.assertEquals(Phase.UPDATE_REFS, snapshotNewUpdateRefs.phase());
     }
-
 }

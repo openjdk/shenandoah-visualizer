@@ -40,7 +40,7 @@ package org.openjdk.shenandoah;
     static final int KILO = 1024;
 
     public static void main(String[] args) {
-        // Command line argument parsing
+        // TODO: Make use of the -vm option again
         String vmIdentifier = null;
         String filePath = null;
 
