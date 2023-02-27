@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Amazon.com, Inc. All rights reserved.
+ * Copyright (c) 2023, Amazon.com, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package org.openjdk.shenandoah;
 import org.junit.Test;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -40,7 +41,10 @@ public class PopupSpotlightTest {
             Graphics2D g = img.createGraphics();
             g.setColor(Color.WHITE);
             g.fillRect(0, 0, 300, 700);
-            new RegionPopUp(0, new RenderRunner(null)).spotlightPaint(g);
+            RenderRunner renderRunner = new RenderRunner(new JFrame());
+            renderRunner.loadPlayback("src/test/resources/regions-6425.log");
+            renderRunner.stepBy(200);
+            new RegionPopUp(0, renderRunner).spotlightPaint(g);
             ImageIO.write(img, "png", new File("spotlight.png"));
         }
     }

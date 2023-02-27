@@ -24,10 +24,10 @@
  */
 package org.openjdk.shenandoah;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -41,7 +41,10 @@ public class PopupTimelineTest {
             Graphics2D g = img.createGraphics();
             g.setColor(Color.WHITE);
             g.fillRect(0, 0, 300, 700);
-            new RegionPopUp(0, new RenderRunner(null)).timelinePaint(g);
+            RenderRunner renderRunner = new RenderRunner(new JFrame());
+            renderRunner.loadPlayback("src/test/resources/regions-6425.log");
+            renderRunner.stepBy(200);
+            new RegionPopUp(0, renderRunner).timelinePaint(g);
             ImageIO.write(img, "png", new File("timeline.png"));
         }
     }
