@@ -64,6 +64,8 @@ public class DataConnector implements Runnable {
     private volatile boolean connected;
     private final Thread connector;
 
+    private volatile String targetVmIdentifier;
+
     public DataConnector(Consumer<MonitoredVm> monitoredVmConsumer) {
         this.monitoredVmConsumer = monitoredVmConsumer;
         this.histogramRecorder = new Recorder(2);
@@ -74,6 +76,10 @@ public class DataConnector implements Runnable {
         this.connector = new Thread(this);
         this.connector.setDaemon(true);
         this.connector.setName("JmxConnectionManager");
+    }
+
+    void connectTo(String id) {
+        targetVmIdentifier = id;
     }
 
     @Override
@@ -105,6 +111,7 @@ public class DataConnector implements Runnable {
     }
 
     public void start() {
+        shouldRun = true;
         connector.start();
     }
 
@@ -125,8 +132,25 @@ public class DataConnector implements Runnable {
 
     private MonitoredVm findShenandoahVm() throws Exception {
         status = "Searching";
+
         HostIdentifier hostId = new HostIdentifier((String)null);
         MonitoredHost host = MonitoredHost.getMonitoredHost(hostId);
+
+        if (targetVmIdentifier != null) {
+            try {
+                MonitoredVm vm = host.getMonitoredVm(new VmIdentifier(targetVmIdentifier));
+                String jvmArgs = MonitoredVmUtil.jvmArgs(vm);
+                if (jvmArgs.contains("ShenandoahRegionSampling")) {
+                    System.out.println("Connecting to given vm: " + targetVmIdentifier);
+                    return vm;
+                } else {
+                    System.out.println("Given identifier for vm " + targetVmIdentifier + " does not have ShenandoahRegionSampling enabled.");
+                }
+            } finally {
+                targetVmIdentifier = null;
+            }
+        }
+
         for (Integer vmId: host.activeVms()) {
             MonitoredVm vm = host.getMonitoredVm(new VmIdentifier(String.valueOf(vmId)));
             String jvmArgs = MonitoredVmUtil.jvmArgs(vm);

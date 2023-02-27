@@ -47,7 +47,7 @@ public class DataProvider {
     private LongMonitor status;
 
 
-    public DataProvider(String id) {
+    public DataProvider() {
         connector = new DataConnector(this::setMonitoredVm);
     }
 
@@ -119,5 +119,9 @@ public class DataProvider {
 
     public String status() {
         return connector.status();
+    }
+
+    public void setConnectionTarget(String vmIdentifier) {
+        connector.connectTo(vmIdentifier);
     }
 }

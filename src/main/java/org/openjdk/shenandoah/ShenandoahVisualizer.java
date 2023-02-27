@@ -40,7 +40,6 @@ package org.openjdk.shenandoah;
     static final int KILO = 1024;
 
     public static void main(String[] args) {
-        // TODO: Make use of the -vm option again
         String vmIdentifier = null;
         String filePath = null;
 
@@ -78,7 +77,7 @@ package org.openjdk.shenandoah;
         if (filePath != null) {
             renderRunner.loadPlayback(filePath);
         } else {
-            renderRunner.loadLive();
+            renderRunner.loadLive(vmIdentifier);
         }
 
         // Executors

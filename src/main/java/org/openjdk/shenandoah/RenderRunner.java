@@ -46,26 +46,31 @@ public class RenderRunner implements Runnable {
         this.frames = new HashSet<>();
         this.frames.add(frame);
         this.playbackSpeed = 1.0;
-        this.liveData = new DataProvider(null);
+        this.liveData = new DataProvider();
     }
 
     public synchronized void loadPlayback(String filePath) {
-        EventLog<Snapshot> new_events = new EventLog<>(TimeUnit.MILLISECONDS);
+        EventLog<Snapshot> newEvents = new EventLog<>(TimeUnit.MILLISECONDS);
         try {
-            DataLogProvider.loadSnapshots(filePath, new_events);
-            events = new_events;
+            liveData.stopConnector();
+            DataLogProvider.loadSnapshots(filePath, newEvents);
+            events = newEvents;
             events.stepBy(1);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public synchronized void loadLive() {
-        EventLog<Snapshot> new_events = new EventLog<>(TimeUnit.MILLISECONDS);
+    public synchronized void loadLive(String vmIdentifier) {
+        if (vmIdentifier != null) {
+            liveData.setConnectionTarget(vmIdentifier);
+        }
+
+        EventLog<Snapshot> newEvents = new EventLog<>(TimeUnit.MILLISECONDS);
         liveData.startConnector();
-        new_events.add(liveData.snapshot());
-        new_events.stepBy(1);
-        events = new_events;
+        newEvents.add(liveData.snapshot());
+        newEvents.stepBy(1);
+        events = newEvents;
     }
 
     public synchronized void run() {
@@ -107,6 +112,8 @@ public class RenderRunner implements Runnable {
     public boolean isPaused() {
         return isPaused;
     }
+
+    public boolean isLive() { return liveData.isConnected(); }
 
     public void togglePlayback() {
         isPaused = !isPaused;

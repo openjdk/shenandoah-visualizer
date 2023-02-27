@@ -198,7 +198,7 @@ public class ToolbarPanel extends JPanel
         }
 
         realtimeModeButton.addActionListener(event -> {
-            renderRunner.loadLive();
+            renderRunner.loadLive(null);
             setFileNameField("");
         });
         fileButton.addActionListener(this::onFileButtonEvent);
@@ -421,6 +421,7 @@ public class ToolbarPanel extends JPanel
     public void paint(Graphics g) {
         timestampField.setText(renderRunner.snapshot().time() + " ms");
         slider.setValue(renderRunner.cursor());
+        realtimeModeButton.setEnabled(!renderRunner.isLive());
         super.paint(g);
     }
 }
