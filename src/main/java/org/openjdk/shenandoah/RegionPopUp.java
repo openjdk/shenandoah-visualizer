@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Amazon.com, Inc. All rights reserved.
+ * Copyright (c) 2023, Amazon.com, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ package org.openjdk.shenandoah;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.LinkedList;
 import java.util.List;
 
 public class RegionPopUp extends JFrame {
@@ -42,9 +40,9 @@ public class RegionPopUp extends JFrame {
     private RegionState spotlightState;
     private long spotlightAge;
     private RegionAffiliation spotlightAffiliation;
-    private final int squareSize = 15;
-    private final int spotlightSquareSize = 28;
-    private final int initialY = 1;
+    private static final int squareSize = 15;
+    private static final int spotlightSquareSize = 28;
+    private static final int initialY = 1;
 
     RegionStat spotlightRegionData;
 
@@ -53,12 +51,12 @@ public class RegionPopUp extends JFrame {
         this.renderRunner = renderRunner;
 
         JPanel timelinePanel = new JPanel() {
-            public void paint (Graphics g) {
+            public void paint(Graphics g) {
                 timelinePaint(g);
             }
         };
         JPanel spotlightPanel = new JPanel() {
-            public void paint (Graphics g) {
+            public void paint(Graphics g) {
                 spotlightPaint(g);
             }
         };
@@ -127,8 +125,6 @@ public class RegionPopUp extends JFrame {
         g.drawString("State: " + spotlightState, 20, 190);
         g.drawString("Age: " + spotlightAge, 20, 210);
         g.drawString("Affiliation: " + spotlightAffiliation, 20, 230);
-    }
-    public final void setSnapshots(LinkedList<Snapshot> snapshots) {
     }
 
     public final void setSpotlightRegionStat(RegionStat r) {

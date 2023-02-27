@@ -1,6 +1,6 @@
  /*
- * Copyright (c) 2021, Amazon.com, Inc. All rights reserved.
- * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, 2023, Amazon.com, Inc. All rights reserved.
+ * Copyright (c) 2016, 2023, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -39,7 +39,7 @@ package org.openjdk.shenandoah;
     private static final int INITIAL_HEIGHT = 1600;
     static final int KILO = 1024;
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         // Command line argument parsing
         String vmIdentifier = null;
         String filePath = null;

@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2023, Amazon.com, Inc. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
 package org.openjdk.shenandoah;
 
 import java.util.ArrayList;
@@ -21,12 +45,6 @@ class EventLog<T extends Timed> {
         // Linked list could also work, but the sublist construction would need to change.
         this.events = new ArrayList<>();
         this.eventTimeUnit = eventTimeUnit;
-    }
-
-    public synchronized void clear() {
-        events.clear();
-        cursor = 0;
-        referenceTime = 0;
     }
 
     public synchronized void add(T t) {
@@ -57,7 +75,7 @@ class EventLog<T extends Timed> {
     }
 
     public void stepTo(int value) {
-        cursor = clamp(1, value, events.size());
+        cursor = clamp(value, events.size());
         referenceTime = latest().time();
     }
 
@@ -102,7 +120,7 @@ class EventLog<T extends Timed> {
         return cursor;
     }
 
-    private static int clamp(int min, int val, int max) {
-        return Math.min(Math.max(min, val), max);
+    private static int clamp(int val, int max) {
+        return Math.min(Math.max(1, val), max);
     }
 }
