@@ -422,6 +422,7 @@ public class ToolbarPanel extends JPanel
         timestampField.setText(renderRunner.snapshot().time() + " ms");
         slider.setValue(renderRunner.cursor());
         realtimeModeButton.setEnabled(!renderRunner.isLive());
+        modeField.setText(renderRunner.status());
         super.paint(g);
     }
 }

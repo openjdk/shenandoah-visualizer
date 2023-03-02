@@ -113,7 +113,7 @@ public class RenderRunner implements Runnable {
         return isPaused;
     }
 
-    public boolean isLive() { return liveData.isConnected(); }
+    public boolean isLive() { return liveData.running(); }
 
     public void togglePlayback() {
         isPaused = !isPaused;
@@ -141,5 +141,9 @@ public class RenderRunner implements Runnable {
 
     public int cursor() {
         return events.cursor();
+    }
+
+    public String status() {
+        return liveData.status();
     }
 }

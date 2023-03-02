@@ -169,7 +169,7 @@ public class DataConnector implements Runnable {
         JMXServiceURL url = new JMXServiceURL(localJmxAddress);
         JMXConnector connector = JMXConnectorFactory.connect(url);
         MBeanServerConnection server = connector.getMBeanServerConnection();
-        connector.addConnectionNotificationListener(this:: handleConnectionNotification, null, server);
+        connector.addConnectionNotificationListener(this::handleConnectionNotification, null, server);
         status = "Connected";
         return server;
     }
@@ -230,5 +230,9 @@ public class DataConnector implements Runnable {
 
     private GarbageCollectionNotificationInfo asGcNotification(Notification notification) {
         return GarbageCollectionNotificationInfo.from((CompositeData) notification.getUserData());
+    }
+
+    public boolean running() {
+        return shouldRun;
     }
 }
