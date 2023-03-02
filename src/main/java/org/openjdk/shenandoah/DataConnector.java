@@ -44,6 +44,8 @@ import javax.management.remote.JMXServiceURL;
 import java.io.IOException;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
@@ -59,23 +61,30 @@ public class DataConnector implements Runnable {
 
     private final Consumer<MonitoredVm> monitoredVmConsumer;
 
-    private volatile String status;
+    private volatile State status;
     private volatile boolean shouldRun;
-    private volatile boolean connected;
-    private final Thread connector;
+
+    private final Executor executor;
 
     private volatile String targetVmIdentifier;
+    private JMXConnector jmxConnector;
+
+    enum State {
+        Searching, Connecting, Connected, Disconnecting, Disconnected
+    }
 
     public DataConnector(Consumer<MonitoredVm> monitoredVmConsumer) {
         this.monitoredVmConsumer = monitoredVmConsumer;
         this.histogramRecorder = new Recorder(2);
         this.histogram = new Histogram(2);
         this.shouldRun = true;
-        this.connected = false;
-        this.status = "Disconnected";
-        this.connector = new Thread(this);
-        this.connector.setDaemon(true);
-        this.connector.setName("JmxConnectionManager");
+        this.status = State.Disconnected;
+        this.executor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r);
+            t.setDaemon(true);
+            t.setName("JmxConnectionManager");
+            return t;
+        });
     }
 
     void connectTo(String id) {
@@ -88,13 +97,12 @@ public class DataConnector implements Runnable {
             try {
                 MonitoredVm vm = findShenandoahVm();
                 if (vm != null) {
+                    transitionTo(State.Connecting);
                     MBeanServerConnection server = createServiceConnection(vm);
                     subscribeToGarbageCollectorNotifications(server);
                     monitoredVmConsumer.accept(vm);
-                    connected = true;
-                    synchronized (DataConnector.class) {
-                        DataConnector.class.wait();
-                    }
+                    shouldRun = false;
+                    transitionTo(State.Connected);
                 } else {
                     Thread.sleep(250);
                 }
@@ -104,24 +112,44 @@ public class DataConnector implements Runnable {
                 e.printStackTrace();
             }
         }
+        System.out.println("Connection task completed: " + status);
     }
 
     public boolean isConnected() {
-        return connected;
+        return status == State.Connected;
+    }
+
+    private void transitionTo(State newState) {
+        System.out.println("Change status to: " + newState);
+        status = newState;
     }
 
     public void start() {
-        shouldRun = true;
-        connector.start();
+        if (status == State.Disconnected) {
+            transitionTo(State.Searching);
+            shouldRun = true;
+            executor.execute(this);
+        }
     }
 
     public void stop() {
         shouldRun = false;
-        connector.interrupt();
+        if (status == State.Connected) {
+            executor.execute(() -> {
+                try {
+                    transitionTo(State.Disconnecting);
+                    jmxConnector.close();
+                    transitionTo(State.Disconnected);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                }
+            });
+        }
     }
 
     public String status() {
-        return status;
+        return status.toString();
     }
 
     public Histogram getPauseHistogram() {
@@ -131,8 +159,6 @@ public class DataConnector implements Runnable {
     }
 
     private MonitoredVm findShenandoahVm() throws Exception {
-        status = "Searching";
-
         HostIdentifier hostId = new HostIdentifier((String)null);
         MonitoredHost host = MonitoredHost.getMonitoredHost(hostId);
 
@@ -164,13 +190,11 @@ public class DataConnector implements Runnable {
     }
 
     private MBeanServerConnection createServiceConnection(MonitoredVm monitoredVm) throws AttachNotSupportedException, IOException {
-        status = "Connecting";
         String localJmxAddress = getLocalJmxAddress(monitoredVm);
         JMXServiceURL url = new JMXServiceURL(localJmxAddress);
-        JMXConnector connector = JMXConnectorFactory.connect(url);
-        MBeanServerConnection server = connector.getMBeanServerConnection();
-        connector.addConnectionNotificationListener(this::handleConnectionNotification, null, server);
-        status = "Connected";
+        jmxConnector = JMXConnectorFactory.connect(url);
+        MBeanServerConnection server = jmxConnector.getMBeanServerConnection();
+        jmxConnector.addConnectionNotificationListener(this::handleConnectionNotification, null, server);
         return server;
     }
 
@@ -194,11 +218,7 @@ public class DataConnector implements Runnable {
     private void handleConnectionNotification(Notification notification, Object serverConnection) {
         System.out.println(notification.getType() + ": " + notification.getMessage());
         if (JMXConnectionNotification.CLOSED.equals(notification.getType())) {
-            status = "Disconnected";
-            connected = false;
-            synchronized (DataConnector.class) {
-                DataConnector.class.notify();
-            }
+            transitionTo(State.Disconnected);
         }
     }
 
@@ -233,6 +253,6 @@ public class DataConnector implements Runnable {
     }
 
     public boolean running() {
-        return shouldRun;
+        return status != State.Disconnected;
     }
 }

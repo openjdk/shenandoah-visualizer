@@ -53,6 +53,7 @@ class EventLog<T extends Timed> {
         }
 
         events.add(t);
+        System.out.println("Added snapshot: " + t.time() + ", referenceTime: " + referenceTime + ", cursor: " + cursor);
 
         if (referenceTime == 0) {
             referenceTime = t.time();

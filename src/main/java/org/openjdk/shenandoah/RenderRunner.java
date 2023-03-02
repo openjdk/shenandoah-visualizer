@@ -52,6 +52,7 @@ public class RenderRunner implements Runnable {
     public synchronized void loadPlayback(String filePath) {
         EventLog<Snapshot> newEvents = new EventLog<>(TimeUnit.MILLISECONDS);
         try {
+            lastUpdateNanos = 0;
             liveData.stopConnector();
             DataLogProvider.loadSnapshots(filePath, newEvents);
             events = newEvents;
@@ -67,6 +68,7 @@ public class RenderRunner implements Runnable {
         }
 
         EventLog<Snapshot> newEvents = new EventLog<>(TimeUnit.MILLISECONDS);
+        lastUpdateNanos = 0;
         liveData.startConnector();
         newEvents.add(liveData.snapshot());
         newEvents.stepBy(1);
@@ -74,19 +76,23 @@ public class RenderRunner implements Runnable {
     }
 
     public synchronized void run() {
-        if (liveData.isConnected()) {
-            events.add(liveData.snapshot());
-        }
-
-        long now = System.nanoTime();
-        if (lastUpdateNanos != 0) {
-            if (!isPaused) {
-                long elapsed = (long)((now - lastUpdateNanos) * playbackSpeed);
-                events.advanceBy(elapsed, TimeUnit.NANOSECONDS);
+        try {
+            if (liveData.isConnected()) {
+                events.add(liveData.snapshot());
             }
+
+            long now = System.nanoTime();
+            if (lastUpdateNanos != 0) {
+                if (!isPaused) {
+                    long elapsed = (long)((now - lastUpdateNanos) * playbackSpeed);
+                    events.advanceBy(elapsed, TimeUnit.NANOSECONDS);
+                }
+            }
+            lastUpdateNanos = now;
+            frames.forEach(JFrame::repaint);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        lastUpdateNanos = now;
-        frames.forEach(JFrame::repaint);
     }
 
     public synchronized Snapshot snapshot() {

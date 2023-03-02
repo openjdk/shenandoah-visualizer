@@ -46,29 +46,32 @@ public class DataProvider {
     private LongMonitor[] data;
     private LongMonitor status;
 
+    private MonitoredVm vm;
 
     public DataProvider() {
         connector = new DataConnector(this::setMonitoredVm);
     }
 
     private void setMonitoredVm(MonitoredVm vm) {
-        LongMonitor max_regions_mon = getMonitor(vm,"sun.gc.shenandoah.regions.max_regions");
+        this.vm = vm;
+
+        LongMonitor max_regions_mon = getMonitor("sun.gc.shenandoah.regions.max_regions");
         maxRegions = (int) max_regions_mon.longValue();
         //Reads in the version of the garbage collector
-        LongMonitor protocol_version_mon = getMonitor(vm, "sun.gc.shenandoah.regions.protocol_version");
+        LongMonitor protocol_version_mon = getMonitor("sun.gc.shenandoah.regions.protocol_version");
         if (protocol_version_mon == null) {
             protocolVersion = ORIGINAL_VERSION;
         } else {
             protocolVersion = protocol_version_mon.longValue();
         }
-        //System.out.println("The version of the Shenandoah is " + protocolVersion);
-        LongMonitor max_size_mon = getMonitor(vm,"sun.gc.shenandoah.regions.region_size");
+
+        LongMonitor max_size_mon = getMonitor("sun.gc.shenandoah.regions.region_size");
         maxSize = max_size_mon.longValue();
-        status = getMonitor(vm, "sun.gc.shenandoah.regions.status");
+        status = getMonitor("sun.gc.shenandoah.regions.status");
 
         data = new LongMonitor[maxRegions];
         for (int i = 0; i < maxRegions; i++) {
-            LongMonitor mon = getMonitor(vm,"sun.gc.shenandoah.regions.region." + i + ".data");
+            LongMonitor mon = getMonitor("sun.gc.shenandoah.regions.region." + i + ".data");
             if (mon != null) {
                 data[i] = mon;
             } else {
@@ -78,9 +81,8 @@ public class DataProvider {
         }
     }
 
-    private static <T> T getMonitor(MonitoredVm vm, String key) {
+    private <T> T getMonitor(String key) {
         try {
-            //noinspection unchecked
             return (T) vm.findByName(key);
         } catch (MonitorException e) {
             throw new IllegalStateException(e);
