@@ -24,6 +24,8 @@
  */
 package org.openjdk.shenandoah;
 
+import org.HdrHistogram.Histogram;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -60,6 +62,13 @@ public class StatusPanel extends JPanel {
         g.drawString(usageStatusLine(snapshot), 0, ++line * LINE);
         g.drawString(liveStatusLine(snapshot), 0, ++line * LINE);
 
+        Histogram histogram = snapshot.getSafepointTime();
+        if (histogram != null) {
+            String pausesText = String.format("GC Pauses: P100=%d, P95=%d, P90=%d",
+                    histogram.getMaxValue(), histogram.getValueAtPercentile(95), histogram.getValueAtPercentile(90));
+            g.drawString(pausesText, 0, ++line * LINE);
+        }
+
         renderTimeLineLegendItem(g, LINE, Colors.OLD[1], ++line, "Old Marking (OM)");
         renderTimeLineLegendItem(g, LINE, Colors.YOUNG[1], ++line, "Young Marking (M)");
         renderTimeLineLegendItem(g, LINE, Colors.YOUNG[2], ++line, "Young Evacuation (E)");
@@ -75,10 +84,14 @@ public class StatusPanel extends JPanel {
 
     private static String getStatus(Snapshot snapshot) {
         switch (snapshot.phase()) {
-            case IDLE:          return " Idle";
-            case EVACUATING:    return " Evacuating";
-            case UPDATE_REFS:   return " Updating Refs";
-            case UNKNOWN:       return " Unknown";
+            case IDLE:
+                return " Idle";
+            case EVACUATING:
+                return " Evacuating";
+            case UPDATE_REFS:
+                return " Updating Refs";
+            case UNKNOWN:
+                return " Unknown";
             case MARKING:
                 String status = " Marking";
                 if (snapshot.getOldPhase() == Phase.MARKING) {

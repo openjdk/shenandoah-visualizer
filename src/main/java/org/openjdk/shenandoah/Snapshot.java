@@ -152,7 +152,6 @@ public class Snapshot implements Timed {
         return oldPhase;
     }
 
-    // TODO: Restore pause time monitoring for 'real time' mode.
     public Histogram getSafepointTime() {
         return histogram;
     }
