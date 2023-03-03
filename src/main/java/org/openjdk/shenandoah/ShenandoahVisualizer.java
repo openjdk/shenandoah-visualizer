@@ -35,11 +35,7 @@ package org.openjdk.shenandoah;
 
  class ShenandoahVisualizer {
 
-    private static final int INITIAL_WIDTH = 2000;
-    private static final int INITIAL_HEIGHT = 1600;
-    static final int KILO = 1024;
-
-    public static void main(String[] args) {
+     public static void main(String[] args) {
         String vmIdentifier = null;
         String filePath = null;
 
@@ -71,7 +67,7 @@ package org.openjdk.shenandoah;
         JFrame frame = new JFrame();
         frame.setLayout(new GridBagLayout());
         frame.setTitle("Shenandoah GC Visualizer");
-        frame.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
+        frame.setSize(LayoutConstants.INITIAL_WIDTH, LayoutConstants.INITIAL_HEIGHT);
 
         final RenderRunner renderRunner = new RenderRunner(frame);
         if (filePath != null) {

@@ -30,6 +30,7 @@ import java.awt.*;
 import static org.openjdk.shenandoah.LayoutConstants.LINE;
 
 public class StatusPanel extends JPanel {
+    static final int KILO = 1024;
     private final RenderRunner renderRunner;
 
     public StatusPanel(RenderRunner renderRunner) {
@@ -55,7 +56,7 @@ public class StatusPanel extends JPanel {
         g.setColor(Color.BLACK);
         g.drawString("GC: " + status, 0, ++line * LINE);
         g.drawString("Mode: " + mode, 0, ++line * LINE);
-        g.drawString("Total: " + (snapshot.total() / ShenandoahVisualizer.KILO) + " MB", 0, ++line * LINE);
+        g.drawString("Total: " + (snapshot.total() / KILO) + " MB", 0, ++line * LINE);
         g.drawString(usageStatusLine(snapshot), 0, ++line * LINE);
         g.drawString(liveStatusLine(snapshot), 0, ++line * LINE);
 
@@ -91,15 +92,15 @@ public class StatusPanel extends JPanel {
 
     protected String liveStatusLine(Snapshot snapshot) {
         return "Live (Green): MB: T:" +
-                snapshot.live() / ShenandoahVisualizer.KILO + " Y:" +
-                snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::live) / ShenandoahVisualizer.KILO + " O:" +
-                snapshot.generationStat(RegionAffiliation.OLD, RegionStat::live) / ShenandoahVisualizer.KILO;
+                snapshot.live() / KILO + " Y:" +
+                snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::live) / KILO + " O:" +
+                snapshot.generationStat(RegionAffiliation.OLD, RegionStat::live) / KILO;
     }
 
     protected String usageStatusLine(Snapshot snapshot) {
         return "Used (White): MB: T:" +
-                snapshot.used() / ShenandoahVisualizer.KILO + " Y:" +
-                snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::used) / ShenandoahVisualizer.KILO + " O:" +
-                snapshot.generationStat(RegionAffiliation.OLD, RegionStat::used) / ShenandoahVisualizer.KILO;
+                snapshot.used() / KILO + " Y:" +
+                snapshot.generationStat(RegionAffiliation.YOUNG, RegionStat::used) / KILO + " O:" +
+                snapshot.generationStat(RegionAffiliation.OLD, RegionStat::used) / KILO;
     }
 }
