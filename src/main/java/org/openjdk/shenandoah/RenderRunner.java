@@ -36,6 +36,7 @@ public class RenderRunner implements Runnable {
     private long lastUpdateNanos;
     private EventLog<Snapshot> events;
     private boolean isPaused;
+    private boolean isLive;
     private double playbackSpeed;
 
     private final DataProvider liveData;
@@ -56,6 +57,7 @@ public class RenderRunner implements Runnable {
             liveData.stopConnector();
             DataLogProvider.loadSnapshots(filePath, newEvents);
             events = newEvents;
+            isLive = false;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -69,6 +71,7 @@ public class RenderRunner implements Runnable {
         lastUpdateNanos = 0;
         liveData.startConnector();
         events = new EventLog<>(TimeUnit.MILLISECONDS);
+        isLive = true;
     }
 
     public synchronized void run() {
@@ -119,7 +122,7 @@ public class RenderRunner implements Runnable {
         return isPaused;
     }
 
-    public boolean isLive() { return liveData.running(); }
+    public boolean isLive() { return isLive; }
 
     public void togglePlayback() {
         isPaused = !isPaused;
@@ -150,6 +153,6 @@ public class RenderRunner implements Runnable {
     }
 
     public String status() {
-        return liveData.status();
+        return isLive ? liveData.status() : "Recorded";
     }
 }

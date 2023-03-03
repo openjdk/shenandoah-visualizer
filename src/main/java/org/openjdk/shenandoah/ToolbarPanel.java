@@ -33,17 +33,14 @@ import java.text.ParseException;
 
 public class ToolbarPanel extends JPanel
         implements ActionListener {
-    private static final int INITIAL_WIDTH = 2000;
-    private static final int INITIAL_HEIGHT = 1200;
 
     private static final String BACK_1 = "Step back 1";
     private static final String BACK_5 = "Step back 5";
-    private static final String PLAY_PAUSE = "play/pause";
+    private static final String PLAY_PAUSE = "Pause";
     private static final String FORWARD_1 = "Step forward 1";
     private static final String FORWARD_5 = "Step forward 5";
     private static final String END_SNAPSHOT = "End snapshot";
 
-    private static final String PLAYBACK = "Playback";
     private static final String REALTIME = "Realtime";
     private static final String CHOOSE_FILE = "choose file";
 
@@ -58,7 +55,7 @@ public class ToolbarPanel extends JPanel
     private JSpinner speedSpinner;
     private JSpinner.NumberEditor speedEditor;
     private final JTextField fileNameField, lastActionField, modeField, timestampField;
-    private final JSlider slider = new JSlider();
+    private final JSlider slider;
 
     public boolean speedButtonPressed = false;
 
@@ -68,12 +65,10 @@ public class ToolbarPanel extends JPanel
 
         this.renderRunner = renderRunner;
 
-        setPreferredSize(new Dimension(INITIAL_WIDTH, INITIAL_HEIGHT));
-
         JToolBar fileToolbar = new JToolBar();
         fileToolbar.setFloatable(false);
 
-        realtimeModeButton = new JButton("Switch to Realtime");
+        realtimeModeButton = new JButton("Switch to Live");
         realtimeModeButton.setActionCommand(REALTIME);
         realtimeModeButton.addActionListener(this);
         realtimeModeButton.setFocusable(false);
@@ -85,29 +80,21 @@ public class ToolbarPanel extends JPanel
         fileButton.setFocusable(false);
         fileToolbar.add(fileButton);
 
+        fileNameField = new JTextField();
+        fileNameField.setEditable(false);
+        fileNameField.setFocusable(false);
+        fileToolbar.add(fileNameField);
+
+        slider = new JSlider();
         slider.setMaximum(renderRunner.snapshotCount());
         slider.setMinimum(0);
         slider.setOrientation(SwingConstants.HORIZONTAL);
         slider.setValue(0);
         slider.setFocusable(false);
 
-        fileNameField = new JTextField();
-        fileNameField.setEditable(false);
-        fileNameField.setFocusable(false);
-        fileToolbar.add(fileNameField);
-
-        {
-            GridBagConstraints c = new GridBagConstraints();
-            c.fill = GridBagConstraints.BOTH;
-            c.gridx = 0;
-            c.gridy = 1;
-            c.weightx = 2;
-            c.weighty = 1;
-            add(fileToolbar, c);
-        }
-
         replayToolbar = new JToolBar();
         replayToolbar.setFloatable(false);
+        replayToolbar.setPreferredSize(new Dimension(400, 10));
 
         statusToolbar = new JToolBar();
         statusToolbar.setFloatable(false);
@@ -155,6 +142,16 @@ public class ToolbarPanel extends JPanel
             c.weightx = 3;
             c.weighty = 1;
             add(slider, c);
+        }
+
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.BOTH;
+            c.gridx = 0;
+            c.gridy = 1;
+            c.weightx = 2;
+            c.weighty = 1;
+            add(fileToolbar, c);
         }
 
         {
@@ -274,7 +271,7 @@ public class ToolbarPanel extends JPanel
         backOneButton.setFocusable(false);
         replayToolbar.add(this.backOneButton);
 
-        this.playPauseButton = new JButton("Play/Pause");
+        this.playPauseButton = new JButton(PLAY_PAUSE);
         playPauseButton.setActionCommand(PLAY_PAUSE);
         playPauseButton.addActionListener(this);
         playPauseButton.setFocusable(false);
@@ -405,13 +402,9 @@ public class ToolbarPanel extends JPanel
     public void actionPerformed(ActionEvent a) {
         String cmd = a.getActionCommand();
         if (CHOOSE_FILE.equals(cmd)) {
-            modeField.setText(PLAYBACK);
-            realtimeModeButton.setEnabled(true);
             setLastActionField("Switched to recorded playback mode.");
         } else if (REALTIME.equals(cmd)) {
             setLastActionField("Switched to live playback mode.");
-            modeField.setText(REALTIME);
-            realtimeModeButton.setEnabled(false);
         } else if (!(PLAY_PAUSE.equals(cmd) || SPEED_0_5.equals(cmd) || SPEED_2.equals(cmd) || SPEED_RESET.equals(cmd))) {
             setLastActionField(cmd + " button pressed.");
         }
@@ -423,6 +416,7 @@ public class ToolbarPanel extends JPanel
         slider.setValue(renderRunner.cursor());
         realtimeModeButton.setEnabled(!renderRunner.isLive());
         modeField.setText(renderRunner.status());
+        playPauseButton.setText(renderRunner.isPaused() ? "Play" : "Pause");
         super.paint(g);
     }
 }

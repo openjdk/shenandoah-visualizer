@@ -126,8 +126,4 @@ public class DataProvider {
     public void setConnectionTarget(String vmIdentifier) {
         connector.connectTo(vmIdentifier);
     }
-
-    public boolean running() {
-        return connector.running();
-    }
 }

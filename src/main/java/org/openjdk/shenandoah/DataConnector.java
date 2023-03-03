@@ -251,8 +251,4 @@ public class DataConnector implements Runnable {
     private GarbageCollectionNotificationInfo asGcNotification(Notification notification) {
         return GarbageCollectionNotificationInfo.from((CompositeData) notification.getUserData());
     }
-
-    public boolean running() {
-        return status != State.Disconnected;
-    }
 }
