@@ -53,7 +53,6 @@ class EventLog<T extends Timed> {
         }
 
         events.add(t);
-        System.out.println("Added snapshot: " + t.time() + ", referenceTime: " + referenceTime + ", cursor: " + cursor);
 
         if (referenceTime == 0) {
             referenceTime = t.time();
@@ -76,8 +75,10 @@ class EventLog<T extends Timed> {
     }
 
     public void stepTo(int value) {
-        cursor = clamp(value, events.size());
-        referenceTime = latest().time();
+        if (events.size() > 0) {
+            cursor = clamp(value, events.size());
+            referenceTime = current().time();
+        }
     }
 
     public synchronized void stepToEnd() {
@@ -90,9 +91,11 @@ class EventLog<T extends Timed> {
     }
 
     public void advanceBy(long duration, TimeUnit timeUnit) {
-        long eventTime = eventTimeUnit.convert(duration, timeUnit);
-        long pointInTime = referenceTime + eventTime;
-        advanceTo(pointInTime);
+        if (referenceTime > 0) {
+            long eventTime = eventTimeUnit.convert(duration, timeUnit);
+            long pointInTime = referenceTime + eventTime;
+            advanceTo(pointInTime);
+        }
     }
 
     private void advanceTo(long pointInTime) {
@@ -106,7 +109,7 @@ class EventLog<T extends Timed> {
         referenceTime = pointInTime;
     }
 
-    public synchronized T latest() {
+    public synchronized T current() {
         if (cursor == 0) {
             return null;
         }

@@ -56,7 +56,6 @@ public class RenderRunner implements Runnable {
             liveData.stopConnector();
             DataLogProvider.loadSnapshots(filePath, newEvents);
             events = newEvents;
-            events.stepBy(1);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -67,18 +66,18 @@ public class RenderRunner implements Runnable {
             liveData.setConnectionTarget(vmIdentifier);
         }
 
-        EventLog<Snapshot> newEvents = new EventLog<>(TimeUnit.MILLISECONDS);
         lastUpdateNanos = 0;
         liveData.startConnector();
-        newEvents.add(liveData.snapshot());
-        newEvents.stepBy(1);
-        events = newEvents;
+        events = new EventLog<>(TimeUnit.MILLISECONDS);
     }
 
     public synchronized void run() {
         try {
             if (liveData.isConnected()) {
-                events.add(liveData.snapshot());
+                Snapshot snapshot = liveData.snapshot();
+                if (snapshot != null) {
+                    events.add(snapshot);
+                }
             }
 
             long now = System.nanoTime();
@@ -96,7 +95,8 @@ public class RenderRunner implements Runnable {
     }
 
     public synchronized Snapshot snapshot() {
-        return events.latest();
+        Snapshot latest = events.current();
+        return latest != null ? latest : DataProvider.DISCONNECTED;
     }
 
     public void addPopup(JFrame popup) {

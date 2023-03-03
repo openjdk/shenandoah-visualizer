@@ -37,7 +37,7 @@ import java.util.List;
 public class DataProvider {
     private static final long ORIGINAL_VERSION = 1;
     private static final long LATEST_VERSION = 2;
-    private static final Snapshot DISCONNECTED = new Snapshot(System.currentTimeMillis(), 1024, LATEST_VERSION, Collections.emptyList(), 0, new Histogram(2));
+    static final Snapshot DISCONNECTED = new Snapshot(System.currentTimeMillis(), 1024, LATEST_VERSION, Collections.emptyList(), 0, new Histogram(2));
     private final DataConnector connector;
 
     private int maxRegions;
@@ -95,7 +95,7 @@ public class DataProvider {
 
     public Snapshot snapshot() {
         if (!connector.isConnected()) {
-            return DISCONNECTED;
+            return null;
         }
 
         List<RegionStat> stats = new ArrayList<>();

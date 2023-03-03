@@ -45,7 +45,7 @@ public class EventLogTest {
     public void testFetchingLatest() {
         EventLog<Event> log = createEventLog(1, 2, 3);
         log.stepBy(1);
-        Assert.assertEquals(new Event(1), log.latest());
+        Assert.assertEquals(new Event(1), log.current());
     }
     @Test
     public void testThatSteppingForwardIncreasesRange() {
