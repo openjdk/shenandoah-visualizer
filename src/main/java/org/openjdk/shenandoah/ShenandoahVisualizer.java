@@ -156,6 +156,9 @@ package org.openjdk.shenandoah;
         toolbarPanel.requestFocusInWindow();
 
         frame.setVisible(true);
+        var history = new RegionHistory(renderRunner);
+        history.setVisible(true);
+        renderRunner.addPopup(history);
 
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
