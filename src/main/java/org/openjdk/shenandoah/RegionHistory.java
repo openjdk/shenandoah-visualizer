@@ -19,6 +19,8 @@ public class RegionHistory extends JFrame implements DocumentListener {
 
     private final RegionSelectionParser parser;
 
+    private final JLabel status;
+
     public RegionHistory(RenderRunner renderRunner) {
         this.renderRunner = renderRunner;
         this.parser = new RegionSelectionParser();
@@ -35,33 +37,34 @@ public class RegionHistory extends JFrame implements DocumentListener {
         regionInput.getDocument().addDocumentListener(this);
         regionSelection.add(regionInput);
         var historyPanel = new RegionHistoryPanel();
+        status = new JLabel();
 
         content.add(regionSelection, BorderLayout.NORTH);
         content.add(historyPanel, BorderLayout.CENTER);
+        content.add(status, BorderLayout.SOUTH);
     }
 
     @Override
     public void insertUpdate(DocumentEvent e) {
-        try {
-            Document document = e.getDocument();
-            updateRegionSection(document.getText(0, document.getLength()));
-        } catch (BadLocationException ex) {
-            throw new RuntimeException(ex);
-        }
+        onTextUpdated(e);
     }
 
     @Override
     public void removeUpdate(DocumentEvent e) {
+        onTextUpdated(e);
+    }
+
+    @Override
+    public void changedUpdate(DocumentEvent e) {
+    }
+
+    private void onTextUpdated(DocumentEvent e) {
         try {
             Document document = e.getDocument();
             updateRegionSection(document.getText(0, document.getLength()));
         } catch (BadLocationException ex) {
             throw new RuntimeException(ex);
         }
-    }
-
-    @Override
-    public void changedUpdate(DocumentEvent e) {
     }
 
     private void updateRegionSection(String expression) {
@@ -69,8 +72,9 @@ public class RegionHistory extends JFrame implements DocumentListener {
             List<Integer> selection = parser.parse(expression);
             regions.clear();
             regions.addAll(selection);
+            status.setText("");
         } catch (Exception e) {
-            // TODO: Show parse errors somewhere
+            status.setText(e.getMessage());
         }
     }
 

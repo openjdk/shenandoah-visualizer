@@ -10,23 +10,28 @@ class RegionSelectionParser {
     int rangeStart = -1;
 
     public List<Integer> parse(String expression) {
-        Collection<Integer> ints = new HashSet<>();
-        for (int i = 0, n = expression.length(); i < n; ++i) {
-            char c = expression.charAt(i);
-            if (Character.isDigit(c)) {
-                sb.append(c);
-            } else if (c == ',') {
-                consumeExpression(ints);
-            } else if (c == '-') {
-                rangeStart = consumeBuffer();
+        try {
+            Collection<Integer> ints = new HashSet<>();
+            for (int i = 0, n = expression.length(); i < n; ++i) {
+                char c = expression.charAt(i);
+                if (Character.isDigit(c)) {
+                    sb.append(c);
+                } else if (c == ',') {
+                    consumeExpression(ints);
+                } else if (c == '-') {
+                    rangeStart = consumeBuffer();
+                }
             }
+            if (!sb.isEmpty()) {
+                consumeExpression(ints);
+            }
+            List<Integer> sorted = new ArrayList<>(ints);
+            sorted.sort(Integer::compareTo);
+            return sorted;
+        } finally {
+            rangeStart = -1;
+            sb.setLength(0);
         }
-        if (!sb.isEmpty()) {
-            consumeExpression(ints);
-        }
-        List<Integer> sorted = new ArrayList<>(ints);
-        sorted.sort(Integer::compareTo);
-        return sorted;
     }
 
     private void consumeExpression(Collection<Integer> ints) {
