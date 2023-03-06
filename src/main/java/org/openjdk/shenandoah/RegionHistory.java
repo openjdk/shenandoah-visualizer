@@ -11,7 +11,7 @@ import java.util.List;
 public class RegionHistory extends JFrame implements DocumentListener {
     public static final String DEFAULT_REGION_SELECTION = "0, 100 - 130, 2000";
     public static final int MIN_REGION_HEIGHT = 5;
-    private static final int MAX_REGION_HEIGHT = 15;
+    private static final int MAX_REGION_HEIGHT = 25;
 
     private final RenderRunner renderRunner;
 
@@ -61,7 +61,8 @@ public class RegionHistory extends JFrame implements DocumentListener {
     }
 
     @Override
-    public void changedUpdate(DocumentEvent e) {}
+    public void changedUpdate(DocumentEvent e) {
+    }
 
     private void updateRegionSection(String expression) {
         try {
@@ -77,14 +78,13 @@ public class RegionHistory extends JFrame implements DocumentListener {
         @Override
         public void paint(Graphics g) {
             // TODO: Scroll bars?
-            // TODO: Add timestamps in a footer for reference.
             // TODO: Fix keyboard shortcuts for this window
             // TODO: Tooltips for region detail
             if (regions.isEmpty()) {
                 g.drawString("No regions selected.", 10, 10);
                 return;
             }
-            
+
             Rectangle viewport = g.getClipBounds();
             int regionSquareSize = clamp(viewport.height / regions.size());
             renderRegionLabels(g, regionSquareSize, 1);
@@ -101,10 +101,18 @@ public class RegionHistory extends JFrame implements DocumentListener {
                     RegionStat r = snapshot.get(region);
                     r.render(g, x, y, regionSquareSize, regionSquareSize);
                     y += regionSquareSize;
-                    if (y > viewport.height) {
+                    if (y > (viewport.height - regionSquareSize)) {
+                        // Break a bit early to leave room for a row with timestamps
                         break;
                     }
                 }
+
+                y += regionSquareSize;
+                if (i % 10 == 0) {
+                    g.setColor(Color.BLACK);
+                    g.drawString(snapshot.time() + "ms", x, y);
+                }
+
                 if (x > viewport.width) {
                     break;
                 }
@@ -120,7 +128,7 @@ public class RegionHistory extends JFrame implements DocumentListener {
             }
         }
     }
-    
+
     private static int clamp(int value) {
         return Math.min(Math.max(MIN_REGION_HEIGHT, value), MAX_REGION_HEIGHT);
     }
