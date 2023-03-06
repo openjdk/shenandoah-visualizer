@@ -6,6 +6,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
 import java.util.List;
 
 public class RegionHistory extends JFrame implements DocumentListener {
@@ -21,7 +22,7 @@ public class RegionHistory extends JFrame implements DocumentListener {
 
     private final JLabel status;
 
-    public RegionHistory(RenderRunner renderRunner) {
+    public RegionHistory(RenderRunner renderRunner, KeyAdapter keyListener) {
         this.renderRunner = renderRunner;
         this.parser = new RegionSelectionParser();
         this.regions = parser.parse(DEFAULT_REGION_SELECTION);
@@ -37,6 +38,8 @@ public class RegionHistory extends JFrame implements DocumentListener {
         regionInput.getDocument().addDocumentListener(this);
         regionSelection.add(regionInput);
         var historyPanel = new RegionHistoryPanel();
+        historyPanel.setFocusable(true);
+        historyPanel.addKeyListener(keyListener);
         status = new JLabel();
 
         content.add(regionSelection, BorderLayout.NORTH);
@@ -82,7 +85,6 @@ public class RegionHistory extends JFrame implements DocumentListener {
         @Override
         public void paint(Graphics g) {
             // TODO: Scroll bars?
-            // TODO: Fix keyboard shortcuts for this window
             // TODO: Tooltips for region detail
             if (regions.isEmpty()) {
                 g.drawString("No regions selected.", 10, 10);

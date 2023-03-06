@@ -156,7 +156,7 @@ package org.openjdk.shenandoah;
         toolbarPanel.requestFocusInWindow();
 
         frame.setVisible(true);
-        var history = new RegionHistory(renderRunner);
+        var history = new RegionHistory(renderRunner, keyShortcutAdapter);
         history.setVisible(true);
         renderRunner.addPopup(history);
 
