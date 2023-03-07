@@ -134,9 +134,12 @@
              content.add(legendPanel, c);
          }
 
-         JPanel toolbarPanel = new ToolbarPanel(renderRunner, keyShortcutAdapter);
+         var toolbarPanel = new ToolbarPanel(renderRunner, keyShortcutAdapter);
          toolbarPanel.setFocusable(true);
          toolbarPanel.requestFocusInWindow();
+         if (filePath != null) {
+             toolbarPanel.setFileNameField(filePath);
+         }
 
          add(toolbarPanel, BorderLayout.SOUTH);
          add(content, BorderLayout.CENTER);
