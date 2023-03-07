@@ -25,19 +25,23 @@
 package org.openjdk.shenandoah;
 
 import javax.swing.*;
-import java.io.IOException;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class RenderRunner implements Runnable {
+    private final ScheduledExecutorService service;
     private long lastUpdateNanos;
-    private EventLog<Snapshot> events;
+    private volatile EventLog<Snapshot> events;
     private boolean isPaused;
     private boolean isLive;
     private double playbackSpeed;
+    private String playbackStatus = "";
 
     private final DataProvider liveData;
 
@@ -48,19 +52,20 @@ public class RenderRunner implements Runnable {
         this.frames.add(frame);
         this.playbackSpeed = 1.0;
         this.liveData = new DataProvider();
+        this.service = Executors.newScheduledThreadPool(2);
+        service.scheduleAtFixedRate(this, 0, 100, TimeUnit.MILLISECONDS);
     }
 
     public synchronized void loadPlayback(String filePath) {
-        EventLog<Snapshot> newEvents = new EventLog<>(TimeUnit.MILLISECONDS);
-        try {
-            lastUpdateNanos = 0;
-            liveData.stopConnector();
-            DataLogProvider.loadSnapshots(filePath, newEvents);
-            events = newEvents;
+        lastUpdateNanos = 0;
+        liveData.stopConnector();
+        events = new EventLog<>(TimeUnit.MILLISECONDS);
+        playbackStatus = "Loading";
+        service.submit(() -> {
+            DataLogProvider.loadSnapshots(filePath, events);
             isLive = false;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+            playbackStatus = "Recorded";
+        });
     }
 
     public synchronized void loadLive(String vmIdentifier) {
@@ -153,6 +158,12 @@ public class RenderRunner implements Runnable {
     }
 
     public String status() {
-        return isLive ? liveData.status() : "Recorded";
+        return isLive ? liveData.status() : playbackStatus;
+    }
+
+    public void shutdown() {
+        service.shutdown();
+        frames.forEach(Window::dispose);
+        System.exit(0);
     }
 }

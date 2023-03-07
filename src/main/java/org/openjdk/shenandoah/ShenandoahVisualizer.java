@@ -29,13 +29,8 @@
  import java.awt.event.KeyEvent;
  import java.awt.event.WindowAdapter;
  import java.awt.event.WindowEvent;
- import java.util.concurrent.Executors;
- import java.util.concurrent.ScheduledExecutorService;
- import java.util.concurrent.TimeUnit;
 
  class ShenandoahVisualizer extends JFrame {
-
-     private final ScheduledExecutorService service;
 
      public static void main(String[] args) {
          String vmIdentifier = null;
@@ -81,10 +76,6 @@
          } else {
              renderRunner.loadLive(vmIdentifier);
          }
-
-         // Executors
-         service = Executors.newScheduledThreadPool(1);
-         service.scheduleAtFixedRate(renderRunner, 0, 100, TimeUnit.MILLISECONDS);
 
          KeyAdapter keyShortcutAdapter = new KeyboardShortcuts(renderRunner);
 
@@ -152,9 +143,7 @@
 
          addWindowListener(new WindowAdapter() {
              public void windowClosing(WindowEvent e) {
-                 service.shutdown();
-                 ShenandoahVisualizer.this.dispose();
-                 System.exit(0);
+                 renderRunner.shutdown();
              }
          });
      }

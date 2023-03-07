@@ -25,7 +25,6 @@
 package org.openjdk.shenandoah;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,9 +36,9 @@ import java.util.concurrent.TimeUnit;
 public class DataLogProvider {
     private static final long LATEST_VERSION = 2;
 
-    public static void loadSnapshots(String filePath, EventLog<Snapshot> events) throws IOException, NumberFormatException {
+    public static void loadSnapshots(String filePath, EventLog<Snapshot> events) {
         if (!isValidPath(filePath)) {
-            throw new FileNotFoundException("Invalid file path supplied. Please try again.");
+            throw new IllegalArgumentException("Invalid file path supplied. Please try again.");
         }
 
         long protocolVersion = LATEST_VERSION;
@@ -70,6 +69,8 @@ public class DataLogProvider {
 
                 metaDataLine = br.readLine();
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
