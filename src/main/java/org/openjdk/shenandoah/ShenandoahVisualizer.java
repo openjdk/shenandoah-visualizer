@@ -178,23 +178,13 @@ package org.openjdk.shenandoah;
          @Override
          public void keyPressed(KeyEvent e) {
              super.keyPressed(e);
-             if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                 renderRunner.stepBy(-1);
-             }
-             if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-                 renderRunner.stepBy(-5);
-             }
-             if (e.getKeyCode() == KeyEvent.VK_SPACE) {
-                 renderRunner.togglePlayback();
-             }
-             if (e.getKeyCode() == KeyEvent.VK_UP) {
-                 renderRunner.stepBy(5);
-             }
-             if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                 renderRunner.stepBy(1);
-             }
-             if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                 renderRunner.stepToEnd();
+             switch (e.getKeyCode()) {
+                 case KeyEvent.VK_LEFT -> renderRunner.stepBy(-1);
+                 case KeyEvent.VK_DOWN -> renderRunner.stepBy(-5);
+                 case KeyEvent.VK_RIGHT -> renderRunner.stepBy(1);
+                 case KeyEvent.VK_UP -> renderRunner.stepBy(5);
+                 case KeyEvent.VK_SPACE -> renderRunner.togglePlayback();
+                 case KeyEvent.VK_ENTER -> renderRunner.stepToEnd();
              }
          }
      }
