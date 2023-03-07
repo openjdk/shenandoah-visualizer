@@ -85,7 +85,7 @@ public class RegionHistory extends JFrame implements DocumentListener {
         @Override
         public void paint(Graphics g) {
             // TODO: Scroll bars?
-            // TODO: Tooltips for region detail
+            // TODO: Tooltips for region detail?
             if (regions.isEmpty()) {
                 g.drawString("No regions selected.", 10, 10);
                 return;

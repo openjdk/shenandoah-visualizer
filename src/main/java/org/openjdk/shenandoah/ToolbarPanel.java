@@ -29,6 +29,7 @@ import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
 import java.text.ParseException;
 
 public class ToolbarPanel extends JPanel
@@ -60,13 +61,20 @@ public class ToolbarPanel extends JPanel
     public boolean speedButtonPressed = false;
 
 
-    public ToolbarPanel(RenderRunner renderRunner) {
+    public ToolbarPanel(RenderRunner renderRunner, KeyAdapter keyShortcutAdapter) {
         super(new GridBagLayout());
 
         this.renderRunner = renderRunner;
 
         JToolBar fileToolbar = new JToolBar();
         fileToolbar.setFloatable(false);
+
+        var history = new RegionHistory(renderRunner, keyShortcutAdapter);
+        renderRunner.addPopup(history);
+
+        var historyButton = new JButton("Show History");
+        historyButton.addActionListener(e -> history.setVisible(true));
+        fileToolbar.add(historyButton);
 
         realtimeModeButton = new JButton("Switch to Live");
         realtimeModeButton.setActionCommand(REALTIME);

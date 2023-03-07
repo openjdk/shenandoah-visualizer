@@ -81,7 +81,7 @@ package org.openjdk.shenandoah;
         service.scheduleAtFixedRate(renderRunner,0, 100, TimeUnit.MILLISECONDS);
 
         KeyAdapter keyShortcutAdapter = new KeyboardShortcuts(renderRunner);
-        JPanel toolbarPanel = new ToolbarPanel(renderRunner);
+        JPanel toolbarPanel = new ToolbarPanel(renderRunner, keyShortcutAdapter);
 
         JPanel legendPanel = new LegendPanel(renderRunner);
 
@@ -156,9 +156,6 @@ package org.openjdk.shenandoah;
         toolbarPanel.requestFocusInWindow();
 
         frame.setVisible(true);
-        var history = new RegionHistory(renderRunner, keyShortcutAdapter);
-        history.setVisible(true);
-        renderRunner.addPopup(history);
 
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
