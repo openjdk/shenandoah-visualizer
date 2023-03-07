@@ -93,11 +93,12 @@ public class RegionHistory extends JFrame implements DocumentListener {
 
             Rectangle viewport = g.getClipBounds();
             int regionSquareSize = clamp(viewport.height / regions.size());
-            renderRegionLabels(g, regionSquareSize, 1);
-            renderRegionHistory(g, viewport, regionSquareSize, 21);
+            renderRegionLabels(g, regionSquareSize);
+            renderRegionHistory(g, viewport, regionSquareSize);
         }
 
-        private void renderRegionHistory(Graphics g, Rectangle viewport, int regionSquareSize, int x) {
+        private void renderRegionHistory(Graphics g, Rectangle viewport, int regionSquareSize) {
+            int x = 21;
             List<Snapshot> snapshots = renderRunner.snapshots();
             for (int i = snapshots.size() - 1; i >= 0; i--) {
                 x += regionSquareSize;
@@ -125,7 +126,8 @@ public class RegionHistory extends JFrame implements DocumentListener {
             }
         }
 
-        private void renderRegionLabels(Graphics g, int regionSquareSize, int x) {
+        private void renderRegionLabels(Graphics g, int regionSquareSize) {
+            int x = 1;
             int labelStride = regionSquareSize < 10 ? 10 : 1;
             for (int i = 0; i < regions.size(); i += labelStride) {
                 int region = regions.get(i);
