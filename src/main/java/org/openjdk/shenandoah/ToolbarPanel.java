@@ -66,6 +66,8 @@ public class ToolbarPanel extends JPanel
 
         this.renderRunner = renderRunner;
 
+        addKeyListener(keyShortcutAdapter);
+
         JToolBar fileToolbar = new JToolBar();
         fileToolbar.setFloatable(false);
 

@@ -33,7 +33,9 @@
  import java.util.concurrent.ScheduledExecutorService;
  import java.util.concurrent.TimeUnit;
 
- class ShenandoahVisualizer {
+ class ShenandoahVisualizer extends JFrame {
+
+     private final ScheduledExecutorService service;
 
      public static void main(String[] args) {
          String vmIdentifier = null;
@@ -64,12 +66,16 @@
              }
          }
 
-         JFrame frame = new JFrame();
-         frame.setLayout(new BorderLayout());
-         frame.setTitle("Shenandoah GC Visualizer");
-         frame.setSize(LayoutConstants.INITIAL_WIDTH, LayoutConstants.INITIAL_HEIGHT);
+         ShenandoahVisualizer visualizer = new ShenandoahVisualizer(filePath, vmIdentifier);
+         visualizer.setVisible(true);
+     }
 
-         final RenderRunner renderRunner = new RenderRunner(frame);
+     public ShenandoahVisualizer(String filePath, String vmIdentifier) {
+         setLayout(new BorderLayout());
+         setTitle("Shenandoah GC Visualizer");
+         setSize(LayoutConstants.INITIAL_WIDTH, LayoutConstants.INITIAL_HEIGHT);
+
+         final RenderRunner renderRunner = new RenderRunner(this);
          if (filePath != null) {
              renderRunner.loadPlayback(filePath);
          } else {
@@ -77,28 +83,18 @@
          }
 
          // Executors
-         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
+         service = Executors.newScheduledThreadPool(1);
          service.scheduleAtFixedRate(renderRunner, 0, 100, TimeUnit.MILLISECONDS);
 
          KeyAdapter keyShortcutAdapter = new KeyboardShortcuts(renderRunner);
 
          JPanel content = new JPanel(new GridBagLayout());
-
-         JPanel toolbarPanel = new ToolbarPanel(renderRunner, keyShortcutAdapter);
-
          JPanel legendPanel = new LegendPanel(renderRunner);
-
          JPanel statusPanel = new StatusPanel(renderRunner);
-
          JPanel graphPanel = new GraphPanel(renderRunner);
-
          JPanel regionsPanel = new RegionPanel(renderRunner, keyShortcutAdapter);
 
          Insets pad = new Insets(10, 10, 10, 10);
-
-         toolbarPanel.addKeyListener(keyShortcutAdapter);
-         toolbarPanel.setFocusable(true);
-         toolbarPanel.requestFocusInWindow();
 
          {
              GridBagConstraints c = new GridBagConstraints();
@@ -147,14 +143,18 @@
              content.add(legendPanel, c);
          }
 
-         frame.add(toolbarPanel, BorderLayout.SOUTH);
-         frame.add(content, BorderLayout.CENTER);
+         JPanel toolbarPanel = new ToolbarPanel(renderRunner, keyShortcutAdapter);
+         toolbarPanel.setFocusable(true);
+         toolbarPanel.requestFocusInWindow();
 
-         frame.setVisible(true);
-         frame.addWindowListener(new WindowAdapter() {
+         add(toolbarPanel, BorderLayout.SOUTH);
+         add(content, BorderLayout.CENTER);
+
+         addWindowListener(new WindowAdapter() {
              public void windowClosing(WindowEvent e) {
                  service.shutdown();
-                 frame.dispose();
+                 ShenandoahVisualizer.this.dispose();
+                 System.exit(0);
              }
          });
      }
