@@ -65,7 +65,7 @@ package org.openjdk.shenandoah;
         }
 
         JFrame frame = new JFrame();
-        frame.setLayout(new GridBagLayout());
+        frame.setLayout(new BorderLayout());
         frame.setTitle("Shenandoah GC Visualizer");
         frame.setSize(LayoutConstants.INITIAL_WIDTH, LayoutConstants.INITIAL_HEIGHT);
 
@@ -81,6 +81,9 @@ package org.openjdk.shenandoah;
         service.scheduleAtFixedRate(renderRunner,0, 100, TimeUnit.MILLISECONDS);
 
         KeyAdapter keyShortcutAdapter = new KeyboardShortcuts(renderRunner);
+
+        JPanel content = new JPanel(new GridBagLayout());
+
         JPanel toolbarPanel = new ToolbarPanel(renderRunner, keyShortcutAdapter);
 
         JPanel legendPanel = new LegendPanel(renderRunner);
@@ -93,15 +96,19 @@ package org.openjdk.shenandoah;
 
         Insets pad = new Insets(10, 10, 10, 10);
 
+        toolbarPanel.addKeyListener(keyShortcutAdapter);
+        toolbarPanel.setFocusable(true);
+        toolbarPanel.requestFocusInWindow();
+
         {
             GridBagConstraints c = new GridBagConstraints();
             c.fill = GridBagConstraints.BOTH;
             c.gridx = 0;
             c.gridy = 0;
-            c.weightx = 0.8;
-            c.weighty = 0.4;
+            c.weightx = 0.9;
+            c.weighty = 0.1;
             c.insets = pad;
-            frame.add(graphPanel, c);
+            content.add(graphPanel, c);
         }
 
         {
@@ -109,22 +116,11 @@ package org.openjdk.shenandoah;
             c.fill = GridBagConstraints.BOTH;
             c.gridx = 0;
             c.gridy = 1;
-            c.weightx = 0.8;
-            c.weighty = 0.5;
+            c.weightx = 0.9;
+            c.weighty = 0.9;
             c.insets = pad;
             c.gridheight = GridBagConstraints.RELATIVE;
-            frame.add(regionsPanel, c);
-        }
-
-        {
-            GridBagConstraints c = new GridBagConstraints();
-            c.fill = GridBagConstraints.HORIZONTAL;
-            c.gridx = 0;
-            c.gridy = 2;
-            c.insets = pad;
-            c.weightx = 1;
-            c.weighty = 0.1;
-            frame.add(toolbarPanel, c);
+            content.add(regionsPanel, c);
         }
 
         {
@@ -133,10 +129,10 @@ package org.openjdk.shenandoah;
             c.fill = GridBagConstraints.BOTH;
             c.gridx = 1;
             c.gridy = 0;
-            c.weightx = 0.2;
+            c.weightx = 0.1;
             c.weighty = 0.5;
             c.insets = pad;
-            frame.add(statusPanel, c);
+            content.add(statusPanel, c);
         }
 
         {
@@ -144,19 +140,17 @@ package org.openjdk.shenandoah;
             c.fill = GridBagConstraints.BOTH;
             c.gridx = 1;
             c.gridy = 1;
-            c.weightx = 0.2;
+            c.weightx = 0.1;
             c.weighty = 0.5;
             c.insets = pad;
             c.gridheight = GridBagConstraints.REMAINDER;
-            frame.add(legendPanel, c);
+            content.add(legendPanel, c);
         }
 
-        toolbarPanel.addKeyListener(keyShortcutAdapter);
-        toolbarPanel.setFocusable(true);
-        toolbarPanel.requestFocusInWindow();
+        frame.add(toolbarPanel, BorderLayout.SOUTH);
+        frame.add(content, BorderLayout.CENTER);
 
         frame.setVisible(true);
-
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 service.shutdown();

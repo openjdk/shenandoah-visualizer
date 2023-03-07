@@ -31,7 +31,6 @@ import java.awt.event.ComponentEvent;
 import java.util.List;
 
 public class GraphPanel extends JPanel {
-    public static final int PHASE_LABEL_WIDTH = 50;
     private final RenderRunner renderRunner;
 
     int graphWidth, graphHeight;
@@ -53,7 +52,7 @@ public class GraphPanel extends JPanel {
 
         int pad = 30;
         int bandHeight = (graphHeight - pad) / 2;
-        int bandWidth = graphWidth - PHASE_LABEL_WIDTH;
+        int bandWidth = graphWidth;
         int phaseHeight = bandHeight / 4;
         double stepY = 1D * bandHeight / renderRunner.snapshot().total();
 
@@ -70,7 +69,7 @@ public class GraphPanel extends JPanel {
         int timelineMarkEndY = bandHeight + pad - 5;
         int timelineMarkTextOffsetY = bandHeight + 20;
 
-        int phaseLabelOffsetX = bandWidth + 10;
+        int phaseLabelOffsetX = bandWidth - 25;
         int phaseLabelOffsetY = bandHeight + pad + 20;
 
         g.setColor(Color.WHITE);
@@ -122,7 +121,7 @@ public class GraphPanel extends JPanel {
             g.setColor(Colors.LIVE_CSET);
             g.drawRect(snapshotStartX, (int) Math.round(startRaw - snapshot.collectionSet() * stepY), 1, 1);
 
-            g.setColor(Color.GRAY);
+            g.setColor(Color.WHITE);
             g.drawString("OM", phaseLabelOffsetX, phaseLabelOffsetY);
             g.drawString("M", phaseLabelOffsetX, phaseLabelOffsetY + phaseHeight);
             g.drawString("E", phaseLabelOffsetX, phaseLabelOffsetY + 2 * phaseHeight );
