@@ -393,7 +393,6 @@ public class ToolbarPanel extends JPanel
         if (returnValue == JFileChooser.APPROVE_OPTION) {
             String filePath = fc.getSelectedFile().getAbsolutePath();
             renderRunner.loadPlayback(filePath);
-            slider.setMaximum(renderRunner.snapshotCount());
             renderRunner.setPlaybackSpeed(1.0);
             setSpeedValue(1.0);
             setFileNameField(filePath);
@@ -423,6 +422,7 @@ public class ToolbarPanel extends JPanel
     @Override
     public void paint(Graphics g) {
         timestampField.setText(renderRunner.snapshot().time() + " ms");
+        slider.setMaximum(renderRunner.snapshotCount());
         slider.setValue(renderRunner.cursor());
         realtimeModeButton.setEnabled(!renderRunner.isLive());
         modeField.setText(renderRunner.status());

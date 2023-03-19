@@ -59,12 +59,13 @@ public class RenderRunner implements Runnable {
     public synchronized void loadPlayback(String filePath) {
         lastUpdateNanos = 0;
         liveData.stopConnector();
-        events = new EventLog<>(TimeUnit.MILLISECONDS);
         playbackStatus = "Loading";
+        events = new EventLog<>(TimeUnit.MILLISECONDS, 1);
         service.submit(() -> {
-            DataLogProvider.loadSnapshots(filePath, events);
+            events = DataLogProvider.loadSnapshots(filePath);
             isLive = false;
             playbackStatus = "Recorded";
+            System.out.println("Loaded event log: " + filePath);
         });
     }
 
@@ -75,7 +76,7 @@ public class RenderRunner implements Runnable {
 
         lastUpdateNanos = 0;
         liveData.startConnector();
-        events = new EventLog<>(TimeUnit.MILLISECONDS);
+        events = new EventLog<>(TimeUnit.MILLISECONDS, 5_000);
         isLive = true;
     }
 

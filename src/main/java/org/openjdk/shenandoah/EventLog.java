@@ -24,13 +24,13 @@
  */
 package org.openjdk.shenandoah;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 class EventLog<T extends Timed> {
-    private final List<T> events;
+    private final CircularBuffer<T> events;
     private final TimeUnit eventTimeUnit;
     private int cursor;
     private long referenceTime;
@@ -40,11 +40,19 @@ class EventLog<T extends Timed> {
     }
 
     EventLog(TimeUnit eventTimeUnit) {
-        // TODO: Use a circular buffer to prevent live sessions from growing without bound.
-        // (And to avoid having to shift all the remaining elements if we remove the oldest).
-        // Linked list could also work, but the sublist construction would need to change.
-        this.events = new ArrayList<>();
+        this.events = new CircularBuffer<>();
         this.eventTimeUnit = eventTimeUnit;
+    }
+
+    EventLog(TimeUnit eventTimeUnit, int eventLogSize) {
+        this.events = new CircularBuffer<>(eventLogSize);
+        this.eventTimeUnit = eventTimeUnit;
+    }
+
+    EventLog(TimeUnit eventTimeUnit, Collection<T> events) {
+        this.events = new CircularBuffer<>(events);
+        this.eventTimeUnit = eventTimeUnit;
+        this.referenceTime = this.events.get(0).time();
     }
 
     public synchronized void add(T t) {
@@ -99,8 +107,8 @@ class EventLog<T extends Timed> {
     }
 
     private void advanceTo(long pointInTime) {
-        for (var iter = events.listIterator(cursor); iter.hasNext(); ) {
-            var event = iter.next();
+        for (int i = cursor; i < events.size(); ++i) {
+            var event = events.get(i);
             if (pointInTime < event.time()) {
                 break;
             }

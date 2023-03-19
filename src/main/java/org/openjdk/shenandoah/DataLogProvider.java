@@ -36,13 +36,13 @@ import java.util.concurrent.TimeUnit;
 public class DataLogProvider {
     private static final long LATEST_VERSION = 2;
 
-    public static void loadSnapshots(String filePath, EventLog<Snapshot> events) {
+    public static EventLog<Snapshot> loadSnapshots(String filePath) {
         if (!isValidPath(filePath)) {
             throw new IllegalArgumentException("Invalid file path supplied. Please try again.");
         }
 
         long protocolVersion = LATEST_VERSION;
-
+        var events = new ArrayList<Snapshot>();
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String metaDataLine = br.readLine(); // timestamp status numRegions regionSize
 
@@ -72,6 +72,7 @@ public class DataLogProvider {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return new EventLog<>(TimeUnit.MILLISECONDS, events);
     }
 
     private static boolean isValidPath(String name) {
