@@ -71,11 +71,6 @@
          setSize(LayoutConstants.INITIAL_WIDTH, LayoutConstants.INITIAL_HEIGHT);
 
          final RenderRunner renderRunner = new RenderRunner(this);
-         if (filePath != null) {
-             renderRunner.loadPlayback(filePath);
-         } else {
-             renderRunner.loadLive(vmIdentifier);
-         }
 
          KeyAdapter keyShortcutAdapter = new KeyboardShortcuts(renderRunner);
 
@@ -84,6 +79,12 @@
          JPanel statusPanel = new StatusPanel(renderRunner);
          JPanel graphPanel = new GraphPanel(renderRunner);
          JPanel regionsPanel = new RegionPanel(renderRunner, keyShortcutAdapter);
+
+         if (filePath != null) {
+             renderRunner.loadPlayback(filePath);
+         } else {
+             renderRunner.loadLive(vmIdentifier);
+         }
 
          Insets pad = new Insets(10, 10, 10, 10);
 

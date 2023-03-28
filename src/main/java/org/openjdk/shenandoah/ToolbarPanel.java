@@ -96,11 +96,15 @@ public class ToolbarPanel extends JPanel
         fileToolbar.add(fileNameField);
 
         slider = new JSlider();
-        slider.setMaximum(renderRunner.snapshotCount());
         slider.setMinimum(0);
         slider.setOrientation(SwingConstants.HORIZONTAL);
         slider.setValue(0);
         slider.setFocusable(false);
+        renderRunner.onRecordingLoaded(() -> {
+            SwingUtilities.invokeLater(() -> {
+                slider.setMaximum(renderRunner.snapshotCount());
+            });
+        });
 
         replayToolbar = new JToolBar();
         replayToolbar.setFloatable(false);
@@ -422,7 +426,6 @@ public class ToolbarPanel extends JPanel
     @Override
     public void paint(Graphics g) {
         timestampField.setText(renderRunner.snapshot().time() + " ms");
-        slider.setMaximum(renderRunner.snapshotCount());
         slider.setValue(renderRunner.cursor());
         realtimeModeButton.setEnabled(!renderRunner.isLive());
         modeField.setText(renderRunner.status());

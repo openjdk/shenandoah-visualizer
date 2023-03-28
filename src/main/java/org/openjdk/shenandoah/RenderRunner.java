@@ -43,6 +43,8 @@ public class RenderRunner implements Runnable {
     private double playbackSpeed;
     private String playbackStatus = "";
 
+    private Runnable recordingLoaded;
+
     private final DataProvider liveData;
 
     private final Set<JFrame> frames;
@@ -52,19 +54,26 @@ public class RenderRunner implements Runnable {
         this.frames.add(frame);
         this.playbackSpeed = 1.0;
         this.liveData = new DataProvider();
+        this.events = new EventLog<>(TimeUnit.MILLISECONDS, 1);
         this.service = Executors.newScheduledThreadPool(2);
         service.scheduleAtFixedRate(this, 0, 100, TimeUnit.MILLISECONDS);
+    }
+
+    public void onRecordingLoaded(Runnable runnable) {
+        this.recordingLoaded = runnable;
     }
 
     public synchronized void loadPlayback(String filePath) {
         lastUpdateNanos = 0;
         liveData.stopConnector();
         playbackStatus = "Loading";
-        events = new EventLog<>(TimeUnit.MILLISECONDS, 1);
         service.submit(() -> {
-            events = DataLogProvider.loadSnapshots(filePath);
+            DataLogProvider.loadSnapshots(filePath, events);
             isLive = false;
             playbackStatus = "Recorded";
+            if (recordingLoaded != null) {
+                recordingLoaded.run();
+            }
             System.out.println("Loaded event log: " + filePath);
         });
     }

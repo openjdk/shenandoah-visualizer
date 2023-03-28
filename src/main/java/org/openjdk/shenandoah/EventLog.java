@@ -24,14 +24,13 @@
  */
 package org.openjdk.shenandoah;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 class EventLog<T extends Timed> {
-    private final CircularBuffer<T> events;
-    private final TimeUnit eventTimeUnit;
+    private CircularBuffer<T> events;
+    private TimeUnit eventTimeUnit;
     private int cursor;
     private long referenceTime;
 
@@ -47,12 +46,6 @@ class EventLog<T extends Timed> {
     EventLog(TimeUnit eventTimeUnit, int eventLogSize) {
         this.events = new CircularBuffer<>(eventLogSize);
         this.eventTimeUnit = eventTimeUnit;
-    }
-
-    EventLog(TimeUnit eventTimeUnit, Collection<T> events) {
-        this.events = new CircularBuffer<>(events);
-        this.eventTimeUnit = eventTimeUnit;
-        this.referenceTime = this.events.get(0).time();
     }
 
     public synchronized void add(T t) {
@@ -134,5 +127,11 @@ class EventLog<T extends Timed> {
 
     private static int clamp(int val, int max) {
         return Math.min(Math.max(1, val), max);
+    }
+
+    public final void load(TimeUnit eventTimeUnit, List<T> events) {
+        this.events = new CircularBuffer<>(events);
+        this.eventTimeUnit = eventTimeUnit;
+        this.referenceTime = this.events.get(0).time();
     }
 }
