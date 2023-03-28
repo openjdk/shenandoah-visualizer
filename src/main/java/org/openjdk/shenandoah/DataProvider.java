@@ -57,7 +57,7 @@ public class DataProvider {
 
         LongMonitor max_regions_mon = getMonitor("sun.gc.shenandoah.regions.max_regions");
         maxRegions = (int) max_regions_mon.longValue();
-        //Reads in the version of the garbage collector
+        // Read in the version of the garbage collector
         LongMonitor protocol_version_mon = getMonitor("sun.gc.shenandoah.regions.protocol_version");
         if (protocol_version_mon == null) {
             protocolVersion = ORIGINAL_VERSION;

@@ -67,7 +67,7 @@ public class Snapshot implements Timed {
             }
         }
 
-        //decodes for 3 bits older versions of shenandoah collector
+        // Decode 3 bits for older versions of shenandoah collector
         Phase version1_phase(long status) {
             int phase = (int) status;
             switch (phase) {
@@ -117,7 +117,7 @@ public class Snapshot implements Timed {
         this.histogram = histogram;
         this.degenActive = ((status & 0x40) >> 6) == 1;
         this.fullActive  = ((status & 0x80) >> 7) == 1;
-        //decodes differently according to different version value
+        // Decode differently according to different version value
         if (protocolVersion == 1) {
             this.globalPhase = Generation.GLOBAL.version1_phase(status);
             this.oldPhase = Phase.IDLE;

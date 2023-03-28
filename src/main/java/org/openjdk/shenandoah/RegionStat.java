@@ -73,7 +73,7 @@ public class RegionStat {
         this.affiliation = RegionAffiliation.YOUNG;
         this.showLivenessDetail = Boolean.getBoolean("show.liveness");
     }
-    //This constructor is for CounterTest
+    // This constructor is for CounterTest
     public RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float plabLvl, float sharedLvl, RegionAffiliation affiliation,RegionState state) {
         this.usedLvl = usedLvl;
         this.liveLvl = liveLvl;
