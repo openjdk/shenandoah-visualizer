@@ -279,7 +279,7 @@ class RegionStat {
         if (category < AGE_COLORS.length) {
             return AGE_COLORS[category];
         }
-        return AGE_5;
+        return Color.BLACK;
     }
 
     @Override
