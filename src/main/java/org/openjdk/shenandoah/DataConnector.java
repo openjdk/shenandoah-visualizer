@@ -70,7 +70,7 @@ class DataConnector implements Runnable {
     private JMXConnector jmxConnector;
 
     enum State {
-        Searching, Connecting, Connected, Disconnecting, Disconnected
+        SEARCHING, CONNECTING, CONNECTED, DISCONNECTING, DISCONNECTED
     }
 
     DataConnector(Consumer<MonitoredVm> monitoredVmConsumer) {
@@ -78,7 +78,7 @@ class DataConnector implements Runnable {
         this.histogramRecorder = new Recorder(2);
         this.histogram = new Histogram(2);
         this.shouldRun = true;
-        this.status = State.Disconnected;
+        this.status = State.DISCONNECTED;
         this.executor = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r);
             t.setDaemon(true);
@@ -97,12 +97,12 @@ class DataConnector implements Runnable {
             try {
                 MonitoredVm vm = findShenandoahVm();
                 if (vm != null) {
-                    transitionTo(State.Connecting);
+                    transitionTo(State.CONNECTING);
                     MBeanServerConnection server = createServiceConnection(vm);
                     subscribeToGarbageCollectorNotifications(server);
                     monitoredVmConsumer.accept(vm);
                     shouldRun = false;
-                    transitionTo(State.Connected);
+                    transitionTo(State.CONNECTED);
                 } else {
                     Thread.sleep(250);
                 }
@@ -116,7 +116,7 @@ class DataConnector implements Runnable {
     }
 
     boolean isConnected() {
-        return status == State.Connected;
+        return status == State.CONNECTED;
     }
 
     private void transitionTo(State newState) {
@@ -125,8 +125,8 @@ class DataConnector implements Runnable {
     }
 
     void start() {
-        if (status == State.Disconnected) {
-            transitionTo(State.Searching);
+        if (status == State.DISCONNECTED) {
+            transitionTo(State.SEARCHING);
             shouldRun = true;
             executor.execute(this);
         }
@@ -134,12 +134,12 @@ class DataConnector implements Runnable {
 
     void stop() {
         shouldRun = false;
-        if (status == State.Connected) {
+        if (status == State.CONNECTED) {
             executor.execute(() -> {
                 try {
-                    transitionTo(State.Disconnecting);
+                    transitionTo(State.DISCONNECTING);
                     jmxConnector.close();
-                    transitionTo(State.Disconnected);
+                    transitionTo(State.DISCONNECTED);
                 } catch (IOException e) {
                     e.printStackTrace();
                     throw new RuntimeException(e);
@@ -218,7 +218,7 @@ class DataConnector implements Runnable {
     private void handleConnectionNotification(Notification notification, Object serverConnection) {
         System.out.println(notification.getType() + ": " + notification.getMessage());
         if (JMXConnectionNotification.CLOSED.equals(notification.getType())) {
-            transitionTo(State.Disconnected);
+            transitionTo(State.DISCONNECTED);
         }
     }
 
