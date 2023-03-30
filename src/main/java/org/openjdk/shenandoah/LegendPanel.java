@@ -32,10 +32,10 @@ import java.util.Map;
 import static org.openjdk.shenandoah.LayoutConstants.LINE;
 import static org.openjdk.shenandoah.RegionState.*;
 
-public class LegendPanel extends JPanel {
+class LegendPanel extends JPanel {
     private final RenderRunner renderRunner;
 
-    public LegendPanel(RenderRunner renderRunner) {
+    LegendPanel(RenderRunner renderRunner) {
         this.renderRunner = renderRunner;
     }
 

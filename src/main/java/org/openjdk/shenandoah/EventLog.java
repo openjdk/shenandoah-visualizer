@@ -48,7 +48,7 @@ class EventLog<T extends Timed> {
         this.eventTimeUnit = eventTimeUnit;
     }
 
-    public synchronized void add(T t) {
+    synchronized void add(T t) {
         if (!events.isEmpty() && t.time() < events.get(events.size() - 1).time()) {
             throw new IllegalArgumentException("Events must be added in chronological order.");
         }
@@ -62,7 +62,7 @@ class EventLog<T extends Timed> {
         }
     }
 
-    public synchronized List<T> inRange() {
+    synchronized List<T> inRange() {
         if (events.isEmpty() || cursor == 0) {
             return Collections.emptyList();
         }
@@ -71,27 +71,27 @@ class EventLog<T extends Timed> {
         return events.subList(0, cursor);
     }
 
-    public synchronized void stepBy(int amount) {
+    synchronized void stepBy(int amount) {
         stepTo(cursor + amount);
     }
 
-    public void stepTo(int value) {
+    void stepTo(int value) {
         if (events.size() > 0) {
             cursor = clamp(value, events.size());
             referenceTime = current().time();
         }
     }
 
-    public synchronized void stepToEnd() {
+    synchronized void stepToEnd() {
         stepTo(Integer.MAX_VALUE);
     }
 
-    public synchronized  void advanceTo(long pointInTime, TimeUnit timeUnit) {
+    synchronized  void advanceTo(long pointInTime, TimeUnit timeUnit) {
         long eventTime = eventTimeUnit.convert(pointInTime, timeUnit);
         advanceTo(eventTime);
     }
 
-    public void advanceBy(long duration, TimeUnit timeUnit) {
+    void advanceBy(long duration, TimeUnit timeUnit) {
         if (referenceTime > 0) {
             long eventTime = eventTimeUnit.convert(duration, timeUnit);
             long pointInTime = referenceTime + eventTime;
@@ -110,18 +110,18 @@ class EventLog<T extends Timed> {
         referenceTime = pointInTime;
     }
 
-    public synchronized T current() {
+    synchronized T current() {
         if (cursor == 0) {
             return null;
         }
         return events.get(cursor - 1);
     }
 
-    public int size() {
+    int size() {
         return events.size();
     }
 
-    public int cursor() {
+    int cursor() {
         return cursor;
     }
 
@@ -129,7 +129,7 @@ class EventLog<T extends Timed> {
         return Math.min(Math.max(1, val), max);
     }
 
-    public final void load(TimeUnit eventTimeUnit, List<T> events) {
+    final void load(TimeUnit eventTimeUnit, List<T> events) {
         this.events = new CircularBuffer<>(events);
         this.eventTimeUnit = eventTimeUnit;
         this.referenceTime = this.events.get(0).time();

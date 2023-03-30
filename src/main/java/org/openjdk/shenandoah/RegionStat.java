@@ -30,7 +30,7 @@ import java.util.Collections;
 
 import static org.openjdk.shenandoah.Colors.*;
 
-public class RegionStat {
+class RegionStat {
 
     private static final int PERCENT_MASK      = 0x7f;
     private static final int AGE_MASK          = 0x0f;
@@ -61,7 +61,7 @@ public class RegionStat {
     private static final Stroke STROKE = new BasicStroke(2);
 
     // This constructor is for the legend.
-    public RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float plabLvl, float sharedLvl, RegionState state) {
+    RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float plabLvl, float sharedLvl, RegionState state) {
         this.usedLvl = usedLvl;
         this.liveLvl = liveLvl;
         this.tlabLvl = tlabLvl;
@@ -74,7 +74,7 @@ public class RegionStat {
         this.showLivenessDetail = Boolean.getBoolean("show.liveness");
     }
     // This constructor is for CounterTest
-    public RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float plabLvl, float sharedLvl, RegionAffiliation affiliation,RegionState state) {
+    RegionStat(float usedLvl, float liveLvl, float tlabLvl, float gclabLvl, float plabLvl, float sharedLvl, RegionAffiliation affiliation,RegionState state) {
         this.usedLvl = usedLvl;
         this.liveLvl = liveLvl;
         this.tlabLvl = tlabLvl;
@@ -88,7 +88,7 @@ public class RegionStat {
     }
 
     // Also only used for the legend.
-    public RegionStat(RegionState state, int age) {
+    RegionStat(RegionState state, int age) {
         this.usedLvl = 0;
         this.liveLvl = 0;
         this.tlabLvl = 0;
@@ -101,7 +101,7 @@ public class RegionStat {
         this.showLivenessDetail = Boolean.getBoolean("show.liveness");
     }
 
-    public RegionStat(long data) {
+    RegionStat(long data) {
         this.showLivenessDetail = Boolean.getBoolean("show.liveness");
 
         usedLvl  = ((data >>> USED_SHIFT)  & PERCENT_MASK) / 100F;
@@ -170,7 +170,7 @@ public class RegionStat {
         }
     }
 
-    public void render(Graphics graphics, int x, int y, int width, int height) {
+    void render(Graphics graphics, int x, int y, int width, int height) {
         Graphics2D g = (Graphics2D) graphics;
         g.setColor(Color.WHITE);
         fillShape(g, x, y, width, height);
@@ -306,43 +306,43 @@ public class RegionStat {
         return result;
     }
 
-    public RegionAffiliation affiliation() {
+    RegionAffiliation affiliation() {
         return affiliation;
     }
 
-    public float live() {
+    float live() {
         return liveLvl;
     }
 
-    public float used() {
+    float used() {
         return usedLvl;
     }
 
-    public float tlabAllocs() {
+    float tlabAllocs() {
         return tlabLvl;
     }
 
-    public float gclabAllocs() {
+    float gclabAllocs() {
         return gclabLvl;
     }
 
-    public float plabAllocs() {
+    float plabAllocs() {
         return plabLvl;
     }
 
-    public float maxAllocsYoung() {
+    float maxAllocsYoung() {
         return Collections.max(Arrays.asList(tlabLvl, gclabLvl, sharedLvl));
     }
-    public float maxAllocsOld() {
+    float maxAllocsOld() {
         return Collections.max(Arrays.asList(plabLvl, sharedLvl));
     }
 
-    public float sharedAllocs() {
+    float sharedAllocs() {
         return sharedLvl;
     }
 
-    public RegionState state() {
+    RegionState state() {
         return state;
     }
-    public long age() { return age; }
+    long age() { return age; }
 }

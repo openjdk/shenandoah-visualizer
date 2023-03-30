@@ -33,10 +33,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class DataLogProvider {
+class DataLogProvider {
     private static final long LATEST_VERSION = 2;
 
-    public static void loadSnapshots(String filePath, EventLog<Snapshot> eventLog) {
+    static void loadSnapshots(String filePath, EventLog<Snapshot> eventLog) {
         if (!isValidPath(filePath)) {
             throw new IllegalArgumentException("Invalid file path supplied. Please try again.");
         }

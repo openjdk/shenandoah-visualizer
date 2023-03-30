@@ -30,12 +30,12 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.List;
 
-public class GraphPanel extends JPanel {
+class GraphPanel extends JPanel {
     private final RenderRunner renderRunner;
 
     int graphWidth, graphHeight;
 
-    public GraphPanel(RenderRunner renderRunner) {
+    GraphPanel(RenderRunner renderRunner) {
         this.renderRunner = renderRunner;
 
         this.addComponentListener(new ComponentAdapter() {

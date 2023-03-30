@@ -24,6 +24,6 @@
  */
 package org.openjdk.shenandoah;
 
-public interface Timed {
+interface Timed {
     long time();
 }

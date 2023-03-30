@@ -24,8 +24,8 @@
  */
 package org.openjdk.shenandoah;
 
-public class LayoutConstants {
-    public static final int LINE = 15;
+class LayoutConstants {
+    static final int LINE = 15;
 
     static final int INITIAL_WIDTH = 2000;
     static final int INITIAL_HEIGHT = 1600;

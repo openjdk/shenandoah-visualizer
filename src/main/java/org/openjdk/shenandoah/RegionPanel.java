@@ -28,12 +28,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-public class RegionPanel extends JPanel {
+class RegionPanel extends JPanel {
     private final RenderRunner renderRunner;
 
     int regionWidth, regionHeight;
 
-    public RegionPanel(RenderRunner renderRunner, KeyAdapter keyboardShortCuts) {
+    RegionPanel(RenderRunner renderRunner, KeyAdapter keyboardShortCuts) {
         this.renderRunner = renderRunner;
 
         addComponentListener(new ComponentAdapter() {

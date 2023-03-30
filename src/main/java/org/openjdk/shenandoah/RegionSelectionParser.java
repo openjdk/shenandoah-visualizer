@@ -33,7 +33,7 @@ class RegionSelectionParser {
     StringBuilder sb = new StringBuilder(4);
     int rangeStart = -1;
 
-    public List<Integer> parse(String expression) {
+    List<Integer> parse(String expression) {
         try {
             Collection<Integer> ints = new HashSet<>();
             for (int i = 0, n = expression.length(); i < n; ++i) {

@@ -34,9 +34,9 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.util.List;
 
-public class RegionHistory extends JFrame implements DocumentListener {
-    public static final String DEFAULT_REGION_SELECTION = "0, 100 - 130, 2000";
-    public static final int MIN_REGION_HEIGHT = 5;
+class RegionHistory extends JFrame implements DocumentListener {
+    static final String DEFAULT_REGION_SELECTION = "0, 100 - 130, 2000";
+    static final int MIN_REGION_HEIGHT = 5;
     private static final int MAX_REGION_HEIGHT = 25;
 
     private final RenderRunner renderRunner;
@@ -47,7 +47,7 @@ public class RegionHistory extends JFrame implements DocumentListener {
 
     private final JLabel status;
 
-    public RegionHistory(RenderRunner renderRunner, KeyAdapter keyListener) {
+    RegionHistory(RenderRunner renderRunner, KeyAdapter keyListener) {
         this.renderRunner = renderRunner;
         this.parser = new RegionSelectionParser();
         this.regions = parser.parse(DEFAULT_REGION_SELECTION);

@@ -31,20 +31,20 @@ import java.awt.*;
 
 import static org.openjdk.shenandoah.LayoutConstants.LINE;
 
-public class StatusPanel extends JPanel {
+class StatusPanel extends JPanel {
     static final int KILO = 1024;
     private final RenderRunner renderRunner;
 
-    public StatusPanel(RenderRunner renderRunner) {
+    StatusPanel(RenderRunner renderRunner) {
         this.renderRunner = renderRunner;
     }
 
-    public static void renderTimeLineLegendItem(Graphics g, int sqSize, Color color, int lineNumber, String label) {
+    static void renderTimeLineLegendItem(Graphics g, Color color, int lineNumber, String label) {
         g.setColor(color);
         int y = (int) (lineNumber * LINE * 1.5);
-        g.fillRect(0, y, sqSize, sqSize);
+        g.fillRect(0, y, LayoutConstants.LINE, LayoutConstants.LINE);
         g.setColor(Color.BLACK);
-        g.drawString(label, (int) (sqSize * 1.5), y + sqSize);
+        g.drawString(label, (int) (LayoutConstants.LINE * 1.5), y + LayoutConstants.LINE);
     }
 
     @Override
@@ -69,17 +69,17 @@ public class StatusPanel extends JPanel {
             g.drawString(pausesText, 0, ++line * LINE);
         }
 
-        renderTimeLineLegendItem(g, LINE, Colors.OLD[1], ++line, "Old Marking (OM)");
-        renderTimeLineLegendItem(g, LINE, Colors.YOUNG[1], ++line, "Young Marking (M)");
-        renderTimeLineLegendItem(g, LINE, Colors.YOUNG[2], ++line, "Young Evacuation (E)");
-        renderTimeLineLegendItem(g, LINE, Colors.YOUNG[3], ++line, "Young Update References (UR)");
+        renderTimeLineLegendItem(g, Colors.OLD[1], ++line, "Old Marking (OM)");
+        renderTimeLineLegendItem(g, Colors.YOUNG[1], ++line, "Young Marking (M)");
+        renderTimeLineLegendItem(g, Colors.YOUNG[2], ++line, "Young Evacuation (E)");
+        renderTimeLineLegendItem(g, Colors.YOUNG[3], ++line, "Young Update References (UR)");
 
-        renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[1], ++line, "Global Marking (M)");
-        renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[2], ++line, "Global Evacuation (E)");
-        renderTimeLineLegendItem(g, LINE, Colors.GLOBAL[3], ++line, "Global Update References (UR)");
+        renderTimeLineLegendItem(g, Colors.GLOBAL[1], ++line, "Global Marking (M)");
+        renderTimeLineLegendItem(g, Colors.GLOBAL[2], ++line, "Global Evacuation (E)");
+        renderTimeLineLegendItem(g, Colors.GLOBAL[3], ++line, "Global Update References (UR)");
 
-        renderTimeLineLegendItem(g, LINE, Colors.DEGENERATE, ++line, "Degenerated Cycle");
-        renderTimeLineLegendItem(g, LINE, Colors.FULL, ++line, "Full");
+        renderTimeLineLegendItem(g, Colors.DEGENERATE, ++line, "Degenerated Cycle");
+        renderTimeLineLegendItem(g, Colors.FULL, ++line, "Full");
     }
 
     private static String getStatus(Snapshot snapshot) {

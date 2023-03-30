@@ -26,7 +26,7 @@ package org.openjdk.shenandoah;
 
 import java.awt.*;
 
-public class Colors {
+class Colors {
 
     static final Color[] YOUNG = createColorFamily(Color.GREEN);
     static final Color[] OLD = createColorFamily(new Color(120 , 146, 210));

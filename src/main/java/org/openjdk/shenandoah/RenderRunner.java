@@ -34,7 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class RenderRunner implements Runnable {
+class RenderRunner implements Runnable {
     private final ScheduledExecutorService service;
     private long lastUpdateNanos;
     private volatile EventLog<Snapshot> events;
@@ -49,7 +49,7 @@ public class RenderRunner implements Runnable {
 
     private final Set<JFrame> frames;
 
-    public RenderRunner(JFrame frame) {
+    RenderRunner(JFrame frame) {
         this.frames = new HashSet<>();
         this.frames.add(frame);
         this.playbackSpeed = 1.0;
@@ -59,11 +59,11 @@ public class RenderRunner implements Runnable {
         service.scheduleAtFixedRate(this, 0, 100, TimeUnit.MILLISECONDS);
     }
 
-    public void onRecordingLoaded(Runnable runnable) {
+    void onRecordingLoaded(Runnable runnable) {
         this.recordingLoaded = runnable;
     }
 
-    public synchronized void loadPlayback(String filePath) {
+    synchronized void loadPlayback(String filePath) {
         lastUpdateNanos = 0;
         liveData.stopConnector();
         playbackStatus = "Loading";
@@ -78,7 +78,7 @@ public class RenderRunner implements Runnable {
         });
     }
 
-    public synchronized void loadLive(String vmIdentifier) {
+    synchronized void loadLive(String vmIdentifier) {
         if (vmIdentifier != null) {
             liveData.setConnectionTarget(vmIdentifier);
         }
@@ -112,66 +112,66 @@ public class RenderRunner implements Runnable {
         }
     }
 
-    public synchronized Snapshot snapshot() {
+    synchronized Snapshot snapshot() {
         Snapshot latest = events.current();
         return latest != null ? latest : DataProvider.DISCONNECTED;
     }
 
-    public void addPopup(JFrame popup) {
+    void addPopup(JFrame popup) {
         frames.add(popup);
     }
 
-    public void deletePopup(JFrame popup) {
+    void deletePopup(JFrame popup) {
         frames.remove(popup);
     }
 
-    public List<Snapshot> snapshots() {
+    List<Snapshot> snapshots() {
         return new ArrayList<>(events.inRange());
     }
 
-    public void setPlaybackSpeed(double speed) {
+    void setPlaybackSpeed(double speed) {
         playbackSpeed = speed;
     }
 
-    public boolean isPaused() {
+    boolean isPaused() {
         return isPaused;
     }
 
-    public boolean isLive() { return isLive; }
+    boolean isLive() { return isLive; }
 
-    public void togglePlayback() {
+    void togglePlayback() {
         isPaused = !isPaused;
     }
 
-    public void stepBy(int value) {
+    void stepBy(int value) {
         events.stepBy(value);
     }
 
-    public void stepToEnd() {
+    void stepToEnd() {
         events.stepToEnd();
     }
 
-    public double getPlaybackSpeed() {
+    double getPlaybackSpeed() {
         return playbackSpeed;
     }
 
-    public int snapshotCount() {
+    int snapshotCount() {
         return events.size();
     }
 
-    public void stepTo(int value) {
+    void stepTo(int value) {
         events.stepTo(value);
     }
 
-    public int cursor() {
+    int cursor() {
         return events.cursor();
     }
 
-    public String status() {
+    String status() {
         return isLive ? liveData.status() : playbackStatus;
     }
 
-    public void shutdown() {
+    void shutdown() {
         service.shutdown();
         frames.forEach(Window::dispose);
         System.exit(0);

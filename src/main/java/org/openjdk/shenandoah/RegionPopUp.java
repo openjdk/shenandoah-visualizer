@@ -28,7 +28,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-public class RegionPopUp extends JFrame {
+class RegionPopUp extends JFrame {
     private final int regionNumber;
     private final RenderRunner renderRunner;
     private float spotlightUsedLvl;
@@ -46,7 +46,7 @@ public class RegionPopUp extends JFrame {
 
     RegionStat spotlightRegionData;
 
-    public RegionPopUp(int regionNumber, RenderRunner renderRunner) {
+    RegionPopUp(int regionNumber, RenderRunner renderRunner) {
         this.regionNumber = regionNumber;
         this.renderRunner = renderRunner;
 
@@ -89,7 +89,7 @@ public class RegionPopUp extends JFrame {
         }
     }
 
-    public synchronized void timelinePaint(Graphics g) {
+    synchronized void timelinePaint(Graphics g) {
         int y = initialY;
         List<Snapshot> snapshots = renderRunner.snapshots();
         for (int i = snapshots.size() - 1; i >= 0; i--) {
@@ -112,7 +112,7 @@ public class RegionPopUp extends JFrame {
         }
     }
 
-    public synchronized void spotlightPaint(Graphics g) {
+    synchronized void spotlightPaint(Graphics g) {
         g.setColor(Color.BLACK);
         g.drawString("Spotlight Region Data", 20, 30);
         g.drawString("Region index: " + regionNumber, 20, 50);
@@ -127,7 +127,7 @@ public class RegionPopUp extends JFrame {
         g.drawString("Affiliation: " + spotlightAffiliation, 20, 230);
     }
 
-    public final void setSpotlightRegionStat(RegionStat r) {
+    final void setSpotlightRegionStat(RegionStat r) {
         this.spotlightRegionData = r;
         spotlightUsedLvl = spotlightRegionData.used() * 100f;
         spotlightLiveLvl = spotlightRegionData.live() * 100f;

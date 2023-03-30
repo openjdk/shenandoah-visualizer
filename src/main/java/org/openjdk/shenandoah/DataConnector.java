@@ -52,7 +52,7 @@ import java.util.function.Consumer;
  * Purpose of this class is to maintain a JMX connection to a JVM running
  * shenandoah region sampling.
  */
-public class DataConnector implements Runnable {
+class DataConnector implements Runnable {
     private static final String LOCAL_CONNECTOR_ADDRESS_PROP = "com.sun.management.jmxremote.localConnectorAddress";
     private static final String SHENANDOAH_PAUSES_BEAN = "java.lang:name=Shenandoah Pauses,type=GarbageCollector";
 
@@ -73,7 +73,7 @@ public class DataConnector implements Runnable {
         Searching, Connecting, Connected, Disconnecting, Disconnected
     }
 
-    public DataConnector(Consumer<MonitoredVm> monitoredVmConsumer) {
+    DataConnector(Consumer<MonitoredVm> monitoredVmConsumer) {
         this.monitoredVmConsumer = monitoredVmConsumer;
         this.histogramRecorder = new Recorder(2);
         this.histogram = new Histogram(2);
@@ -115,7 +115,7 @@ public class DataConnector implements Runnable {
         System.out.println("Connection task completed: " + status);
     }
 
-    public boolean isConnected() {
+    boolean isConnected() {
         return status == State.Connected;
     }
 
@@ -124,7 +124,7 @@ public class DataConnector implements Runnable {
         status = newState;
     }
 
-    public void start() {
+    void start() {
         if (status == State.Disconnected) {
             transitionTo(State.Searching);
             shouldRun = true;
@@ -132,7 +132,7 @@ public class DataConnector implements Runnable {
         }
     }
 
-    public void stop() {
+    void stop() {
         shouldRun = false;
         if (status == State.Connected) {
             executor.execute(() -> {
@@ -148,11 +148,11 @@ public class DataConnector implements Runnable {
         }
     }
 
-    public String status() {
+    String status() {
         return status.toString();
     }
 
-    public Histogram getPauseHistogram() {
+    Histogram getPauseHistogram() {
         Histogram temp = histogramRecorder.getIntervalHistogram();
         histogram.add(temp);
         return histogram.copy();

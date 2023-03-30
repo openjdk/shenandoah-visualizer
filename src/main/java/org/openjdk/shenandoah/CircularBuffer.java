@@ -26,40 +26,40 @@ package org.openjdk.shenandoah;
 
 import java.util.*;
 
-public class CircularBuffer<T> {
+class CircularBuffer<T> {
 
-    public static final int DEFAULT_SIZE = 8;
+    static final int DEFAULT_SIZE = 8;
 
     private final Object[] elements;
     private int tail;
     private int count;
 
-    public CircularBuffer(int size) {
+    CircularBuffer(int size) {
         elements = new Object[size];
         count = tail = 0;
     }
 
-    public CircularBuffer(Collection<T> elements) {
+    CircularBuffer(Collection<T> elements) {
         this.elements = elements.toArray();
         tail = 0;
         count = this.elements.length;
     }
 
-    public CircularBuffer() {
+    CircularBuffer() {
         this(DEFAULT_SIZE);
     }
 
-    public boolean isEmpty() {
+    boolean isEmpty() {
         return count == 0;
     }
 
-    public void add(T i) {
+    void add(T i) {
         elements[tail] = i;
         tail = (tail  + 1) % elements.length;
         ++count;
     }
 
-    public List<T> subList(int include, int exclude) {
+    List<T> subList(int include, int exclude) {
         if (include == exclude) {
             return Collections.emptyList();
         }
@@ -71,11 +71,11 @@ public class CircularBuffer<T> {
         return list;
     }
 
-    public T get(int elementAt) {
+    T get(int elementAt) {
         return (T) elements[index(elementAt)];
     }
 
-    public int size() {
+    int size() {
         return Math.min(count, elements.length);
     }
 

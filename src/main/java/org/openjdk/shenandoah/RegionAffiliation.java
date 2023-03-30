@@ -24,7 +24,7 @@
  */
 package org.openjdk.shenandoah;
 
-public enum RegionAffiliation {
+enum RegionAffiliation {
     FREE,
     YOUNG,
     OLD;

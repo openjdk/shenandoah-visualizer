@@ -29,7 +29,7 @@ import org.HdrHistogram.Histogram;
 import java.util.List;
 import java.util.function.Function;
 
-public class Snapshot implements Timed {
+class Snapshot implements Timed {
     protected String collectionMode() {
         if (phase() == Phase.IDLE) {
             return "";
@@ -46,10 +46,10 @@ public class Snapshot implements Timed {
         return isYoungActive() ? "Young" : "Global";
     }
 
-    public enum Generation {
+    enum Generation {
         YOUNG(4), OLD(2), GLOBAL(0);
 
-        public final int shift;
+        final int shift;
 
         Generation(int shift) {
             this.shift = shift;
@@ -110,7 +110,7 @@ public class Snapshot implements Timed {
     private int age12Count;
     private int age15Count;
 
-    public Snapshot(long time, long regionSize, long protocolVersion, List<RegionStat> stats, int status, Histogram histogram) {
+    Snapshot(long time, long regionSize, long protocolVersion, List<RegionStat> stats, int status, Histogram histogram) {
         this.time = time;
         this.regionSize = regionSize;
         this.stats = stats;
@@ -130,7 +130,7 @@ public class Snapshot implements Timed {
         this.stateCounter();
     }
 
-    public Phase phase() {
+    Phase phase() {
         if (oldPhase != Phase.IDLE) {
             return oldPhase;
         }
@@ -140,38 +140,39 @@ public class Snapshot implements Timed {
         return globalPhase;
     }
 
-    public Phase getGlobalPhase() {
+    Phase getGlobalPhase() {
         return globalPhase;
     }
 
-    public Phase getYoungPhase() {
+    Phase getYoungPhase() {
         return youngPhase;
     }
 
-    public Phase getOldPhase() {
+    Phase getOldPhase() {
         return oldPhase;
     }
 
-    public Histogram getSafepointTime() {
+    Histogram getSafepointTime() {
         return histogram;
     }
 
-    public boolean isYoungActive() {
+    boolean isYoungActive() {
         return youngPhase != Phase.IDLE;
     }
 
-    public boolean isDegenActive() {
+    boolean isDegenActive() {
         return degenActive;
     }
 
-    public boolean isFullActive() {
+    boolean isFullActive() {
         return fullActive;
     }
 
-    public RegionStat get(int i) {
+    RegionStat get(int i) {
         return stats.get(i);
     }
 
+    @Override
     public long time() {
         return time;
     }
@@ -200,15 +201,15 @@ public class Snapshot implements Timed {
         return result;
     }
 
-    public int regionCount() {
+    int regionCount() {
         return stats.size();
     }
 
-    public long total() {
+    long total() {
         return regionSize * regionCount();
     }
 
-    public long used() {
+    long used() {
         long used = 0L;
         for (RegionStat rs : stats) {
             used += regionSize * rs.used();
@@ -216,7 +217,7 @@ public class Snapshot implements Timed {
         return used;
     }
 
-    public long generationStat(RegionAffiliation affiliation, Function<RegionStat, Float> stat) {
+    long generationStat(RegionAffiliation affiliation, Function<RegionStat, Float> stat) {
         long used = 0L;
         for (RegionStat rs : stats) {
             if (rs.affiliation() == affiliation) {
@@ -226,7 +227,7 @@ public class Snapshot implements Timed {
         return used;
     }
 
-    public long collectionSet() {
+    long collectionSet() {
         long used = 0L;
         for (RegionStat rs : stats) {
             if (rs.state() == RegionState.CSET || rs.state() == RegionState.PINNED_CSET) {
@@ -236,7 +237,7 @@ public class Snapshot implements Timed {
         return used;
     }
 
-    public long live() {
+    long live() {
         long live = 0L;
         for (RegionStat rs : stats) {
             live += regionSize * rs.live();
@@ -244,7 +245,7 @@ public class Snapshot implements Timed {
         return live;
     }
 
-    public double percentageOfOldRegionsInCollectionSet() {
+    double percentageOfOldRegionsInCollectionSet() {
         long totalInCset = 0, oldInCset = 0;
         for (RegionStat rs : stats) {
             if (rs.state() == RegionState.CSET || rs.state() == RegionState.PINNED_CSET) {
@@ -344,61 +345,61 @@ public class Snapshot implements Timed {
             }
         }
     }
-    public int getEmptyUncommittedCount() {
+    int getEmptyUncommittedCount() {
         return emptyUncommittedCount;
     }
-    public int getEmptyCommittedCount() {
+    int getEmptyCommittedCount() {
         return emptyCommittedCount;
     }
-    public int getTrashCount() {
+    int getTrashCount() {
         return trashCount;
     }
-    public int getTlabCount() {
+    int getTlabCount() {
         return tlabCount;
     }
-    public int getGclabCount() {
+    int getGclabCount() {
         return gclabCount;
     }
-    public int getPlabCount() {
+    int getPlabCount() {
         return plabCount;
     }
-    public int getSharedCount() {
+    int getSharedCount() {
         return sharedCount;
     }
-    public int getHumongousCount() {
+    int getHumongousCount() {
         return humongousCount;
     }
-    public int getPinnedHumongousCount() {
+    int getPinnedHumongousCount() {
         return pinnedHumongousCount;
     }
-    public int getCSetCount() {
+    int getCSetCount() {
         return cSetCount;
     }
-    public int getPinnedCount() {
+    int getPinnedCount() {
         return pinnedCount;
     }
-    public int getPinnedCSetCount() {
+    int getPinnedCSetCount() {
         return pinnedCSetCount;
     }
-    public int getAge0Count() {
+    int getAge0Count() {
         return age0Count;
     }
-    public int getAge3Count() {
+    int getAge3Count() {
         return age3Count;
     }
-    public int getAge6Count() {
+    int getAge6Count() {
         return age6Count;
     }
-    public int getAge9Count() {
+    int getAge9Count() {
         return age9Count;
     }
-    public int getAge12Count() {
+    int getAge12Count() {
         return age12Count;
     }
-    public int getAge15Count() {
+    int getAge15Count() {
         return age15Count;
     }
-    public int statsSize() {
+    int statsSize() {
         return stats.size();
     }
 }

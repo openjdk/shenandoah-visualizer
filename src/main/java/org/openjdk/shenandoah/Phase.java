@@ -24,7 +24,7 @@
  */
 package org.openjdk.shenandoah;
 
-public enum Phase {
+enum Phase {
     IDLE,
     MARKING,
     EVACUATING,

@@ -65,7 +65,7 @@
          visualizer.setVisible(true);
      }
 
-     public ShenandoahVisualizer(String filePath, String vmIdentifier) {
+     ShenandoahVisualizer(String filePath, String vmIdentifier) {
          setLayout(new BorderLayout());
          setTitle("Shenandoah GC Visualizer");
          setSize(LayoutConstants.INITIAL_WIDTH, LayoutConstants.INITIAL_HEIGHT);
@@ -155,7 +155,7 @@
      private static class KeyboardShortcuts extends KeyAdapter {
          private final RenderRunner renderRunner;
 
-         public KeyboardShortcuts(RenderRunner renderRunner) {
+         KeyboardShortcuts(RenderRunner renderRunner) {
              this.renderRunner = renderRunner;
          }
 

@@ -24,7 +24,7 @@
  */
 package org.openjdk.shenandoah;
 
-public enum RegionState {
+enum RegionState {
     EMPTY_UNCOMMITTED,
     EMPTY_COMMITTED,
     REGULAR,

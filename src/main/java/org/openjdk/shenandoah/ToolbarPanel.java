@@ -32,7 +32,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.text.ParseException;
 
-public class ToolbarPanel extends JPanel
+class ToolbarPanel extends JPanel
         implements ActionListener {
 
     private static final String BACK_1 = "Step back 1";
@@ -58,10 +58,10 @@ public class ToolbarPanel extends JPanel
     private final JTextField fileNameField, lastActionField, modeField, timestampField;
     private final JSlider slider;
 
-    public boolean speedButtonPressed = false;
+    boolean speedButtonPressed = false;
 
 
-    public ToolbarPanel(RenderRunner renderRunner, KeyAdapter keyShortcutAdapter) {
+    ToolbarPanel(RenderRunner renderRunner, KeyAdapter keyShortcutAdapter) {
         super(new GridBagLayout());
 
         this.renderRunner = renderRunner;
@@ -340,7 +340,7 @@ public class ToolbarPanel extends JPanel
         speedToolbar.add(resetSpeedMultiplierButton);
     }
 
-    public double getSpeedValue() {
+    double getSpeedValue() {
         JFormattedTextField speedField = getTextField(speedSpinner);
         if (speedField == null) {
             return 0.0;
@@ -357,7 +357,7 @@ public class ToolbarPanel extends JPanel
         return speedValue;
     }
 
-    public void setSpeedValue(double speed) {
+    void setSpeedValue(double speed) {
         JFormattedTextField speedField = getTextField(speedSpinner);
         if (speedField == null) {
             return;
@@ -404,11 +404,11 @@ public class ToolbarPanel extends JPanel
         }
     }
 
-    public void setFileNameField(String s) {
+    void setFileNameField(String s) {
         fileNameField.setText(s);
     }
 
-    public void setLastActionField(String s) {
+    void setLastActionField(String s) {
         lastActionField.setText(s);
     }
 

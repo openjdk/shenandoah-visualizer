@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class DataProvider {
+class DataProvider {
     private static final long ORIGINAL_VERSION = 1;
     private static final long LATEST_VERSION = 2;
     static final Snapshot DISCONNECTED = new Snapshot(System.currentTimeMillis(), 1024, LATEST_VERSION, Collections.emptyList(), 0, new Histogram(2));
@@ -48,7 +48,7 @@ public class DataProvider {
 
     private MonitoredVm vm;
 
-    public DataProvider() {
+    DataProvider() {
         connector = new DataConnector(this::setMonitoredVm);
     }
 
@@ -89,11 +89,11 @@ public class DataProvider {
         }
     }
 
-    public boolean isConnected() {
+    boolean isConnected() {
         return connector.isConnected();
     }
 
-    public Snapshot snapshot() {
+    Snapshot snapshot() {
         if (!connector.isConnected()) {
             return null;
         }
@@ -113,17 +113,17 @@ public class DataProvider {
         return new Snapshot(time, maxSize, protocolVersion, stats, (int) status.longValue(), connector.getPauseHistogram());
     }
 
-    public void stopConnector() {
+    void stopConnector() {
         connector.stop();
     }
 
-    public void startConnector() { connector.start(); }
+    void startConnector() { connector.start(); }
 
-    public String status() {
+    String status() {
         return connector.status();
     }
 
-    public void setConnectionTarget(String vmIdentifier) {
+    void setConnectionTarget(String vmIdentifier) {
         connector.connectTo(vmIdentifier);
     }
 }
