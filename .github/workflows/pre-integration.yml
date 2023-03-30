@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        java: [8, 11, 15, 16-ea]
+        java: [17, 20, 21-ea]
         os: [ubuntu-18.04, windows-2019, macos-12]
       fail-fast: false
     name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}

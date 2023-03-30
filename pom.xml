@@ -15,7 +15,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javac.target>19</javac.target>
+        <javac.target>17</javac.target>
         <uberjar.name>visualizer</uberjar.name>
     </properties>
 
