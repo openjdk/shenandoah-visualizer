@@ -44,13 +44,15 @@ class DataLogProvider {
         long protocolVersion = LATEST_VERSION;
         var events = new ArrayList<Snapshot>();
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            String metaDataLine = br.readLine(); // timestamp status numRegions regionSize
+            // Metadata line: timestamp status numRegions regionSize
+            String metaDataLine;
+            while ((metaDataLine = br.readLine()) != null) {
+                if (metaDataLine.trim().isEmpty()) continue;
 
-            while (metaDataLine != null && metaDataLine.trim().length() > 0) {
                 metaDataLine = processLoggingTag(metaDataLine);
                 long[] metaData = processLongData(metaDataLine);
                 if (metaData.length != 5 && metaData.length != 4) {
-                    throw new IllegalArgumentException(String.format("Metadata line has %d values. Expected 5 values.", metaData.length));
+                    throw new IllegalArgumentException("Metadata line has " + metaData.length + " values. Expected 4 or 5.");
                 } else if (metaData.length > 4) {
                     protocolVersion = metaData[4];
                 }
@@ -66,8 +68,6 @@ class DataLogProvider {
                 long regionSize = metaData[3];
                 int status = Math.toIntExact(metaData[1]);
                 events.add(new Snapshot(tsMilli, regionSize, protocolVersion, processRegionStats(regionData), status, null));
-
-                metaDataLine = br.readLine();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
