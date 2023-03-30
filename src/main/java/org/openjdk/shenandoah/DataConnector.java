@@ -106,7 +106,8 @@ class DataConnector {
                     Thread.sleep(250);
                 }
             } catch (InterruptedException e) {
-                Thread.interrupted();
+                shouldRun = false;
+                Thread.currentThread().interrupt();
             } catch (Exception e) {
                 e.printStackTrace();
             }
