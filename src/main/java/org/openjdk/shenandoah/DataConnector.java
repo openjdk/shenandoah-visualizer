@@ -52,7 +52,7 @@ import java.util.function.Consumer;
  * Purpose of this class is to maintain a JMX connection to a JVM running
  * shenandoah region sampling.
  */
-class DataConnector implements Runnable {
+class DataConnector {
     private static final String LOCAL_CONNECTOR_ADDRESS_PROP = "com.sun.management.jmxremote.localConnectorAddress";
     private static final String SHENANDOAH_PAUSES_BEAN = "java.lang:name=Shenandoah Pauses,type=GarbageCollector";
 
@@ -91,8 +91,7 @@ class DataConnector implements Runnable {
         targetVmIdentifier = id;
     }
 
-    @Override
-    public void run() {
+    private void searchForShenandoahVm() {
         while (shouldRun) {
             try {
                 MonitoredVm vm = findShenandoahVm();
@@ -128,7 +127,7 @@ class DataConnector implements Runnable {
         if (status == State.DISCONNECTED) {
             transitionTo(State.SEARCHING);
             shouldRun = true;
-            executor.execute(this);
+            executor.execute(this::searchForShenandoahVm);
         }
     }
 
