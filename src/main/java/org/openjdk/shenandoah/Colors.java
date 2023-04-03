@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,32 +26,42 @@ package org.openjdk.shenandoah;
 
 import java.awt.*;
 
-public class Colors {
+class Colors {
+
+    static final Color[] YOUNG = createColorFamily(Color.GREEN);
+    static final Color[] OLD = createColorFamily(new Color(120 , 146, 210));
+    static final Color[] GLOBAL = createColorFamily(Color.RED);
+
+    private static Color[] createColorFamily(Color base) {
+        Color[] colors = new Color[4];
+        float[] hsb = Color.RGBtoHSB(base.getRed(), base.getGreen(), base.getBlue(), null);
+        colors[0] = base;
+        colors[1] = Color.getHSBColor(hsb[0], 0.5f, 0.5f);
+        colors[2] = Color.getHSBColor(hsb[0], 0.4f, 0.6f);
+        colors[3] = Color.getHSBColor(hsb[0], 0.3f, 0.7f);
+        return colors;
+    }
 
     static final Color TIMELINE_IDLE        = Color.BLACK;
-    static final Color TIMELINE_MARK        = new Color(100, 100, 0);
-    static final Color TIMELINE_EVACUATING  = new Color(100, 0, 0);
-    static final Color TIMELINE_UPDATEREFS  = new Color(0, 100, 100);
 
-    static final Color SHARED_ALLOC           = new Color(0, 250, 250);
-    static final Color SHARED_ALLOC_BORDER    = new Color(0, 191, 190);
+    static final Color DEGENERATE = Color.ORANGE;
+    static final Color FULL       = Color.RED;
+
+    static final Color SHARED_ALLOC         = new Color(0, 150, 250);
     static final Color TLAB_ALLOC           = new Color(0, 200, 0);
-    static final Color TLAB_ALLOC_BORDER    = new Color(0, 100, 0);
     static final Color GCLAB_ALLOC          = new Color(185, 0, 250);
-    static final Color GCLAB_ALLOC_BORDER   = new Color(118, 0, 160);
+    static final Color PLAB_ALLOC           = new Color(111, 78, 55);
 
     static final Color USED                 = new Color(220, 220, 220);
-
-    static final Color LIVE_COMMITTED       = new Color(150, 150, 150);
     static final Color LIVE_REGULAR         = new Color(0, 200, 0);
     static final Color LIVE_HUMONGOUS       = new Color(250, 100, 0);
     static final Color LIVE_PINNED_HUMONGOUS = new Color(255, 0, 0);
     static final Color LIVE_CSET            = new Color(250, 250, 0);
     static final Color LIVE_TRASH           = new Color(100, 100, 100);
-    static final Color LIVE_PINNED          = new Color(255, 0, 0);
-    static final Color LIVE_PINNED_CSET     = new Color(255, 120, 0);
+    static final Color LIVE_PINNED          = new Color(252, 201, 156);
+    static final Color LIVE_PINNED_CSET     = new Color(59, 88, 124);
     static final Color LIVE_EMPTY           = new Color(255, 255, 255);
-
-    static final Color LIVE_BORDER          = new Color(0, 100, 0);
     static final Color BORDER               = new Color(150, 150, 150);
+
+    static final Color[] AGE_COLORS = {Color.LIGHT_GRAY, Color.YELLOW, Color.ORANGE, Color.RED, Color.BLUE};
 }
