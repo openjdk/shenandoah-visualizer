@@ -46,7 +46,7 @@ Build as any Maven-driven Java project:
 #### Saving JVM session
 Add this additional flag to an active JVM running Shenandoah:
 
-    $ -Xlog:gc+region=debug:<file name>::filesize=<Target byte size for log rotation>,filecount=<Number of files to keep in rotation>
+    $ -Xlog:gc+region=trace:<file name>::filesize=<Target byte size for log rotation>,filecount=<Number of files to keep in rotation>
 
 
 #### Replaying JVM session
@@ -71,3 +71,4 @@ Add this additional flag to an active JVM running Shenandoah:
 Sample region popup window view
 
 <img src="images/sample-region-popup-screenshot.png" width="150">
+
